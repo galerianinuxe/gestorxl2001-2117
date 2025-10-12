@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
+
 interface ErrorReportModalProps {
   open: boolean;
   onClose: () => void;
@@ -69,7 +70,7 @@ const ErrorReportModal: React.FC<ErrorReportModalProps> = ({ open, onClose }) =>
             setSelectedWhatsApp(profile.phone);
           }
         } catch (error) {
-          console.error('Erro ao buscar WhatsApp do usuário:', error);
+          // Erro ao buscar WhatsApp - ignora silenciosamente
         }
       };
       
@@ -78,7 +79,10 @@ const ErrorReportModal: React.FC<ErrorReportModalProps> = ({ open, onClose }) =>
   }, [open, user]);
 
   const handleSubmit = async () => {
-    if (!errorType || !errorTitle || !errorDescription) {
+    const trimTitle = errorTitle.trim();
+    const trimDesc = errorDescription.trim();
+    
+    if (!errorType || !trimTitle || !trimDesc) {
       toast({
         title: "Campos obrigatórios",
         description: "Por favor, preencha todos os campos obrigatórios.",
@@ -95,6 +99,25 @@ const ErrorReportModal: React.FC<ErrorReportModalProps> = ({ open, onClose }) =>
       });
       return;
     }
+    
+    // Length validation
+    if (trimTitle.length > 100) {
+      toast({
+        title: "Erro",
+        description: "Título muito longo (máximo 100 caracteres)",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (trimDesc.length > 1000) {
+      toast({
+        title: "Erro",
+        description: "Descrição muito longa (máximo 1000 caracteres)",
+        variant: "destructive"
+      });
+      return;
+    }
 
     setIsSubmitting(true);
 
@@ -106,9 +129,9 @@ const ErrorReportModal: React.FC<ErrorReportModalProps> = ({ open, onClose }) =>
           user_email: user.email || '',
           user_whatsapp: selectedWhatsApp || null,
           error_type: errorType,
-          error_title: errorTitle,
-          error_description: errorDescription,
-          reproduce_steps: reproduceSteps || null
+          error_title: trimTitle.substring(0, 100),
+          error_description: trimDesc.substring(0, 1000),
+          reproduce_steps: reproduceSteps.trim().substring(0, 500) || null
         });
 
       if (error) {

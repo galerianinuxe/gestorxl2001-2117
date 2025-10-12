@@ -1,6 +1,31 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+// Sanitize data for logging (remove sensitive information)
+const sanitizeForLog = (data: any): any => {
+  if (!data) return data;
+  const sanitized = { ...data };
+  
+  // Remove sensitive fields
+  const sensitiveFields = ['access_token', 'authorization', 'token', 'password', 'secret', 'api_key'];
+  sensitiveFields.forEach(field => {
+    if (sanitized[field]) {
+      sanitized[field] = '[REDACTED]';
+    }
+  });
+  
+  // Sanitize nested payer info
+  if (sanitized.payer) {
+    sanitized.payer = {
+      ...sanitized.payer,
+      email: sanitized.payer.email ? `${sanitized.payer.email.substring(0, 3)}***` : undefined,
+      identification: sanitized.payer.identification ? { type: sanitized.payer.identification.type, number: '***' } : undefined
+    };
+  }
+  
+  return sanitized;
+};
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -36,9 +61,9 @@ serve(async (req) => {
       throw new Error('Mercado Pago Access Token not configured')
     }
 
-    console.log('Creating PIX payment for:', {
+    console.log('Creating PIX payment:', {
       amount: transaction_amount,
-      payer_email: payer.email,
+      payer_email: payer.email ? `${payer.email.substring(0, 3)}***` : 'unknown',
       external_reference
     })
 
@@ -75,7 +100,7 @@ serve(async (req) => {
       notification_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/webhook-mercado-pago`
     }
 
-    console.log('Payment data being sent:', JSON.stringify(paymentData, null, 2))
+    console.log('Payment data prepared (sanitized):', sanitizeForLog(paymentData))
 
     const response = await fetch('https://api.mercadopago.com/v1/payments', {
       method: 'POST',

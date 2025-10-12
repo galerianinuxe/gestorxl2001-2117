@@ -1,6 +1,18 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+// Sanitize webhook data for logging
+const sanitizeForLog = (data: any): any => {
+  if (!data) return data;
+  const sanitized = { ...data };
+  
+  if (sanitized.payer_email) {
+    sanitized.payer_email = `${sanitized.payer_email.substring(0, 3)}***`;
+  }
+  
+  return sanitized;
+};
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -13,7 +25,7 @@ serve(async (req) => {
 
   try {
     const webhookData = await req.json()
-    console.log('Webhook received:', webhookData)
+    console.log('Webhook received (sanitized):', sanitizeForLog(webhookData))
 
     // Only process payment notifications
     if (webhookData.type !== 'payment') {
@@ -58,7 +70,7 @@ serve(async (req) => {
 
     // If payment is approved, activate user subscription
     if (paymentData.status === 'approved') {
-      console.log(`Payment ${paymentId} approved! Activating subscription...`)
+      console.log(`Payment approved! Activating subscription for payment ending in ...${paymentId.toString().substring(paymentId.toString().length - 4)}`)
       
       // Extract plan info from external_reference (format: plan_<id>_<timestamp>)
       const externalRef = paymentData.external_reference
@@ -110,7 +122,7 @@ serve(async (req) => {
             if (subError) {
               console.error('Error activating subscription:', subError)
             } else {
-              console.log(`Subscription activated for user ${profile.id}`)
+              console.log(`Subscription activated successfully`)
             }
           }
         }
