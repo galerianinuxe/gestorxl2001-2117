@@ -1,9 +1,10 @@
 // Logger utility - production optimized logging system
+const isProduction = import.meta.env.PROD;
+const isDev = import.meta.env.DEV;
+
 export const createLogger = (prefix: string = '') => {
-  const isDev = import.meta.env.DEV;
-  
   return {
-    // Dev only logs
+    // Dev only logs (completely disabled in production)
     debug: (...args: any[]) => {
       if (isDev) console.log(`🔍 ${prefix}`, ...args);
     },
@@ -11,12 +12,19 @@ export const createLogger = (prefix: string = '') => {
       if (isDev) console.info(`ℹ️ ${prefix}`, ...args);
     },
     
-    // Always visible logs
+    // Warnings (only in dev, silent in production)
     warn: (...args: any[]) => {
-      console.warn(`⚠️ ${prefix}`, ...args);
+      if (isDev) console.warn(`⚠️ ${prefix}`, ...args);
     },
+    
+    // Critical errors only (always visible but minimized)
     error: (...args: any[]) => {
-      console.error(`❌ ${prefix}`, ...args);
+      if (isProduction) {
+        // In production, only log to error tracking service, not console
+        console.error(`❌ ${prefix}`, 'Error occurred');
+      } else {
+        console.error(`❌ ${prefix}`, ...args);
+      }
     },
     
     // Success logs (dev only)

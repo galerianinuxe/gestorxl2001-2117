@@ -13,6 +13,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { createLogger } from '@/utils/logger';
+
+const logger = createLogger('[OrderHistory]');
 
 interface OrderHistoryModalProps {
   isOpen: boolean;
@@ -76,7 +79,7 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
         .order('created_at', { ascending: false });
 
       if (ordersError) {
-        console.error('Erro ao carregar pedidos:', ordersError);
+        logger.error('Error loading orders:', ordersError);
         return;
       }
 
@@ -124,7 +127,7 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
       
       setOrders(allOrders);
     } catch (error) {
-      console.error('Erro ao carregar histórico:', error);
+      logger.error('Error loading history:', error);
     } finally {
       setLoading(false);
     }
@@ -146,7 +149,7 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
         })
       }));
     } catch (error) {
-      console.error('Erro ao carregar histórico local:', error);
+      logger.error('Error loading local history:', error);
       return [];
     }
   };
@@ -205,8 +208,7 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
   const handleDeleteEmptyOpenOrders = async () => {
     if (!user?.id || deleting) return;
     
-    // Starting empty orders cleanup (dev only)
-    if (import.meta.env.DEV) console.log('🗑️ Iniciando exclusão de pedidos vazios...');
+    logger.debug('Starting empty orders cleanup...');
     setDeleting(true);
     
     try {
@@ -218,7 +220,7 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
         .eq('status', 'open');
 
       if (findError) {
-        console.error('❌ Erro ao buscar pedidos em aberto:', findError);
+        logger.error('Error fetching open orders:', findError);
         toast({
           title: "Erro",
           description: "Erro ao buscar pedidos em aberto. Tente novamente.",
@@ -227,8 +229,7 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
         return;
       }
 
-      // Found open orders (dev only)
-      if (import.meta.env.DEV) console.log(`📋 Encontrados ${openOrders?.length || 0} pedidos em aberto`);
+      logger.debug(`Found ${openOrders?.length || 0} open orders`);
 
       // Filtrar pedidos realmente vazios (sem itens)
       const emptyOrderIds: string[] = [];
@@ -245,22 +246,18 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
             .eq('user_id', user.id); // Adicionar filtro por usuário para segurança
 
           if (itemsError) {
-            console.error(`❌ Erro ao buscar itens do pedido ${order.id}:`, itemsError);
+            logger.error(`Error fetching items for order ${order.id}:`, itemsError);
             continue;
           }
-
-          // Order items check (removed verbose logging)
 
           if (!items || items.length === 0) {
             emptyOrderIds.push(order.id);
             customerIdsToCheck.push(order.customer_id);
-            // Empty order marked for deletion (removed verbose logging)
           }
         }
       }
 
-      // Empty orders summary (dev only)  
-      if (import.meta.env.DEV) console.log(`🎯 Total de pedidos vazios encontrados: ${emptyOrderIds.length}`);
+      logger.debug(`Total empty orders found: ${emptyOrderIds.length}`);
 
       if (emptyOrderIds.length === 0) {
         toast({
@@ -272,24 +269,24 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
       }
 
       // Excluir os pedidos vazios
-      console.log('🗑️ Excluindo pedidos vazios...');
+      logger.debug('Deleting empty orders...');
       const { error: deleteError } = await supabase
         .from('orders')
         .delete()
         .in('id', emptyOrderIds)
-        .eq('user_id', user.id); // Adicionar filtro por usuário para segurança
+        .eq('user_id', user.id);
 
       if (deleteError) {
-        console.error('❌ Erro ao excluir pedidos vazios:', deleteError);
+        logger.error('Error deleting empty orders:', deleteError);
         alert('Erro ao excluir pedidos vazios. Tente novamente.');
         return;
       }
 
-      console.log('✅ Pedidos vazios excluídos com sucesso');
+      logger.success('Empty orders deleted successfully');
 
       // Verificar e remover clientes que ficaram sem pedidos
       const uniqueCustomerIds = [...new Set(customerIdsToCheck)];
-      console.log(`🔍 Verificando ${uniqueCustomerIds.length} clientes para possível remoção...`);
+      logger.debug(`Checking ${uniqueCustomerIds.length} customers for removal...`);
       
       for (const customerId of uniqueCustomerIds) {
         const { data: remainingOrders } = await supabase
@@ -299,12 +296,12 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
           .eq('user_id', user.id);
 
         if (!remainingOrders || remainingOrders.length === 0) {
-          console.log(`🗑️ Removendo cliente órfão: ${customerId}`);
+          logger.debug(`Removing orphan customer: ${customerId}`);
           await supabase
             .from('customers')
             .delete()
             .eq('id', customerId)
-            .eq('user_id', user.id); // Adicionar filtro por usuário para segurança
+            .eq('user_id', user.id);
         }
       }
 
@@ -318,14 +315,13 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
             !emptyOrderIds.includes(order.id)
           );
           localStorage.setItem(historyKey, JSON.stringify(filteredHistory));
-          console.log('🧹 Histórico local limpo');
+          logger.debug('Local history cleaned');
         }
       } catch (localError) {
-        console.error('⚠️ Erro ao limpar histórico local:', localError);
+        logger.error('Error cleaning local history:', localError);
       }
 
-      // Recarregar a lista
-      console.log('🔄 Recarregando lista de pedidos...');
+      logger.debug('Reloading orders list...');
       await loadOrderHistory();
       
       toast({
@@ -333,10 +329,10 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
         description: `${emptyOrderIds.length} pedidos vazios foram excluídos`,
         variant: "default",
       });
-      console.log('🎉 Exclusão de pedidos vazios concluída com sucesso');
+      logger.success('Empty orders deletion completed');
       
     } catch (error) {
-      console.error('❌ Erro geral ao excluir pedidos vazios:', error);
+      logger.error('Error deleting empty orders:', error);
       toast({
         title: "Erro",
         description: "Erro inesperado ao excluir pedidos vazios. Tente novamente.",
@@ -362,7 +358,7 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
         .eq('status', 'open');
 
       if (findError) {
-        console.error('Erro ao buscar pedidos em aberto:', findError);
+        logger.error('Error fetching open orders:', findError);
         return;
       }
 
@@ -381,7 +377,7 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
         .in('order_id', orderIds);
 
       if (itemsError) {
-        console.error('Erro ao excluir itens dos pedidos:', itemsError);
+        logger.error('Error deleting order items:', itemsError);
       }
 
       // Excluir os pedidos
@@ -391,7 +387,7 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
         .in('id', orderIds);
 
       if (ordersError) {
-        console.error('Erro ao excluir pedidos:', ordersError);
+        logger.error('Error deleting orders:', ordersError);
         return;
       }
 
@@ -411,11 +407,10 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
         }
       }
 
-      // Recarregar a lista
       await loadOrderHistory();
       alert(`${orderIds.length} pedidos em aberto foram excluídos.`);
     } catch (error) {
-      console.error('Erro ao excluir todos os pedidos em aberto:', error);
+      logger.error('Error deleting all open orders:', error);
     } finally {
       setDeleting(false);
       setShowDeleteAllOpenConfirm(false);

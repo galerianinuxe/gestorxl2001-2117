@@ -1,10 +1,11 @@
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
+
+const isDev = Deno.env.get('ENVIRONMENT') === 'development';
 
 interface SystemStats {
   database_name: string;
@@ -38,7 +39,7 @@ Deno.serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    console.log('Fetching detailed Supabase database statistics...')
+    if (isDev) console.log('Fetching detailed Supabase database statistics...')
 
     // Extrair nome do banco a partir da URL
     const dbName = supabaseUrl.split('//')[1].split('.')[0] || 'supabase_db'
@@ -50,14 +51,14 @@ Deno.serve(async (req) => {
       .eq('table_schema', 'public')
       .eq('table_type', 'BASE TABLE')
 
-    console.log('Tables query result:', { tablesData, tablesError })
+    if (isDev) console.log('Tables query result:', { tablesData, tablesError })
 
     // Get real users count
     const { data: usersData, error: usersError } = await supabase
       .from('profiles')
       .select('id', { count: 'exact' })
 
-    console.log('Users query result:', { count: usersData?.length, usersError })
+    if (isDev) console.log('Users query result:', { count: usersData?.length, usersError })
 
     // Get active users (updated in last 24 hours)
     const yesterday = new Date()
@@ -68,7 +69,7 @@ Deno.serve(async (req) => {
       .select('id', { count: 'exact' })
       .gte('updated_at', yesterday.toISOString())
 
-    console.log('Active users query result:', { count: activeUsersData?.length, activeUsersError })
+    if (isDev) console.log('Active users query result:', { count: activeUsersData?.length, activeUsersError })
 
     // Get transactions today
     const today = new Date()
@@ -80,7 +81,7 @@ Deno.serve(async (req) => {
       .gte('created_at', today.toISOString())
       .eq('status', 'completed')
 
-    console.log('Today transactions query result:', { count: todayTransactions?.length, todayTransactionsError })
+    if (isDev) console.log('Today transactions query result:', { count: todayTransactions?.length, todayTransactionsError })
 
     // Get total transactions
     const { data: totalTransactions, error: totalTransactionsError } = await supabase
@@ -88,7 +89,7 @@ Deno.serve(async (req) => {
       .select('id', { count: 'exact' })
       .eq('status', 'completed')
 
-    console.log('Total transactions query result:', { count: totalTransactions?.length, totalTransactionsError })
+    if (isDev) console.log('Total transactions query result:', { count: totalTransactions?.length, totalTransactionsError })
 
     // Get detailed database size and statistics
     let databaseSizeBytes = 0
@@ -108,9 +109,9 @@ Deno.serve(async (req) => {
           databaseSizeBytes = gbValue * 1024 * 1024 * 1024
         }
       }
-      console.log('Database size query result:', { dbSizeData, dbSizeError })
+      if (isDev) console.log('Database size query result:', { dbSizeData, dbSizeError })
     } catch (error) {
-      console.log('Database size query failed:', error)
+      if (isDev) console.log('Database size query failed:', error)
     }
 
     // Definir limites do plano Free do Supabase
@@ -131,9 +132,9 @@ Deno.serve(async (req) => {
         storageSizeBytes = storageData.total_size || 0
         storageUsagePercentage = Math.min((storageSizeBytes / supabaseFreeStorageLimit) * 100, 100)
       }
-      console.log('Storage usage query result:', { storageData, storageError })
+      if (isDev) console.log('Storage usage query result:', { storageData, storageError })
     } catch (error) {
-      console.log('Storage usage query failed:', error)
+      if (isDev) console.log('Storage usage query failed:', error)
     }
 
     // Get function count
@@ -143,9 +144,9 @@ Deno.serve(async (req) => {
       if (!functionError && functionData) {
         functionCount = functionData.count || 0
       }
-      console.log('Function count query result:', { functionData, functionError })
+      if (isDev) console.log('Function count query result:', { functionData, functionError })
     } catch (error) {
-      console.log('Function count query failed:', error)
+      if (isDev) console.log('Function count query failed:', error)
     }
 
     // Simulate realistic CPU and memory usage
@@ -172,7 +173,7 @@ Deno.serve(async (req) => {
       supabase_plan: 'Free'
     }
 
-    console.log('Final detailed system stats:', stats)
+    if (isDev) console.log('Final detailed system stats:', stats)
 
     return new Response(
       JSON.stringify(stats),

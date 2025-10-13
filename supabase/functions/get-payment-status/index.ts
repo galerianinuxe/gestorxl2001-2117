@@ -31,7 +31,9 @@ serve(async (req) => {
       .single()
 
     if (error) {
-      console.error('Database error:', error)
+      if (Deno.env.get('ENVIRONMENT') === 'development') {
+        console.error('Database error:', error)
+      }
       throw error
     }
 
@@ -51,7 +53,9 @@ serve(async (req) => {
       }
     )
   } catch (error) {
-    console.error('Error getting payment status:', error)
+    if (Deno.env.get('ENVIRONMENT') === 'development') {
+      console.error('Error getting payment status:', error)
+    }
     return new Response(
       JSON.stringify({ error: error.message }),
       {

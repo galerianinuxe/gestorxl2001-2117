@@ -9,6 +9,9 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { hasUserUsedTrial } from '@/utils/subscriptionStorage';
+import { createLogger } from '@/utils/logger';
+
+const logger = createLogger('[HomeLayout]');
 
 interface HomeLayoutProps {
   onOpenCashRegister: () => void;
@@ -52,7 +55,7 @@ export function HomeLayout({ onOpenCashRegister }: HomeLayoutProps) {
   const fetchSubscription = async () => {
     if (!user) return;
     
-    console.log('🔍 Buscando assinatura para usuário:', user.email);
+    logger.debug('Fetching subscription for user:', user.email);
     
     // Buscar assinatura do Supabase primeiro
     const { data: supabaseSubscription, error } = await supabase
@@ -65,7 +68,7 @@ export function HomeLayout({ onOpenCashRegister }: HomeLayoutProps) {
       .maybeSingle();
 
     if (supabaseSubscription && supabaseSubscription.is_active && new Date(supabaseSubscription.expires_at) > new Date()) {
-      console.log('✅ Assinatura ativa encontrada no Supabase:', supabaseSubscription);
+      logger.success('Active subscription found in Supabase');
       setSubscription(supabaseSubscription);
       return;
     }
@@ -80,7 +83,7 @@ export function HomeLayout({ onOpenCashRegister }: HomeLayoutProps) {
           return;
         }
       } catch (error) {
-        console.error('❌ Erro ao parsear assinatura:', error);
+        logger.error('Error parsing subscription:', error);
       }
     }
 
@@ -178,7 +181,7 @@ export function HomeLayout({ onOpenCashRegister }: HomeLayoutProps) {
         setConfirmPassword('');
       }
     } catch (error) {
-      console.error('Error updating password:', error);
+      logger.error('Error updating password:', error);
       toast({
         title: "Erro ao alterar senha",
         description: "Erro interno. Tente novamente.",

@@ -15,7 +15,9 @@ const initializeApp = () => {
   // Remover StrictMode temporariamente para resolver problemas de renderização
   root.render(<App />);
   
-  console.log('✅ App initialized successfully');
+  if (import.meta.env.DEV) {
+    console.log('✅ App initialized successfully');
+  }
 };
 
 // Aguardar o DOM estar carregado

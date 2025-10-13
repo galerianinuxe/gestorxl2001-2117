@@ -3,10 +3,13 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import NoSubscriptionBlocker from './NoSubscriptionBlocker';
+import { createLogger } from '@/utils/logger';
 
 interface AuthGuardProps {
   children: React.ReactNode;
 }
+
+const logger = createLogger('[AuthGuard]');
 
 const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   const navigate = useNavigate();
@@ -30,14 +33,14 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   useEffect(() => {
     const handleSubscriptionSync = (event: any) => {
       if (user && event.detail?.userId === user.id) {
-        console.log('🔄 Subscription sync event received, re-checking...');
+        logger.debug('Subscription sync event received, re-checking...');
         setSubscriptionCheckTrigger(prev => prev + 1);
       }
     };
 
     const handleTrialActivation = (event: any) => {
       if (user && event.detail?.userId === user.id) {
-        console.log('🎉 Trial activation event received, re-checking...');
+        logger.debug('Trial activation event received, re-checking...');
         setSubscriptionCheckTrigger(prev => prev + 1);
         setShowSubscriptionBlocker(false);
       }
@@ -45,7 +48,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
 
     const handleAdminActions = (event: any) => {
       if (user && event.detail?.userId === user.id) {
-        console.log('⚡ Admin subscription action event received, re-checking...');
+        logger.debug('Admin subscription action event received, re-checking...');
         setSubscriptionCheckTrigger(prev => prev + 1);
       }
     };
@@ -67,8 +70,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     if (!user) return;
     
     try {
-      // Fetching user data (dev only)
-      if (import.meta.env.DEV) console.log('🔍 Fetching user data for:', user.email);
+      logger.debug('Fetching user data for:', user.email);
       
       // SEGURANÇA: Verificar se é admin via RPC (SECURITY DEFINER)
       const { data: adminCheck, error: adminError } = await supabase
@@ -76,7 +78,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
       
       if (!adminError && adminCheck !== null) {
         setIsAdmin(adminCheck);
-        if (import.meta.env.DEV) console.log('🔐 Admin check via RPC:', adminCheck);
+        logger.debug('Admin check via RPC:', adminCheck);
       }
 
       // SEGURANÇA: Verificar assinatura ativa via RPC (SECURITY DEFINER)
@@ -85,21 +87,18 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
       
       if (!subError && subscriptionActive !== null) {
         setIsSubscriptionActive(subscriptionActive);
-        if (import.meta.env.DEV) console.log('🔐 Subscription check via RPC:', subscriptionActive);
+        logger.debug('Subscription check via RPC:', subscriptionActive);
       }
 
-      // Subscription check result (dev only)
-      if (import.meta.env.DEV) {
-        console.log('🔍 Security check results:', {
-          userId: user.id,
-          email: user.email,
-          isAdmin: adminCheck,
-          isSubscriptionActive: subscriptionActive
-        });
-      }
+      logger.debug('Security check results:', {
+        userId: user.id,
+        email: user.email,
+        isAdmin: adminCheck,
+        isSubscriptionActive: subscriptionActive
+      });
 
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      logger.error('Error fetching user data:', error);
     } finally {
       setDataLoading(false);
     }
@@ -111,15 +110,12 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   useEffect(() => {
     if (loading || dataLoading) return;
 
-    // Auth guard route validation (logs only in dev)
-    if (import.meta.env.DEV) {
-      console.log('🛡️ AuthGuard checking route:', {
-        pathname: location.pathname,
-        user: user?.email,
-        isAdmin,
-        isSubscriptionActive
-      });
-    }
+    logger.debug('AuthGuard checking route:', {
+      pathname: location.pathname,
+      user: user?.email,
+      isAdmin,
+      isSubscriptionActive
+    });
 
     // Public routes that don't require authentication
     const publicRoutes = ['/landing', '/login', '/register', '/planos'];
@@ -143,53 +139,39 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
         navigate('/landing', { replace: true });
       }, 10);
     } else if (user && isPublicRoute && location.pathname !== '/planos' && location.pathname !== '/landing') {
-      // Admin can access landing freely, regular users are redirected unless on landing
       if (!isAdmin) {
-        // User authenticated, redirecting (dev only)
-        if (import.meta.env.DEV) console.log('✅ User authenticated, redirecting from public page to home');
+        logger.debug('User authenticated, redirecting from public page to home');
         navigate('/');
       } else {
-        // Admin has free access (dev only)
-        if (import.meta.env.DEV) console.log('✅ Admin has free access to all pages including landing');
+        logger.debug('Admin has free access to all pages including landing');
       }
     } else if (user && isAdminRoute) {
-      // Check if user is admin for /covildomal route
       if (!isAdmin) {
-        // User is not admin (dev only)
-        if (import.meta.env.DEV) console.log('❌ User is not admin, redirecting to home');
+        logger.debug('User is not admin, redirecting to home');
         navigate('/');
         return;
       }
-      // Admin accessing admin panel (dev only)
-      if (import.meta.env.DEV) console.log('✅ Admin accessing admin panel');
+      logger.debug('Admin accessing admin panel');
     } else if (user && isSubscriptionProtectedRoute) {
-      // For administrators: direct access without subscription verification
       if (isAdmin) {
-        // Admin has direct access (dev only)
-        if (import.meta.env.DEV) console.log('✅ Admin has direct access to protected routes');
+        logger.debug('Admin has direct access to protected routes');
         return;
       }
       
-      // For regular users: check subscription via state (já verificado via RPC)
       if (!isSubscriptionActive) {
-        // User without subscription (dev only)
-        if (import.meta.env.DEV) console.log('❌ User without active subscription, redirecting to home');
+        logger.debug('User without active subscription, redirecting to home');
         navigate('/');
         return;
       }
       
-      // User has active subscription (dev only)
-      if (import.meta.env.DEV) console.log('✅ User has active subscription, accessing protected route');
+      logger.debug('User has active subscription, accessing protected route');
     } else if (user && isAuthOnlyRoute) {
-      // Routes that only need authentication, but check subscription for home page
       if (location.pathname === '/' && !isAdmin && !isSubscriptionActive) {
-        // User on home without subscription (dev only)
-        if (import.meta.env.DEV) console.log('❌ User on home page without subscription, showing subscription blocker');
+        logger.debug('User on home page without subscription, showing subscription blocker');
         setShowSubscriptionBlocker(true);
         return;
       }
-      // Auth-only route access (dev only)
-      if (import.meta.env.DEV) console.log('✅ Auth-only route access granted');
+      logger.debug('Auth-only route access granted');
       setShowSubscriptionBlocker(false);
     }
   }, [user, loading, dataLoading, navigate, location.pathname, isSubscriptionActive, isAdmin]);
@@ -212,9 +194,8 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
       <NoSubscriptionBlocker 
         userName={user.email} 
         onTrialActivated={async () => {
-          console.log('🎯 Trial activation callback triggered');
+          logger.debug('Trial activation callback triggered');
           setShowSubscriptionBlocker(false);
-          // Force immediate re-check with small delay to ensure data propagation
           setTimeout(() => {
             setSubscriptionCheckTrigger(prev => prev + 1);
           }, 500);
