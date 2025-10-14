@@ -2114,6 +2114,14 @@ export type Database = {
         Args: { user_name: string }
         Returns: string
       }
+      get_dashboard_summary: {
+        Args: {
+          filter_end?: string
+          filter_start?: string
+          target_user_id: string
+        }
+        Returns: Json
+      }
       get_online_users: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -2312,6 +2320,10 @@ export type Database = {
       validate_material_name: {
         Args: { name_input: string }
         Returns: string
+      }
+      validate_subscription_access: {
+        Args: { required_feature?: string; target_user_id: string }
+        Returns: boolean
       }
       validate_user_data: {
         Args: {

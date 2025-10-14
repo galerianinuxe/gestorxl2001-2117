@@ -13,7 +13,7 @@ interface MaterialGridProps {
   onNewOrderRequest?: () => void;
 }
 
-const MaterialGrid = ({ 
+const MaterialGrid = React.memo(({ 
   materials, 
   onMaterialSelect, 
   isSaleMode = false, 
@@ -155,6 +155,15 @@ const MaterialGrid = ({
       />
     </>
   );
-};
+}, (prevProps, nextProps) => {
+  // Comparação otimizada - só re-renderiza se necessário
+  return (
+    prevProps.materials.length === nextProps.materials.length &&
+    prevProps.isSaleMode === nextProps.isSaleMode &&
+    prevProps.hasActiveOrder === nextProps.hasActiveOrder
+  );
+});
+
+MaterialGrid.displayName = 'MaterialGrid';
 
 export default MaterialGrid;

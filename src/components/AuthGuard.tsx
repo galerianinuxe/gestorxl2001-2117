@@ -21,6 +21,10 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   const [showSubscriptionBlocker, setShowSubscriptionBlocker] = useState(false);
   const [subscriptionCheckTrigger, setSubscriptionCheckTrigger] = useState(0);
 
+  // Cache de verificações de role
+  const roleCache = React.useRef<Map<string, { isAdmin: boolean, timestamp: number }>>(new Map());
+  const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+
   useEffect(() => {
     if (user && !loading) {
       fetchUserData();
@@ -70,35 +74,35 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     if (!user) return;
     
     try {
-      logger.debug('Fetching user data for:', user.email);
+      logger.debug('Fetching user data');
       
-      // SEGURANÇA: Verificar se é admin via RPC (SECURITY DEFINER)
-      const { data: adminCheck, error: adminError } = await supabase
-        .rpc('has_role', { _user_id: user.id, _role: 'admin' });
-      
-      if (!adminError && adminCheck !== null) {
-        setIsAdmin(adminCheck);
-        logger.debug('Admin check via RPC:', adminCheck);
+      // SEGURANÇA: Verificar se é admin via RPC com cache
+      const cached = roleCache.current.get(user.id);
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        setIsAdmin(cached.isAdmin);
+        logger.debug('Using cached admin status');
+      } else {
+        const { data: adminCheck, error: adminError } = await supabase
+          .rpc('has_role', { _user_id: user.id, _role: 'admin' });
+        
+        if (!adminError && adminCheck !== null) {
+          setIsAdmin(adminCheck);
+          roleCache.current.set(user.id, { isAdmin: adminCheck, timestamp: Date.now() });
+          logger.debug('Admin check via RPC (cached)');
+        }
       }
 
-      // SEGURANÇA: Verificar assinatura ativa via RPC (SECURITY DEFINER)
+      // SEGURANÇA: Verificar assinatura ativa via RPC (server-side validation)
       const { data: subscriptionActive, error: subError } = await supabase
-        .rpc('is_subscription_active', { target_user_id: user.id });
+        .rpc('validate_subscription_access', { target_user_id: user.id });
       
       if (!subError && subscriptionActive !== null) {
         setIsSubscriptionActive(subscriptionActive);
-        logger.debug('Subscription check via RPC:', subscriptionActive);
+        logger.debug('Subscription validated server-side');
       }
 
-      logger.debug('Security check results:', {
-        userId: user.id,
-        email: user.email,
-        isAdmin: adminCheck,
-        isSubscriptionActive: subscriptionActive
-      });
-
     } catch (error) {
-      logger.error('Error fetching user data:', error);
+      logger.error('Error fetching user data');
     } finally {
       setDataLoading(false);
     }

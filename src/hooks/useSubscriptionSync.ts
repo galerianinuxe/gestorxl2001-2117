@@ -2,6 +2,9 @@
 import { useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { createLogger } from '@/utils/logger';
+
+const logger = createLogger('[SubscriptionSync]');
 
 export const useSubscriptionSync = () => {
   const { user } = useAuth();
@@ -122,21 +125,34 @@ export const useSubscriptionSync = () => {
     console.log('🧹 Dados de assinatura limpos para usuário:', userId);
   };
 
-  // Sincronizar automaticamente quando o hook é usado
+  // Sincronizar automaticamente quando o hook é usado com Realtime
   useEffect(() => {
-    if (user) {
-      // Sincronização inicial
-      syncSubscriptionData();
-      
-      // Sincronizar periodicamente (a cada 5 minutos - reduzido para performance)
-      const interval = setInterval(() => {
-        syncSubscriptionData();
-      }, 300000); // 5 minutos
-      
-      return () => {
-        clearInterval(interval);
-      };
-    }
+    if (!user) return;
+
+    // Sincronização inicial
+    syncSubscriptionData();
+    
+    // Substituir polling por Realtime subscription
+    const channel = supabase
+      .channel('subscription-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_subscriptions',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          logger.debug('Subscription changed, syncing...');
+          syncSubscriptionData();
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user, syncSubscriptionData]);
 
   return { syncSubscriptionData };
