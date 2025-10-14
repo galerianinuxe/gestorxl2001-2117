@@ -279,7 +279,7 @@ const OrderList: React.FC<OrderListProps> = ({
         </div>
       </div>
       
-      <div className="overflow-auto flex-1">
+      <div className="overflow-auto flex-1" style={{ height: 'calc(100vh - 120px)' }}>
         {allCustomers.length === 0 ? <div className="flex items-center justify-center h-full text-gray-400 text-center p-4">
             <div>
               <p className="text-lg font-medium mb-2">Nenhum pedido em aberto</p>
@@ -291,8 +291,8 @@ const OrderList: React.FC<OrderListProps> = ({
         if (!aOrder && !bOrder) return 0;
         if (!aOrder) return 1;
         if (!bOrder) return -1;
-        return bOrder.timestamp - aOrder.timestamp; // Mais recente primeiro
-      }).map(customer => {
+        return bOrder.timestamp - aOrder.timestamp;
+      }).slice(0, 50).map(customer => {
         const isSelected = activeCustomer?.id === customer.id;
         const openOrder = customer.orders.find(o => o.status === 'open');
         return <div key={customer.id} onClick={() => handleSelectCustomer(customer)} className={`flex justify-between items-center p-3 border-b border-gray-700 cursor-pointer ${isSelected ? 'bg-[#194530]' : 'hover:bg-pdv-dark'}`}>

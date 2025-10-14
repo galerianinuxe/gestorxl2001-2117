@@ -12,34 +12,44 @@ import WhatsAppSupportButton from "./components/WhatsAppSupportButton";
 import { RealtimeMessageModal } from "./components/RealtimeMessageModal";
 import { useRealtimeMessages } from "./hooks/useRealtimeMessages";
 
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import Materials from './pages/Materials';
-import Settings from './pages/Settings';
-import Dashboard from './pages/Dashboard';
-import PurchaseOrders from './pages/PurchaseOrders';
-import CurrentStock from './pages/CurrentStock';
-import SalesOrders from './pages/SalesOrders';
-import Transactions from './pages/Transactions';
-import Expenses from './pages/Expenses';
-import DailyFlow from './pages/DailyFlow';
-import CashAdditions from './pages/CashAdditions';
-import Landing from './pages/Landing';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import GuiaCompleto from './pages/GuiaCompleto';
-import UserHomeScreen from './components/UserHomeScreen';
-import Planos from './pages/Planos';
-import PromoXlata01 from './pages/PromoXlata01';
-import Covildomal from './pages/Covildomal';
-import TermsOfService from './pages/TermsOfService';
-import ErrorReport from './pages/ErrorReport';
-import ReferralSystemPage from './pages/ReferralSystem';
-import { MainLayout } from './components/MainLayout';
+// Code splitting: lazy load de todas as páginas
+import { lazy, Suspense } from 'react';
+
+const Index = lazy(() => import("./pages/Index"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Materials = lazy(() => import('./pages/Materials'));
+const Settings = lazy(() => import('./pages/Settings'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const PurchaseOrders = lazy(() => import('./pages/PurchaseOrders'));
+const CurrentStock = lazy(() => import('./pages/CurrentStock'));
+const SalesOrders = lazy(() => import('./pages/SalesOrders'));
+const Transactions = lazy(() => import('./pages/Transactions'));
+const Expenses = lazy(() => import('./pages/Expenses'));
+const DailyFlow = lazy(() => import('./pages/DailyFlow'));
+const CashAdditions = lazy(() => import('./pages/CashAdditions'));
+const Landing = lazy(() => import('./pages/Landing'));
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const GuiaCompleto = lazy(() => import('./pages/GuiaCompleto'));
+const UserHomeScreen = lazy(() => import('./components/UserHomeScreen'));
+const Planos = lazy(() => import('./pages/Planos'));
+const PromoXlata01 = lazy(() => import('./pages/PromoXlata01'));
+const Covildomal = lazy(() => import('./pages/Covildomal'));
+const TermsOfService = lazy(() => import('./pages/TermsOfService'));
+const ErrorReport = lazy(() => import('./pages/ErrorReport'));
+const ReferralSystemPage = lazy(() => import('./pages/ReferralSystem'));
+const MainLayout = lazy(() => import('./components/MainLayout').then(m => ({ default: m.MainLayout })));
 
 import { useEffect } from "react";
 
 const queryClient = new QueryClient();
+
+// Loading fallback otimizado
+const PageLoader = () => (
+  <div className="flex items-center justify-center h-screen bg-gray-900">
+    <div className="text-white text-xl">Carregando...</div>
+  </div>
+);
 
 const AppContent = () => {
   // SEO global
@@ -86,19 +96,49 @@ const AppContent = () => {
     <>
       <Routes>
         {/* Rotas públicas - não precisam de autenticação */}
-        <Route path="/landing" element={<Landing />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/termos-de-uso" element={<TermsOfService />} />
-        <Route path="/guia-completo" element={<GuiaCompleto />} />
-        <Route path="/planos" element={<Planos />} />
-        <Route path="/covildomal" element={<Covildomal />} />
+        <Route path="/landing" element={
+          <Suspense fallback={<PageLoader />}>
+            <Landing />
+          </Suspense>
+        } />
+        <Route path="/login" element={
+          <Suspense fallback={<PageLoader />}>
+            <Login />
+          </Suspense>
+        } />
+        <Route path="/register" element={
+          <Suspense fallback={<PageLoader />}>
+            <Register />
+          </Suspense>
+        } />
+        <Route path="/termos-de-uso" element={
+          <Suspense fallback={<PageLoader />}>
+            <TermsOfService />
+          </Suspense>
+        } />
+        <Route path="/guia-completo" element={
+          <Suspense fallback={<PageLoader />}>
+            <GuiaCompleto />
+          </Suspense>
+        } />
+        <Route path="/planos" element={
+          <Suspense fallback={<PageLoader />}>
+            <Planos />
+          </Suspense>
+        } />
+        <Route path="/covildomal" element={
+          <Suspense fallback={<PageLoader />}>
+            <Covildomal />
+          </Suspense>
+        } />
         
         {/* Rotas protegidas - precisam passar pelo AuthGuard */}
         <Route path="/" element={
-          <AuthGuard>
-            <Index />
-          </AuthGuard>
+          <Suspense fallback={<PageLoader />}>
+            <AuthGuard>
+              <Index />
+            </AuthGuard>
+          </Suspense>
         } />
         <Route path="/materiais" element={
           <AuthGuard>
