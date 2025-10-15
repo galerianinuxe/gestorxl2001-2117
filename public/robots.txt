@@ -1,46 +1,16 @@
-
-User-agent: *
-Allow: /
-
-# Sitemap
-Sitemap: https://xlata.site/sitemap.xml
-
-# Crawl-delay for respectful crawling
-Crawl-delay: 1
-
-# Allow all major search engines
 User-agent: Googlebot
 Allow: /
 
 User-agent: Bingbot
 Allow: /
 
-User-agent: Slurp
-Allow: /
-
-User-agent: DuckDuckBot
-Allow: /
-
-User-agent: Baiduspider
-Allow: /
-
-User-agent: YandexBot
-Allow: /
-
-# Social media bots
-User-agent: facebookexternalhit
-Allow: /
-
 User-agent: Twitterbot
 Allow: /
 
-User-agent: LinkedInBot
+User-agent: facebookexternalhit
 Allow: /
 
-User-agent: WhatsApp
+User-agent: *
 Allow: /
 
-# Disallow admin areas (if any)
-# User-agent: *
-# Disallow: /admin/
-# Disallow: /api/
+Sitemap: https://www.xlata.site/sitemap.xml
