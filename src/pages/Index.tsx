@@ -372,101 +372,94 @@ const Index: React.FC = () => {
   };
 
   const handleSelectMaterial = async (material: Material) => {
-    // Se não há cliente ou pedido ativo, criar automaticamente
-    if (!currentCustomer || !activeOrder) {
-      console.log('Criando pedido automaticamente para material:', material.name);
-      
-      // Criar novo cliente e pedido automaticamente
-      const newCustomerId = generateUUID();
-      const newOrderId = generateUUID();
-      
-      const newCustomer: Customer = {
-        id: newCustomerId,
-        name: "# Nome Cliente", // Nome padrão
-        orders: []
-      };
+    // 1. Validação de peso unificada no início da função
+    const peso = parseWeight(pesoInput);
+    console.log('🔍 Validando peso no início:', { pesoInput, peso, isValid: peso > 0 });
 
-      const newOrder: Order = {
-        id: newOrderId,
-        customerId: newCustomerId,
-        items: [],
-        total: 0,
-        status: 'open' as const,
-        timestamp: Date.now(),
-        type: isSaleMode ? 'venda' as const : 'compra' as const
-      };
+    if (peso <= 0) {
+      console.warn('⚠️ Peso inválido detectado. Exibindo alerta.');
+      setShowWeightAlert(true);
+      return; // Para a execução se o peso for inválido
+    }
 
-      newCustomer.orders = [newOrder];
+    // A partir daqui, o peso é considerado válido.
+    let orderToUse = activeOrder;
+    let customerToUse = currentCustomer;
 
+    // 2. Cria um pedido automaticamente se não houver um ativo
+    if (!customerToUse || !orderToUse) {
+      console.log('Nenhum pedido ativo. Criando um novo automaticamente...');
       try {
-        // Salvar no Supabase
+        const newCustomerId = generateUUID();
+        const newOrderId = generateUUID();
+        
+        const newCustomer: Customer = {
+          id: newCustomerId,
+          name: "# Nome Cliente",
+          orders: []
+        };
+
+        const newOrder: Order = {
+          id: newOrderId,
+          customerId: newCustomerId,
+          items: [],
+          total: 0,
+          status: 'open' as const,
+          timestamp: Date.now(),
+          type: isSaleMode ? 'venda' as const : 'compra' as const
+        };
+
+        newCustomer.orders = [newOrder];
+        
+        // Salva e atualiza o estado
         await saveCustomer(newCustomer);
         await saveOrder(newOrder);
         
-        // Atualizar estado local
         setCustomers(prev => [...prev, newCustomer]);
         setCurrentCustomer(newCustomer);
         setCurrentOrder(newOrder);
         setActiveCustomer(newCustomer);
         setActiveOrder(newOrder);
         
-        // Auto-save session data
+        // Atualiza as variáveis locais para o restante da função
+        customerToUse = newCustomer;
+        orderToUse = newOrder;
+
         await autoSaveSessionData(newCustomer, newOrder);
-        
-        console.log('Pedido criado automaticamente, continuando com seleção do material');
-        
-        // Agora processar o material selecionado
-        const peso = parseWeight(pesoInput);
-        console.log('🔍 Validação de peso (criação automática):', { pesoInput, peso, isValid: peso > 0 });
-        
-        if (peso > 0) {
-          setSelectedMaterialModal(material);
-          return; // ✅ IMPORTANTE: Retornar aqui para não executar a validação duplicada no final
-        } else {
-          console.warn('⚠️ Peso inválido detectado (criação automática):', { pesoInput, peso });
-          setShowWeightAlert(true);
-          return; // ✅ IMPORTANTE: Retornar aqui para não executar a validação duplicada no final
-        }
-        
+        console.log('Pedido automático criado com sucesso.');
+
       } catch (error) {
         console.error('Erro ao criar pedido automaticamente:', error);
         toast({
           title: "Erro",
-          description: "Erro ao criar pedido automaticamente. Tente novamente.",
+          description: "Não foi possível criar o pedido automaticamente. Tente novamente.",
           variant: "destructive",
           duration: 3000
         });
+        return; // Para a execução em caso de falha
       }
-      
-      return;
     }
 
-    // Check if there are existing items and if they're of different type
-    if (activeOrder.items.length > 0) {
-      const existingType = activeOrder.items[0].materialName ? activeOrder.type === 'venda' ? 'venda' : 'compra' : null;
+    // 3. Verifica a compatibilidade do tipo de operação (compra/venda)
+    if (orderToUse.items.length > 0) {
+      const existingType = orderToUse.type;
       const currentType = isSaleMode ? 'venda' : 'compra';
       if (existingType && existingType !== currentType) {
         toast({
           title: "Tipo de operação incompatível",
-          description: `Não é possível misturar itens de ${existingType} com ${currentType} no mesmo pedido. Finalize o pedido atual ou alterne o modo.`,
+          description: `Não é possível misturar itens de ${existingType} com ${currentType} no mesmo pedido.`,
           variant: "destructive",
           duration: 4000
         });
         return;
       }
     }
-    
-    // Validação final de peso (apenas para pedidos já existentes)
-    const peso = parseWeight(pesoInput);
-    console.log('🔍 Validação de peso (pedido existente):', { pesoInput, peso, isValid: peso > 0 });
-    
-    if (peso > 0) {
-      setSelectedMaterialModal(material);
-    } else {
-      console.warn('⚠️ Peso inválido detectado (pedido existente):', { pesoInput, peso });
-      setShowWeightAlert(true);
-    }
+
+    // 4. Se tudo estiver certo, abre o modal do material
+    console.log('Peso válido e pedido OK. Abrindo modal do material.');
+    setSelectedMaterialModal(material);
   };
+  
   const handleAddMaterialToOrder = async (taraValue: number = 0, adjustedPrice?: number, netWeight?: number) => {
     // Use netWeight if provided (from MaterialModal), otherwise calculate from pesoInput
     const weight = netWeight !== undefined ? netWeight : Number(pesoInput);
