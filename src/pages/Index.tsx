@@ -363,6 +363,14 @@ const Index: React.FC = () => {
       await createNewOrder(targetCustomer);
     }
   };
+  // Helper para normalizar entrada de peso (vírgula para ponto)
+  const parseWeight = (weightInput: string): number => {
+    if (!weightInput || weightInput.trim() === '') return 0;
+    const normalized = weightInput.replace(',', '.');
+    const weight = Number(normalized);
+    return isNaN(weight) ? 0 : weight;
+  };
+
   const handleSelectMaterial = async (material: Material) => {
     // Se não há cliente ou pedido ativo, criar automaticamente
     if (!currentCustomer || !activeOrder) {
@@ -408,7 +416,7 @@ const Index: React.FC = () => {
         console.log('Pedido criado automaticamente, continuando com seleção do material');
         
         // Agora processar o material selecionado
-        const peso = Number(pesoInput);
+        const peso = parseWeight(pesoInput);
         if (peso > 0) {
           setSelectedMaterialModal(material);
         } else {
@@ -442,7 +450,7 @@ const Index: React.FC = () => {
         return;
       }
     }
-    const peso = Number(pesoInput);
+    const peso = parseWeight(pesoInput);
     if (peso > 0) {
       setSelectedMaterialModal(material);
     } else {
