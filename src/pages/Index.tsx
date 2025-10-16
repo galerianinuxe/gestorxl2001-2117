@@ -440,11 +440,7 @@ const Index: React.FC = () => {
         return; // Para a execução em caso de falha
       }
     }
-    if (peso <= 0) {
-      console.warn('⚠️ Peso inválido detectado. Exibindo alerta.');
-      setShowWeightAlert(true);
-      return; // Para a execução se o peso for inválido
-    }
+    
     // 3. Verifica a compatibilidade do tipo de operação (compra/venda)
     if (orderToUse.items.length > 0) {
       const existingType = orderToUse.type;
@@ -459,7 +455,11 @@ const Index: React.FC = () => {
         return;
       }
     }
-
+    if (peso <= 0) {
+      console.warn('⚠️ Peso inválido detectado. Exibindo alerta.');
+      setShowWeightAlert(true);
+      return; // Para a execução se o peso for inválido
+    }
     // 4. Se tudo estiver certo, abre o modal do material
     console.log('Peso válido e pedido OK. Abrindo modal do material.');
     setSelectedMaterialModal(material);
