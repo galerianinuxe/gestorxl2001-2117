@@ -417,10 +417,15 @@ const Index: React.FC = () => {
         
         // Agora processar o material selecionado
         const peso = parseWeight(pesoInput);
+        console.log('🔍 Validação de peso (criação automática):', { pesoInput, peso, isValid: peso > 0 });
+        
         if (peso > 0) {
           setSelectedMaterialModal(material);
+          return; // ✅ IMPORTANTE: Retornar aqui para não executar a validação duplicada no final
         } else {
+          console.warn('⚠️ Peso inválido detectado (criação automática):', { pesoInput, peso });
           setShowWeightAlert(true);
+          return; // ✅ IMPORTANTE: Retornar aqui para não executar a validação duplicada no final
         }
         
       } catch (error) {
@@ -450,10 +455,15 @@ const Index: React.FC = () => {
         return;
       }
     }
+    
+    // Validação final de peso (apenas para pedidos já existentes)
     const peso = parseWeight(pesoInput);
+    console.log('🔍 Validação de peso (pedido existente):', { pesoInput, peso, isValid: peso > 0 });
+    
     if (peso > 0) {
       setSelectedMaterialModal(material);
     } else {
+      console.warn('⚠️ Peso inválido detectado (pedido existente):', { pesoInput, peso });
       setShowWeightAlert(true);
     }
   };
