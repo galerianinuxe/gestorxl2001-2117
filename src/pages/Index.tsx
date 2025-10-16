@@ -41,6 +41,15 @@ const generateUUID = () => {
   return crypto.randomUUID();
 };
 
+// **CORREÇÃO**: Função movida para fora do componente para se tornar uma função utilitária pura e estável.
+// Helper para normalizar entrada de peso (vírgula para ponto)
+const parseWeight = (weightInput: string): number => {
+  if (!weightInput || weightInput.trim() === '') return 0;
+  const normalized = weightInput.replace(',', '.');
+  const weight = Number(normalized);
+  return isNaN(weight) ? 0 : weight;
+};
+
 // Componentes memoizados para evitar re-renders desnecessários
 const MemoizedOrderList = memo(OrderList);
 const MemoizedOrderDetails = memo(OrderDetails);
@@ -363,15 +372,10 @@ const Index: React.FC = () => {
       await createNewOrder(targetCustomer);
     }
   };
-  // Helper para normalizar entrada de peso (vírgula para ponto)
-  const parseWeight = (weightInput: string): number => {
-    if (!weightInput || weightInput.trim() === '') return 0;
-    const normalized = weightInput.replace(',', '.');
-    const weight = Number(normalized);
-    return isNaN(weight) ? 0 : weight;
-  };
 
-  const handleSelectMaterial = async (material: Material) => {
+  // **CORREÇÃO**: Função envolvida em useCallback para evitar 'stale closures'.
+  // Agora ela sempre terá acesso ao `pesoInput` mais recente.
+  const handleSelectMaterial = useCallback(async (material: Material) => {
     // 1. Validação de peso unificada no início da função
     const peso = parseWeight(pesoInput);
     console.log('🔍 Validando peso no início:', { pesoInput, peso, isValid: peso > 0 });
@@ -458,7 +462,7 @@ const Index: React.FC = () => {
     // 4. Se tudo estiver certo, abre o modal do material
     console.log('Peso válido e pedido OK. Abrindo modal do material.');
     setSelectedMaterialModal(material);
-  };
+  }, [activeOrder, currentCustomer, isSaleMode, pesoInput]);
   
   const handleAddMaterialToOrder = async (taraValue: number = 0, adjustedPrice?: number, netWeight?: number) => {
     // Use netWeight if provided (from MaterialModal), otherwise calculate from pesoInput
