@@ -38,7 +38,7 @@ const Covildomal = lazy(() => import('./pages/Covildomal'));
 const TermsOfService = lazy(() => import('./pages/TermsOfService'));
 const ErrorReport = lazy(() => import('./pages/ErrorReport'));
 const ReferralSystemPage = lazy(() => import('./pages/ReferralSystem'));
-const MainLayout = lazy(() => import('./components/MainLayout').then(m => ({ default: m.MainLayout })));
+import { MainLayout } from './components/MainLayout';
 
 import { useEffect } from "react";
 
@@ -142,86 +142,110 @@ const AppContent = () => {
         } />
         <Route path="/materiais" element={
           <AuthGuard>
-            <MainLayout>
-              <Materials />
-            </MainLayout>
+            <Suspense fallback={<PageLoader />}>
+              <MainLayout>
+                <Materials />
+              </MainLayout>
+            </Suspense>
           </AuthGuard>
         } />
         <Route path="/configuracoes" element={
           <AuthGuard>
-            <MainLayout>
-              <Settings />
-            </MainLayout>
+            <Suspense fallback={<PageLoader />}>
+              <MainLayout>
+                <Settings />
+              </MainLayout>
+            </Suspense>
           </AuthGuard>
         } />
         <Route path="/dashboard" element={
           <AuthGuard>
-            <MainLayout>
-              <Dashboard />
-            </MainLayout>
+            <Suspense fallback={<PageLoader />}>
+              <MainLayout>
+                <Dashboard />
+              </MainLayout>
+            </Suspense>
           </AuthGuard>
         } />
         <Route path="/purchase-orders" element={
           <AuthGuard>
-            <MainLayout>
-              <PurchaseOrders />
-            </MainLayout>
+            <Suspense fallback={<PageLoader />}>
+              <MainLayout>
+                <PurchaseOrders />
+              </MainLayout>
+            </Suspense>
           </AuthGuard>
         } />
         <Route path="/current-stock" element={
           <AuthGuard>
-            <MainLayout>
-              <CurrentStock />
-            </MainLayout>
+            <Suspense fallback={<PageLoader />}>
+              <MainLayout>
+                <CurrentStock />
+              </MainLayout>
+            </Suspense>
           </AuthGuard>
         } />
         <Route path="/sales-orders" element={
           <AuthGuard>
-            <MainLayout>
-              <SalesOrders />
-            </MainLayout>
+            <Suspense fallback={<PageLoader />}>
+              <MainLayout>
+                <SalesOrders />
+              </MainLayout>
+            </Suspense>
           </AuthGuard>
         } />
         <Route path="/transactions" element={
           <AuthGuard>
-            <MainLayout>
-              <Transactions />
-            </MainLayout>
+            <Suspense fallback={<PageLoader />}>
+              <MainLayout>
+                <Transactions />
+              </MainLayout>
+            </Suspense>
           </AuthGuard>
         } />
         <Route path="/expenses" element={
           <AuthGuard>
-            <MainLayout>
-              <Expenses />
-            </MainLayout>
+            <Suspense fallback={<PageLoader />}>
+              <MainLayout>
+                <Expenses />
+              </MainLayout>
+            </Suspense>
           </AuthGuard>
         } />
         <Route path="/daily-flow" element={
           <AuthGuard>
-            <MainLayout>
-              <DailyFlow />
-            </MainLayout>
+            <Suspense fallback={<PageLoader />}>
+              <MainLayout>
+                <DailyFlow />
+              </MainLayout>
+            </Suspense>
           </AuthGuard>
         } />
         <Route path="/cash-additions" element={
           <AuthGuard>
-            <MainLayout>
-              <CashAdditions />
-            </MainLayout>
+            <Suspense fallback={<PageLoader />}>
+              <MainLayout>
+                <CashAdditions />
+              </MainLayout>
+            </Suspense>
           </AuthGuard>
         } />
         <Route path="/relatar-erro" element={
           <AuthGuard>
-            <MainLayout>
-              <ErrorReport />
-            </MainLayout>
+            <Suspense fallback={<PageLoader />}>
+              <MainLayout>
+                <ErrorReport />
+              </MainLayout>
+            </Suspense>
           </AuthGuard>
         } />
         <Route path="/sistema-indicacoes" element={
           <AuthGuard>
-            <MainLayout>
-              <ReferralSystemPage />
-            </MainLayout>
+            <Suspense fallback={<PageLoader />}>
+              <MainLayout>
+                <ReferralSystemPage />
+              </MainLayout>
+            </Suspense>
           </AuthGuard>
         } />
         <Route path="/promocao-xlata01" element={
