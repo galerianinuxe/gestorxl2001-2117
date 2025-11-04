@@ -97,7 +97,7 @@ const NoSubscriptionBlocker: React.FC<NoSubscriptionBlockerProps> = ({
                 <CardContent className="p-6">
                   <div className="flex items-center justify-center mb-4">
                     <div className="w-16 h-16 bg-gradient-to-br rounded-full flex items-center justify-center">
-                      <Sparkles className="h-8 w-8 text-white" />
+                      <Sparkles className="h-8 w-8 from-yellow-600 to-orange-800 text-white" />
                     </div>
                   </div>
                   <h3 className="text-xl font-bold text-white mb-2">
