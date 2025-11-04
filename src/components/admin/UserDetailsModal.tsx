@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { User, Mail, Calendar, CreditCard, Clock, Shield, Activity, Info, BarChart3, Trash2, Download, Phone, MessageCircle, ChevronDown } from 'lucide-react';
+import { User, Mail, Calendar, CreditCard, Clock, Shield, Activity, Info, BarChart3, Trash2, Download, Phone, MessageCircle, ChevronDown, Copy, Link } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ConfirmDeleteUserModal } from '@/components/admin/ConfirmDeleteUserModal';
 import { supabase } from '@/integrations/supabase/client';
@@ -325,6 +325,21 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
     return fullName.split(' ')[0];
   };
 
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      toast({
+        title: "Copiado!",
+        description: `${label} copiado para a área de transferência.`,
+      });
+    }).catch(() => {
+      toast({
+        title: "Erro",
+        description: "Não foi possível copiar.",
+        variant: "destructive",
+      });
+    });
+  };
+
   const handleWhatsAppMessage = (messageType: string) => {
     if (!user.whatsapp) {
       toast({
@@ -357,6 +372,30 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
     
     window.open(whatsappUrl, '_blank');
+  };
+
+  const getWhatsAppLink = (messageType: string) => {
+    if (!user.whatsapp) return '';
+    
+    const firstName = getFirstName(user.name);
+    let message = '';
+
+    switch (messageType) {
+      case 'option1':
+        message = `Olá! ${firstName} Tudo certo? Vi que você se cadastrou no sistema Xlata, mas ainda não ativou o teste gratuito. Posso te ajudar com qualquer dúvida ou dificuldade que tenha surgido. Quer uma ajuda pra começar? 🚀`;
+        break;
+      case 'option2':
+        message = `Oii, ${firstName}. Notei que você criou uma conta no Xlata, mas talvez não tenha conseguido usar ainda. Se precisar de ajuda pra entender como funciona ou quiser tirar alguma dúvida, tô por aqui! 😉`;
+        break;
+      case 'option3':
+        message = `Oii, ${firstName}. Aqui é do sistema Xlata 😊 Vi que você se registrou, mas ainda não iniciou o uso da plataforma. Aconteceu algo? Estamos disponíveis pra te ajudar a começar, tirar dúvidas ou até fazer uma demonstração, se quiser. Só me chamar!`;
+        break;
+      default:
+        return '';
+    }
+
+    const phoneNumber = user.whatsapp.replace(/\D/g, '');
+    return `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
   };
 
   return (
@@ -417,9 +456,19 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
                     </div>
                     <div>
                       <label className="text-sm text-gray-400 block mb-1">Email</label>
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-gray-400" />
-                        <p className="text-white">{user.email}</p>
+                      <div className="flex items-center gap-2 justify-between">
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-4 w-4 text-gray-400" />
+                          <p className="text-white">{user.email}</p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => copyToClipboard(user.email, 'Email')}
+                          className="h-8 w-8 p-0 bg-gray-700 hover:bg-gray-600 border-gray-600"
+                        >
+                          <Copy className="h-4 w-4 text-gray-300" />
+                        </Button>
                       </div>
                     </div>
                     <div>
@@ -447,27 +496,66 @@ const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
                                 onClick={() => handleWhatsAppMessage('option1')}
                                 className="text-gray-200 hover:bg-gray-700 cursor-pointer p-3"
                               >
-                                <div className="flex flex-col">
-                                  <span className="font-medium">Primeira mensagem</span>
-                                  <span className="text-xs text-gray-400">Sobre teste gratuito não ativado</span>
+                                <div className="flex items-center justify-between flex-1">
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">Primeira mensagem</span>
+                                    <span className="text-xs text-gray-400">Sobre teste gratuito não ativado</span>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      copyToClipboard(getWhatsAppLink('option1'), 'Link');
+                                    }}
+                                    className="h-7 w-7 p-0 hover:bg-gray-600 ml-2"
+                                  >
+                                    <Link className="h-3.5 w-3.5 text-gray-400" />
+                                  </Button>
                                 </div>
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => handleWhatsAppMessage('option2')}
                                 className="text-gray-200 hover:bg-gray-700 cursor-pointer p-3"
                               >
-                                <div className="flex flex-col">
-                                  <span className="font-medium">Segunda mensagem</span>
-                                  <span className="text-xs text-gray-400">Oferta de ajuda casual</span>
+                                <div className="flex items-center justify-between flex-1">
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">Segunda mensagem</span>
+                                    <span className="text-xs text-gray-400">Oferta de ajuda casual</span>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      copyToClipboard(getWhatsAppLink('option2'), 'Link');
+                                    }}
+                                    className="h-7 w-7 p-0 hover:bg-gray-600 ml-2"
+                                  >
+                                    <Link className="h-3.5 w-3.5 text-gray-400" />
+                                  </Button>
                                 </div>
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => handleWhatsAppMessage('option3')}
                                 className="text-gray-200 hover:bg-gray-700 cursor-pointer p-3"
                               >
-                                <div className="flex flex-col">
-                                  <span className="font-medium">Terceira mensagem</span>
-                                  <span className="text-xs text-gray-400">Demonstração e suporte</span>
+                                <div className="flex items-center justify-between flex-1">
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">Terceira mensagem</span>
+                                    <span className="text-xs text-gray-400">Demonstração e suporte</span>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      copyToClipboard(getWhatsAppLink('option3'), 'Link');
+                                    }}
+                                    className="h-7 w-7 p-0 hover:bg-gray-600 ml-2"
+                                  >
+                                    <Link className="h-3.5 w-3.5 text-gray-400" />
+                                  </Button>
                                 </div>
                               </DropdownMenuItem>
                             </DropdownMenuContent>
