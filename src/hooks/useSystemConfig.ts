@@ -93,6 +93,12 @@ export const useSystemConfig = () => {
     try {
       const newVersion = generateNewVersion();
       
+      // Verificar se config existe e tem ID válido antes de atualizar
+      if (!config?.id) {
+        console.warn('Config não carregado ainda, aguardando...');
+        return newVersion;
+      }
+      
       // Só atualizar se for uma atualização forçada ou se a versão atual for diferente
       if (forceUpdate || !config?.system_version || config.system_version !== newVersion) {
         const { error } = await supabase
@@ -101,7 +107,7 @@ export const useSystemConfig = () => {
             system_version: newVersion,
             updated_at: new Date().toISOString()
           })
-          .eq('id', config?.id);
+          .eq('id', config.id); // Usar config.id diretamente, já validado acima
 
         if (error) throw error;
 
@@ -116,21 +122,8 @@ export const useSystemConfig = () => {
     }
   };
 
-  // Função para simular dados de disco realistas
-  const generateDiskStats = () => {
-    const totalGB = 50;
-    const usedGB = 12.5 + (Math.random() * 5); // Entre 12.5GB e 17.5GB
-    const freeGB = totalGB - usedGB;
-    const percentage = Math.round((usedGB / totalGB) * 100);
-
-    return {
-      disk_total: `${totalGB}GB`,
-      disk_used: `${usedGB.toFixed(1)}GB`,
-      disk_free: `${freeGB.toFixed(1)}GB`,
-      disk_percentage: percentage,
-      disk_usage: `${usedGB.toFixed(1)}GB / ${totalGB}GB`
-    };
-  };
+  // Nota: Dados de disco não são acessíveis no plano Free do Supabase
+  // Removido simulação - valores serão omitidos ou mostrados como N/A
 
   const fetchSystemConfig = async () => {
     try {
@@ -169,15 +162,11 @@ export const useSystemConfig = () => {
         const hours = Math.floor((uptimeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const minutes = Math.floor((uptimeDiff % (1000 * 60 * 60)) / (1000 * 60));
 
-        // Gerar dados de disco realistas
-        const diskStats = generateDiskStats();
-
         setStats(prevStats => ({
           ...prevStats,
           uptime_days: days,
           uptime_hours: hours,
-          uptime_minutes: minutes,
-          ...diskStats
+          uptime_minutes: minutes
         }));
       }
 
@@ -206,9 +195,6 @@ export const useSystemConfig = () => {
       console.log('Detailed system stats received:', systemStats);
 
       if (systemStats) {
-        // Gerar dados de disco atualizados
-        const diskStats = generateDiskStats();
-
         setStats(prevStats => ({
           ...prevStats,
           cpu_usage: systemStats.cpu_usage || 0,
@@ -228,7 +214,12 @@ export const useSystemConfig = () => {
           transactions_today: systemStats.transactions_today || 0,
           total_transactions: systemStats.total_transactions || 0,
           supabase_plan: systemStats.supabase_plan || 'Free',
-          ...diskStats
+          // Disk stats removidos - não disponíveis no plano Free
+          disk_usage: 'N/A',
+          disk_total: 'N/A',
+          disk_used: 'N/A',
+          disk_free: 'N/A',
+          disk_percentage: 0
         }));
       }
 

@@ -93,18 +93,28 @@ export const useAdminDashboard = () => {
       const usersWithActiveSubscriptions = new Set(activeSubscriptions?.map(sub => sub.user_id) || []);
       const inactiveUsers = totalUsers - usersWithActiveSubscriptions.size;
 
-      // Buscar logins recentes (últimos 30 dias) - usando profiles updated_at como proxy
+      // Buscar logins recentes (últimos 30 dias) usando last_login_at
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
       const { data: recentProfiles, error: recentError } = await supabase
         .from('profiles')
         .select('id')
-        .gte('updated_at', thirtyDaysAgo.toISOString());
+        .gte('last_login_at', thirtyDaysAgo.toISOString())
+        .not('last_login_at', 'is', null);
 
-      if (recentError) throw recentError;
-
-      const recentLogins = recentProfiles?.length || 0;
+      if (recentError) {
+        console.warn('Erro ao buscar logins recentes:', recentError);
+        // Fallback para updated_at se last_login_at não existir ainda
+        const { data: fallbackProfiles } = await supabase
+          .from('profiles')
+          .select('id')
+          .gte('updated_at', thirtyDaysAgo.toISOString());
+        
+        const recentLogins = fallbackProfiles?.length || 0;
+      } else {
+        const recentLogins = recentProfiles?.length || 0;
+      }
 
       // Calcular taxa de conversão
       const totalTrialUsers = trialUsers + expiredTests;
@@ -122,8 +132,16 @@ export const useAdminDashboard = () => {
 
       const totalTransactions = orders?.length || 0;
 
-      // Usuários ativos mensais (que fizeram login/atividade nos últimos 30 dias)
-      const monthlyActiveUsers = recentLogins;
+      // Usuários ativos mensais
+      const monthlyActiveUsers = recentProfiles?.length || 0;
+
+      // Buscar versão do sistema do banco
+      const { data: systemConfig } = await supabase
+        .from('admin_system_config')
+        .select('system_version')
+        .single();
+      
+      const systemVersion = systemConfig?.system_version || 'v2.2.0';
 
       // Atualizar stats
       setStats({
@@ -132,7 +150,7 @@ export const useAdminDashboard = () => {
         trialUsers,
         expiredTests,
         inactiveUsers,
-        recentLogins,
+        recentLogins: monthlyActiveUsers,
         monthlyRevenue,
       });
 
@@ -143,7 +161,7 @@ export const useAdminDashboard = () => {
         databaseStatus: 'connected',
         conversionRate: `${conversionRate}%`,
         lastUpdate: new Date().toLocaleString('pt-BR'),
-        systemVersion: 'v2.1.319',
+        systemVersion,
         monthlyActiveUsers,
         totalTransactions,
       });
@@ -190,6 +208,36 @@ export const useAdminDashboard = () => {
 
   useEffect(() => {
     fetchStats();
+    
+    // Setup real-time subscriptions para atualização automática
+    const subscriptionsChannel = supabase
+      .channel('admin-dashboard-subscriptions')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'user_subscriptions'
+      }, () => {
+        console.log('Subscription changed, refreshing stats...');
+        fetchStats();
+      })
+      .subscribe();
+    
+    const profilesChannel = supabase
+      .channel('admin-dashboard-profiles')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'profiles'
+      }, () => {
+        console.log('New user registered, refreshing stats...');
+        fetchStats();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscriptionsChannel);
+      supabase.removeChannel(profilesChannel);
+    };
   }, []);
 
   return {

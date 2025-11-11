@@ -79,21 +79,8 @@ export const SystemManagement = () => {
     return 'text-green-400';
   };
 
-  // Simular dados de disco realistas
-  const getDiskStats = () => {
-    const totalDiskGB = 50; // 50GB total
-    const usedGB = 12.5 + (Math.random() * 5); // Entre 12.5GB e 17.5GB usado
-    const usedPercentage = (usedGB / totalDiskGB) * 100;
-    
-    return {
-      total: formatBytes(totalDiskGB * 1024 * 1024 * 1024),
-      used: formatBytes(usedGB * 1024 * 1024 * 1024),
-      free: formatBytes((totalDiskGB - usedGB) * 1024 * 1024 * 1024),
-      percentage: Math.round(usedPercentage)
-    };
-  };
-
-  const diskStats = getDiskStats();
+  // Dados de disco não disponíveis no plano Free
+  // Exibir como N/A ou omitir
 
   const handleSaveConfig = async () => {
     setIsLoading(true);
@@ -330,48 +317,49 @@ export const SystemManagement = () => {
             </div>
 
             <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-gray-400">Uso de CPU:</span>
-                <span className={stats.cpu_usage < 50 ? "text-green-400" : "text-yellow-400"}>
-                  {stats.cpu_usage}%
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Uso de Memória:</span>
-                <span className={stats.memory_usage < 70 ? "text-green-400" : "text-yellow-400"}>
-                  {stats.memory_usage}%
-                </span>
-              </div>
-              
-              {/* Espaço em Disco com barra de progresso */}
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400 flex items-center gap-1">
-                    <HardDrive className="h-3 w-3" />
-                    Espaço em Disco:
+              {stats.cpu_usage !== undefined && stats.cpu_usage > 0 ? (
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Uso de CPU:</span>
+                  <span className={stats.cpu_usage < 50 ? "text-green-400" : "text-yellow-400"}>
+                    {stats.cpu_usage}%
                   </span>
-                  <div className="text-right">
-                    <div className="text-sm text-white font-semibold">
-                      {diskStats.used} / {diskStats.total}
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      {diskStats.free} livre
-                    </div>
-                  </div>
                 </div>
-                <div className="space-y-1">
-                  <Progress 
-                    value={diskStats.percentage} 
-                    className="h-2 bg-gray-700" 
-                  />
-                  <div className="flex justify-between text-xs">
-                    <span className="text-gray-500">0%</span>
-                    <span className={`font-medium ${getUsageColor(diskStats.percentage)}`}>
-                      {diskStats.percentage}% usado
-                    </span>
-                    <span className="text-gray-500">100%</span>
-                  </div>
+              ) : (
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Uso de CPU:</span>
+                  <span className="text-gray-500 text-sm flex items-center gap-1">
+                    <Info className="h-3 w-3" />
+                    N/A (Plano {stats.supabase_plan})
+                  </span>
                 </div>
+              )}
+              
+              {stats.memory_usage !== undefined && stats.memory_usage > 0 ? (
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Uso de Memória:</span>
+                  <span className={stats.memory_usage < 70 ? "text-green-400" : "text-yellow-400"}>
+                    {stats.memory_usage}%
+                  </span>
+                </div>
+              ) : (
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Uso de Memória:</span>
+                  <span className="text-gray-500 text-sm flex items-center gap-1">
+                    <Info className="h-3 w-3" />
+                    N/A (Plano {stats.supabase_plan})
+                  </span>
+                </div>
+              )}
+              
+              <div className="flex justify-between">
+                <span className="text-gray-400 flex items-center gap-1">
+                  <HardDrive className="h-3 w-3" />
+                  Espaço em Disco:
+                </span>
+                <span className="text-gray-500 text-sm flex items-center gap-1">
+                  <Info className="h-3 w-3" />
+                  N/A (Plano {stats.supabase_plan})
+                </span>
               </div>
             </div>
           </div>

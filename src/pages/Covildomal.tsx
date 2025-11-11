@@ -70,24 +70,33 @@ const Covildomal = () => {
   useEffect(() => {
     fetchUnreadErrorReports();
     
-    // Set up real-time subscription for error reports
-    const channel = supabase
+    // Set up real-time subscriptions
+    const errorReportsChannel = supabase
       .channel('error-reports-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'error_reports'
-        },
-        () => {
-          fetchUnreadErrorReports();
-        }
-      )
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'error_reports'
+      }, () => {
+        fetchUnreadErrorReports();
+      })
+      .subscribe();
+    
+    // Real-time para orders (transações)
+    const ordersChannel = supabase
+      .channel('admin-orders-changes')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'orders'
+      }, () => {
+        refetch();
+      })
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(errorReportsChannel);
+      supabase.removeChannel(ordersChannel);
     };
   }, []);
 

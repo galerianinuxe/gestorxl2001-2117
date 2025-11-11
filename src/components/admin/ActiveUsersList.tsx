@@ -80,14 +80,15 @@ export const ActiveUsersList = () => {
         }
       }
 
-      // Buscar usuários que estiveram ativos recentemente (últimas 24 horas) mas não estão online
-      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      // Buscar usuários que estiveram ativos recentemente (últimas 2 horas) mas não estão online
+      const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
       
       const { data: recentProfiles, error: recentError } = await supabase
         .from('profiles')
-        .select('id, name, email, updated_at, created_at, status')
-        .gte('updated_at', twentyFourHoursAgo)
-        .order('updated_at', { ascending: false });
+        .select('id, name, email, last_login_at, updated_at, created_at, status')
+        .gte('last_login_at', twoHoursAgo)
+        .not('last_login_at', 'is', null)
+        .order('last_login_at', { ascending: false });
 
       if (recentError) {
         console.error('Erro ao buscar usuários recentes:', recentError);
@@ -97,7 +98,7 @@ export const ActiveUsersList = () => {
         const offlineUsers = recentProfiles
           ?.filter(profile => !onlineUserIds.includes(profile.id))
           .map(profile => {
-            const lastSeen = new Date(profile.updated_at);
+            const lastSeen = new Date(profile.last_login_at || profile.updated_at);
             const now = new Date();
             const timeOfflineMinutes = Math.floor((now.getTime() - lastSeen.getTime()) / (1000 * 60));
             
@@ -105,7 +106,7 @@ export const ActiveUsersList = () => {
               user_id: profile.id,
               name: profile.name,
               email: profile.email,
-              last_seen_at: profile.updated_at,
+              last_seen_at: profile.last_login_at || profile.updated_at,
               session_started: profile.created_at,
               is_online: false,
               status: profile.status || 'user',
@@ -329,7 +330,7 @@ export const ActiveUsersList = () => {
               <Users className="h-12 w-12 text-gray-500 mx-auto mb-4" />
               <p className="text-gray-400 text-lg">Nenhum usuário ativo no momento</p>
               <p className="text-gray-500 text-sm mt-2">
-                Usuários com atividade nas últimas 24 horas aparecerão aqui
+                Usuários com atividade nas últimas 2 horas aparecerão aqui
               </p>
             </div>
           ) : (
@@ -411,7 +412,7 @@ export const ActiveUsersList = () => {
             </h4>
             <div className="text-sm text-gray-400 space-y-1">
               <p>• Usuários online em tempo real: <span className="text-green-400 font-medium">{onlineCount}</span></p>
-              <p>• Usuários offline recentes (24h): <span className="text-red-400 font-medium">{offlineCount}</span></p>
+              <p>• Usuários offline recentes (2h): <span className="text-red-400 font-medium">{offlineCount}</span></p>
               <p>• Lista atualizada automaticamente a cada 10 segundos</p>
               <p>• Indicador verde 🟢 para online, vermelho 🔴 para offline</p>
               <p>• Total de usuários exibidos: <span className="text-blue-400 font-medium">{activeUsers.length}</span></p>
