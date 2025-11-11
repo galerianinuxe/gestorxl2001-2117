@@ -2116,6 +2116,8 @@ export type Database = {
         }
         Returns: Json
       }
+      get_database_statistics: { Args: never; Returns: Json }
+      get_function_count: { Args: never; Returns: Json }
       get_online_users: {
         Args: never
         Returns: {
@@ -2123,6 +2125,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_storage_usage: { Args: never; Returns: Json }
       get_system_stats: { Args: never; Returns: Json }
       get_unread_admin_messages: {
         Args: never
