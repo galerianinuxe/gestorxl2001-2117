@@ -12,7 +12,7 @@ import { PaymentFormData, PlanData } from '@/types/mercadopago';
 import { useMercadoPago } from '@/hooks/useMercadoPago';
 import QRCodeDisplay from './QRCodeDisplay';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth'; // 👈 novo
+import { useAuth } from '@/hooks/useAuth';
 
 const formSchema = z.object({
   name: z
@@ -24,7 +24,10 @@ const formSchema = z.object({
     .min(10, 'Telefone deve ter pelo menos 10 dígitos')
     .max(11, 'Telefone deve ter no máximo 11 dígitos')
     .regex(/^\d+$/, 'Telefone deve conter apenas números'),
-  email: z.string().email('Email inválido').max(100, 'Email muito longo'),
+  email: z
+    .string()
+    .email('Email inválido')
+    .max(100, 'Email muito longo'),
   cpf: z
     .string()
     .length(11, 'CPF deve ter exatamente 11 dígitos')
@@ -45,7 +48,7 @@ const MercadoPagoCheckout: React.FC<MercadoPagoCheckoutProps> = ({
   const [step, setStep] = useState<'form' | 'qrcode'>('form');
   const { toast } = useToast();
   const { loading, paymentData, createPixPayment, reset } = useMercadoPago();
-  const { user } = useAuth(); // 👈 novo
+  const { user } = useAuth();
 
   const {
     register,
@@ -66,7 +69,7 @@ const MercadoPagoCheckout: React.FC<MercadoPagoCheckoutProps> = ({
         return;
       }
 
-      await createPixPayment(data, selectedPlan, user.id); // 👈 passa user.id
+      await createPixPayment(data, selectedPlan, user.id);
       setStep('qrcode');
       toast({
         title: 'QR Code gerado!',
@@ -110,6 +113,7 @@ const MercadoPagoCheckout: React.FC<MercadoPagoCheckoutProps> = ({
 
         {step === 'form' ? (
           <div className="space-y-6 px-1">
+            {/* RESUMO DO PLANO */}
             <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20 rounded-xl">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg text-foreground font-medium">
@@ -126,11 +130,14 @@ const MercadoPagoCheckout: React.FC<MercadoPagoCheckoutProps> = ({
               </CardContent>
             </Card>
 
+            {/* FORMULÁRIO */}
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-              {/* ... todo o resto do formulário exatamente como você já tinha ... */}
-              {/* (pode manter igual, não precisa alterar aqui) */}
+              {/* Nome */}
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-foreground font-medium text-sm">
+                <Label
+                  htmlFor="name"
+                  className="text-foreground font-medium text-sm"
+                >
                   Nome Completo *
                 </Label>
                 <Input
@@ -146,7 +153,73 @@ const MercadoPagoCheckout: React.FC<MercadoPagoCheckoutProps> = ({
                 )}
               </div>
 
-              {/* ... campos phone, email, cpf iguais aos seus ... */}
+              {/* Telefone */}
+              <div className="space-y-2">
+                <Label
+                  htmlFor="phone"
+                  className="text-foreground font-medium text-sm"
+                >
+                  Telefone (WhatsApp) *
+                </Label>
+                <Input
+                  id="phone"
+                  {...register('phone')}
+                  placeholder="(11) 95555-4444"
+                  type="tel"
+                  maxLength={11}
+                  className="h-12 bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary rounded-lg"
+                />
+                {errors.phone && (
+                  <p className="text-sm text-destructive flex items-center gap-1 mt-1">
+                    {errors.phone.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Email */}
+              <div className="space-y-2">
+                <Label
+                  htmlFor="email"
+                  className="text-foreground font-medium text-sm"
+                >
+                  Email *
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  {...register('email')}
+                  placeholder="seu@email.com"
+                  className="h-12 bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary rounded-lg"
+                />
+                {errors.email && (
+                  <p className="text-sm text-destructive flex items-center gap-1 mt-1">
+                    {errors.email.message}
+                  </p>
+                )}
+              </div>
+
+              {/* CPF */}
+              <div className="space-y-2">
+                <Label
+                  htmlFor="cpf"
+                  className="text-foreground font-medium text-sm"
+                >
+                  CPF *
+                </Label>
+                <Input
+                  id="cpf"
+                  {...register('cpf')}
+                  placeholder="123.456.789-01"
+                  type="text"
+                  maxLength={11}
+                  className="h-12 bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary rounded-lg"
+                />
+                {errors.cpf && (
+                  <p className="text-sm text-destructive flex items-center gap-1 mt-1">
+                    {errors.cpf.message}
+                  </p>
+                )}
+              </div>
 
               <Button
                 type="submit"
@@ -165,7 +238,8 @@ const MercadoPagoCheckout: React.FC<MercadoPagoCheckoutProps> = ({
               </Button>
 
               <p className="text-xs text-muted-foreground text-center mt-3">
-                Seus dados estão protegidos e são usados apenas para processar o pagamento
+                Seus dados estão protegidos e são usados apenas para processar o
+                pagamento
               </p>
             </form>
           </div>
