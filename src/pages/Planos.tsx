@@ -2,28 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Crown, Calendar, CreditCard, ArrowLeft, RefreshCw, User } from 'lucide-react';
+import { Check, Crown, Calendar, CreditCard, ArrowLeft, MessageSquare, User, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MercadoPagoCheckout from '@/components/MercadoPagoCheckout';
+import { PlanData } from '@/types/mercadopago';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
-// Plano que vai para o checkout
-interface SelectedPlan {
-  id: string;
-  name: string;
-  price: string;
-  amount: number;
-  plan_type: string; // usado no external_reference
-}
-
 const Planos = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-
   const [checkoutOpen, setCheckoutOpen] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<SelectedPlan | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<PlanData | null>(null);
   const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentSubscription, setCurrentSubscription] = useState<any>(null);
@@ -49,39 +40,31 @@ const Planos = () => {
 
       if (error) throw error;
 
-      const formattedPlans =
-        data?.map((plan) => ({
-          id: plan.id,
-          name: plan.name,
-          price:
-            plan.is_promotional && plan.promotional_price
-              ? `R$ ${plan.promotional_price.toFixed(2).replace('.', ',')}`
-              : `R$ ${plan.price.toFixed(2).replace('.', ',')}`,
-          period:
-            plan.is_promotional && plan.promotional_period
-              ? plan.promotional_period
-              : plan.period,
-          description: plan.description,
-          icon: plan.is_promotional ? (
-            <Badge className="h-6 w-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs">
-              🔥
-            </Badge>
-          ) : plan.is_popular ? (
-            <Crown className="h-6 w-6" />
-          ) : (
-            <Calendar className="h-6 w-6" />
-          ),
-          popular: plan.is_popular,
-          savings:
-            plan.is_promotional && plan.promotional_description
-              ? plan.promotional_description
-              : plan.savings,
-          amount:
-            plan.is_promotional && plan.promotional_price
-              ? plan.promotional_price
-              : plan.price,
-          plan_type: plan.plan_type, // 👈 importantíssimo
-        })) || [];
+      const formattedPlans = data?.map(plan => ({
+        id: plan.id,
+        name: plan.name,
+        price: plan.is_promotional && plan.promotional_price 
+          ? `R$ ${plan.promotional_price.toFixed(2).replace('.', ',')}`
+          : `R$ ${plan.price.toFixed(2).replace('.', ',')}`,
+        period: plan.is_promotional && plan.promotional_period 
+          ? plan.promotional_period 
+          : plan.period,
+        description: plan.description,
+        icon: plan.is_promotional 
+          ? <Badge className="h-6 w-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs">🔥</Badge>
+          : plan.is_popular 
+            ? <Crown className="h-6 w-6" />
+            : <Calendar className="h-6 w-6" />,
+        popular: plan.is_popular,
+        promotional: plan.is_promotional,
+        savings: plan.is_promotional && plan.promotional_description 
+          ? plan.promotional_description 
+          : plan.savings,
+        amount: plan.is_promotional && plan.promotional_price 
+          ? plan.promotional_price 
+          : plan.price,
+        plan_type: plan.plan_type
+      })) || [];
 
       setPlans(formattedPlans);
     } catch (error) {
@@ -92,41 +75,36 @@ const Planos = () => {
   const loadSubscriptionData = async () => {
     try {
       setLoading(true);
-
-      // assinatura ativa
+      
       const { data: subscription } = await supabase
         .from('user_subscriptions')
         .select('*')
-        .eq('user_id', user!.id)
+        .eq('user_id', user.id)
         .eq('is_active', true)
         .maybeSingle();
 
       setCurrentSubscription(subscription);
 
-      // histórico
       const { data: renewals } = await supabase
         .from('user_subscriptions')
         .select('*')
-        .eq('user_id', user!.id)
+        .eq('user_id', user.id)
         .order('activated_at', { ascending: false })
         .limit(10);
 
       setRenewalsHistory(renewals || []);
 
-      // idade da conta
       const { data: profile } = await supabase
         .from('profiles')
         .select('created_at')
-        .eq('id', user!.id)
+        .eq('id', user.id)
         .single();
 
       if (profile?.created_at) {
         const created = new Date(profile.created_at);
         const now = new Date();
-        const diffDays = Math.floor(
-          (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24)
-        );
-
+        const diffDays = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
+        
         if (diffDays < 30) {
           setAccountAge(`${diffDays} dias`);
         } else if (diffDays < 365) {
@@ -135,11 +113,7 @@ const Planos = () => {
         } else {
           const years = Math.floor(diffDays / 365);
           const months = Math.floor((diffDays % 365) / 30);
-          setAccountAge(
-            `${years} ${years === 1 ? 'ano' : 'anos'}${
-              months > 0 ? ` e ${months} ${months === 1 ? 'mês' : 'meses'}` : ''
-            }`
-          );
+          setAccountAge(`${years} ${years === 1 ? 'ano' : 'anos'}${months > 0 ? ` e ${months} ${months === 1 ? 'mês' : 'meses'}` : ''}`);
         }
       }
     } catch (error) {
@@ -151,49 +125,30 @@ const Planos = () => {
 
   const getDaysRemaining = () => {
     if (!currentSubscription) return 0;
-    const diff =
-      new Date(currentSubscription.expires_at).getTime() -
-      new Date().getTime();
+    const diff = new Date(currentSubscription.expires_at).getTime() - new Date().getTime();
     return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
   };
 
   const getPlanName = (planType: string) => {
-    const names: Record<string, string> = {
-      monthly: 'Mensal',
-      quarterly: 'Trimestral',
-      biannual: 'Semestral',
-      annual: 'Anual',
-      triennial: 'Trienal',
-      trial: 'Período de teste',
+    const names: any = {
+      'monthly': 'Mensal', 'quarterly': 'Trimestral', 'biannual': 'Semestral',
+      'annual': 'Anual', 'triennial': 'Trienal'
     };
     return names[planType] || planType;
   };
 
   const handleSelectPlan = (plan: any) => {
     if (!user) {
-      toast({
-        title: 'Login necessário',
-        description: 'Faça login para assinar.',
-        variant: 'destructive',
-      });
+      toast({ title: "Login necessário", description: "Faça login para assinar.", variant: "destructive" });
       navigate('/login');
       return;
     }
-
-    setSelectedPlan({
-      id: plan.id,
-      name: plan.name,
-      price: plan.price,
-      amount: plan.amount,
-      plan_type: plan.plan_type,
-    });
-
+    setSelectedPlan({ id: plan.id, name: plan.name, price: plan.price, amount: plan.amount });
     setCheckoutOpen(true);
   };
 
   const handleRenewCurrentPlan = async () => {
     if (!currentSubscription) return;
-
     const { data: currentPlanData } = await supabase
       .from('subscription_plans')
       .select('*')
@@ -205,25 +160,18 @@ const Planos = () => {
       setSelectedPlan({
         id: currentPlanData.id,
         name: currentPlanData.name,
-        price: `R$ ${currentPlanData.price
-          .toFixed(2)
-          .replace('.', ',')}`,
-        amount: currentPlanData.price,
-        plan_type: currentPlanData.plan_type,
+        price: `R$ ${currentPlanData.price.toFixed(2).replace('.', ',')}`,
+        amount: currentPlanData.price
       });
       setCheckoutOpen(true);
     }
   };
 
   const benefits = [
-    'Cadastro ilimitado de materiais',
-    'Gerenciamento completo de estoque',
-    'Controle de compras e vendas',
-    'Relatórios e análises detalhadas',
-    'Sistema de caixa integrado',
-    'Suporte técnico prioritário',
-    'Atualizações automáticas',
-    'Acesso ao guia completo em vídeo',
+    "Cadastro ilimitado de materiais", "Gerenciamento completo de estoque",
+    "Controle de compras e vendas", "Relatórios e análises detalhadas",
+    "Sistema de caixa integrado", "Suporte técnico prioritário",
+    "Atualizações automáticas", "Acesso ao guia completo em vídeo"
   ];
 
   const daysRemaining = getDaysRemaining();
@@ -231,181 +179,74 @@ const Planos = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 relative overflow-hidden">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-green-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-green-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => navigate(-1)}
-            className="text-white hover:bg-white/10"
-          >
+          <Button variant="ghost" onClick={() => navigate(-1)} className="text-white hover:bg-white/10">
             <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
           </Button>
         </div>
 
         {user && (
           <div className="mb-12 space-y-6">
-            <h2 className="text-3xl font-bold text-white mb-6">
-              Minha Assinatura
-            </h2>
-
+            <h2 className="text-3xl font-bold text-white mb-6">Minha Assinatura</h2>
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-400" />
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-400"></div>
               </div>
             ) : (
               <>
                 <Card className="bg-gray-800/50 border-gray-700 backdrop-blur-sm">
                   <CardHeader>
                     <CardTitle className="text-white flex items-center gap-2">
-                      <CreditCard className="h-5 w-5 text-green-400" />{' '}
-                      Assinatura Atual
+                      <CreditCard className="h-5 w-5 text-green-400" /> Assinatura Atual
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {currentSubscription ? (
                       <>
                         <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <p className="text-gray-400 text-sm">Plano</p>
-                            <p className="text-white font-semibold">
-                              {getPlanName(currentSubscription.plan_type)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-gray-400 text-sm">Status</p>
-                            <Badge
-                              className={
-                                daysRemaining > 7
-                                  ? 'bg-green-600'
-                                  : daysRemaining > 0
-                                  ? 'bg-yellow-600'
-                                  : 'bg-red-600'
-                              }
-                            >
-                              {daysRemaining > 0 ? 'Ativo' : 'Expirado'}
-                            </Badge>
-                          </div>
-                          <div>
-                            <p className="text-gray-400 text-sm">
-                              Dias Restantes
-                            </p>
-                            <p
-                              className={`font-bold text-xl ${
-                                daysRemaining > 7
-                                  ? 'text-green-400'
-                                  : daysRemaining > 0
-                                  ? 'text-yellow-400'
-                                  : 'text-red-400'
-                              }`}
-                            >
-                              {daysRemaining} dias
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-gray-400 text-sm">Expira em</p>
-                            <p className="text-white">
-                              {new Date(
-                                currentSubscription.expires_at
-                              ).toLocaleDateString('pt-BR')}
-                            </p>
-                          </div>
+                          <div><p className="text-gray-400 text-sm">Plano</p><p className="text-white font-semibold">{getPlanName(currentSubscription.plan_type)}</p></div>
+                          <div><p className="text-gray-400 text-sm">Status</p><Badge className={daysRemaining > 7 ? 'bg-green-600' : daysRemaining > 0 ? 'bg-yellow-600' : 'bg-red-600'}>{daysRemaining > 0 ? 'Ativo' : 'Expirado'}</Badge></div>
+                          <div><p className="text-gray-400 text-sm">Dias Restantes</p><p className={`font-bold text-xl ${daysRemaining > 7 ? 'text-green-400' : daysRemaining > 0 ? 'text-yellow-400' : 'text-red-400'}`}>{daysRemaining} dias</p></div>
+                          <div><p className="text-gray-400 text-sm">Expira em</p><p className="text-white">{new Date(currentSubscription.expires_at).toLocaleDateString('pt-BR')}</p></div>
                         </div>
-
-                        <Button
-                          onClick={handleRenewCurrentPlan}
-                          className="w-full bg-green-600 hover:bg-green-700"
-                        >
-                          <RefreshCw className="h-4 w-4 mr-2" /> Renovar
-                          Assinatura
+                        <Button onClick={handleRenewCurrentPlan} className="w-full bg-green-600 hover:bg-green-700">
+                          <RefreshCw className="h-4 w-4 mr-2" /> Renovar Assinatura
                         </Button>
                       </>
                     ) : (
-                      <div className="text-center py-8">
-                        <p className="text-gray-400">
-                          Você não possui uma assinatura ativa
-                        </p>
-                      </div>
+                      <div className="text-center py-8"><p className="text-gray-400">Você não possui uma assinatura ativa</p></div>
                     )}
                   </CardContent>
                 </Card>
 
                 <Card className="bg-gray-800/50 border-gray-700 backdrop-blur-sm">
-                  <CardHeader>
-                    <CardTitle className="text-white flex items-center gap-2">
-                      <User className="h-5 w-5 text-blue-400" /> Informações da
-                      Conta
-                    </CardTitle>
-                  </CardHeader>
+                  <CardHeader><CardTitle className="text-white flex items-center gap-2"><User className="h-5 w-5 text-blue-400" /> Informações da Conta</CardTitle></CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-gray-400 text-sm">Membro desde</p>
-                        <p className="text-white font-semibold">
-                          {accountAge || 'Carregando...'}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-gray-400 text-sm">
-                          Total de Renovações
-                        </p>
-                        <p className="text-white font-semibold">
-                          {renewalsHistory.length}
-                        </p>
-                      </div>
+                      <div><p className="text-gray-400 text-sm">Membro desde</p><p className="text-white font-semibold">{accountAge || 'Carregando...'}</p></div>
+                      <div><p className="text-gray-400 text-sm">Total de Renovações</p><p className="text-white font-semibold">{renewalsHistory.length}</p></div>
                     </div>
                   </CardContent>
                 </Card>
 
                 {renewalsHistory.length > 0 && (
                   <Card className="bg-gray-800/50 border-gray-700 backdrop-blur-sm">
-                    <CardHeader>
-                      <CardTitle className="text-white flex items-center gap-2">
-                        <Calendar className="h-5 w-5 text-purple-400" />{' '}
-                        Histórico de Renovações
-                      </CardTitle>
-                    </CardHeader>
+                    <CardHeader><CardTitle className="text-white flex items-center gap-2"><Calendar className="h-5 w-5 text-purple-400" /> Histórico de Renovações</CardTitle></CardHeader>
                     <CardContent>
                       <div className="space-y-3">
                         {renewalsHistory.map((renewal) => (
-                          <div
-                            key={renewal.id}
-                            className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg"
-                          >
+                          <div key={renewal.id} className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg">
                             <div className="flex-1">
-                              <p className="text-white font-medium">
-                                {getPlanName(renewal.plan_type)}
-                              </p>
-                              <p className="text-gray-400 text-sm">
-                                {new Date(
-                                  renewal.activated_at
-                                ).toLocaleDateString('pt-BR')}{' '}
-                                -{' '}
-                                {new Date(
-                                  renewal.expires_at
-                                ).toLocaleDateString('pt-BR')}
-                              </p>
+                              <p className="text-white font-medium">{getPlanName(renewal.plan_type)}</p>
+                              <p className="text-gray-400 text-sm">{new Date(renewal.activated_at).toLocaleDateString('pt-BR')} - {new Date(renewal.expires_at).toLocaleDateString('pt-BR')}</p>
                             </div>
-                            <Badge
-                              className={
-                                renewal.payment_method === 'mercadopago_pix' &&
-                                new Date(renewal.expires_at) > new Date()
-                                  ? 'bg-green-600'
-                                  : renewal.payment_method ===
-                                    'mercadopago_pix'
-                                  ? 'bg-yellow-600'
-                                  : 'bg-blue-600'
-                              }
-                            >
-                              {renewal.payment_method === 'mercadopago_pix' &&
-                              new Date(renewal.expires_at) > new Date()
-                                ? 'Ativo'
-                                : renewal.payment_method === 'mercadopago_pix'
-                                ? 'Expirado'
-                                : 'Pendente'}
+                            <Badge className={renewal.payment_method === 'mercadopago_pix' && new Date(renewal.expires_at) > new Date() ? 'bg-green-600' : renewal.payment_method === 'mercadopago_pix' ? 'bg-yellow-600' : 'bg-blue-600'}>
+                              {renewal.payment_method === 'mercadopago_pix' && new Date(renewal.expires_at) > new Date() ? 'Ativo' : renewal.payment_method === 'mercadopago_pix' ? 'Expirado' : 'Pendente'}
                             </Badge>
                           </div>
                         ))}
@@ -419,96 +260,37 @@ const Planos = () => {
         )}
 
         <div className="text-center mb-12">
-          <Badge className="bg-green-600 text-white px-4 py-2 mb-4">
-            🔥 ESCOLHA SEU PLANO
-          </Badge>
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            Planos e Preços
-          </h1>
-          <p className="text-xl text-gray-300">
-            Escolha o plano ideal para o seu negócio
-          </p>
+          <Badge className="bg-green-600 text-white px-4 py-2 mb-4">🔥 ESCOLHA SEU PLANO</Badge>
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">Planos e Preços</h1>
+          <p className="text-xl text-gray-300">Escolha o plano ideal para o seu negócio</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
           {plans.map((plan) => (
-            <Card
-              key={plan.id}
-              className={`relative bg-gray-800/50 border-2 backdrop-blur-sm hover:scale-105 transition-all ${
-                plan.popular ? 'border-green-500' : 'border-gray-700'
-              }`}
-            >
-              {plan.popular && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                  <Badge className="bg-green-600">Mais Popular</Badge>
-                </div>
-              )}
+            <Card key={plan.id} className={`relative bg-gray-800/50 border-2 backdrop-blur-sm hover:scale-105 transition-all ${plan.popular ? 'border-green-500' : 'border-gray-700'}`}>
+              {plan.popular && <div className="absolute -top-4 left-1/2 -translate-x-1/2"><Badge className="bg-green-600">Mais Popular</Badge></div>}
               <CardHeader className="text-center pb-4">
-                <div className="flex justify-center mb-4 text-green-400">
-                  {plan.icon}
-                </div>
-                <CardTitle className="text-2xl text-white">
-                  {plan.name}
-                </CardTitle>
-                <div className="text-4xl font-bold text-white">
-                  {plan.price}
-                </div>
+                <div className="flex justify-center mb-4 text-green-400">{plan.icon}</div>
+                <CardTitle className="text-2xl text-white">{plan.name}</CardTitle>
+                <div className="text-4xl font-bold text-white">{plan.price}</div>
                 <p className="text-gray-400 text-sm">{plan.period}</p>
-                {plan.savings && (
-                  <p className="text-green-400 text-sm mt-2 font-semibold">
-                    {plan.savings}
-                  </p>
-                )}
+                {plan.savings && <p className="text-green-400 text-sm mt-2 font-semibold">{plan.savings}</p>}
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-gray-300 text-center min-h-[3rem]">
-                  {plan.description}
-                </p>
-                <Button
-                  onClick={() => handleSelectPlan(plan)}
-                  className={
-                    plan.popular
-                      ? 'w-full bg-green-600 hover:bg-green-700'
-                      : 'w-full bg-gray-700 hover:bg-gray-600'
-                  }
-                >
-                  Assinar Agora
-                </Button>
+                <p className="text-gray-300 text-center min-h-[3rem]">{plan.description}</p>
+                <Button onClick={() => handleSelectPlan(plan)} className={plan.popular ? 'w-full bg-green-600 hover:bg-green-700' : 'w-full bg-gray-700 hover:bg-gray-600'}>Assinar Agora</Button>
               </CardContent>
             </Card>
           ))}
         </div>
 
         <Card className="bg-gray-800/50 border-gray-700 mb-16">
-          <CardHeader>
-            <CardTitle className="text-2xl text-white text-center">
-              Todos os planos incluem:
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {benefits.map((b, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <Check className="h-5 w-5 text-green-400" />
-                  <span className="text-gray-300">{b}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
+          <CardHeader><CardTitle className="text-2xl text-white text-center">Todos os planos incluem:</CardTitle></CardHeader>
+          <CardContent><div className="grid grid-cols-1 md:grid-cols-2 gap-4">{benefits.map((b, i) => <div key={i} className="flex items-center gap-3"><Check className="h-5 w-5 text-green-400" /><span className="text-gray-300">{b}</span></div>)}</div></CardContent>
         </Card>
       </div>
 
-      {selectedPlan && (
-        <MercadoPagoCheckout
-          isOpen={checkoutOpen}
-          selectedPlan={selectedPlan}
-          onClose={() => {
-            setCheckoutOpen(false);
-            setSelectedPlan(null);
-            if (user) loadSubscriptionData();
-          }}
-        />
-      )}
+      {selectedPlan && <MercadoPagoCheckout isOpen={checkoutOpen} onClose={() => { setCheckoutOpen(false); setSelectedPlan(null); if(user) loadSubscriptionData(); }} selectedPlan={selectedPlan} />}
     </div>
   );
 };
