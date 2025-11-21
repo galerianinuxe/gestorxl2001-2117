@@ -1,16 +1,11 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
 User-agent: *
 Allow: /
 
+# Impede indexação de arquivos internos sensíveis (boas práticas)
+Disallow: /src/
+Disallow: /node_modules/
+Disallow: /package.json
+Disallow: /vite.config.js
+
+# SITEMAP OFICIAL
 Sitemap: https://www.xlata.site/sitemap.xml
