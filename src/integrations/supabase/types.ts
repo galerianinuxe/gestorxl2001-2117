@@ -2128,6 +2128,7 @@ export type Database = {
         Args: never
         Returns: {
           last_seen_at: string
+          session_id: string
           user_id: string
         }[]
       }
