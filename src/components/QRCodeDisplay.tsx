@@ -132,7 +132,7 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
   const isRejected = paymentStatus === 'rejected' || paymentStatus === 'cancelled';
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Timer & Progress */}
       {!isApproved && !isRejected && (
         <div className="space-y-2">
@@ -144,7 +144,7 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
             <span className={cn(
               "font-mono font-semibold",
               timeLeft <= 60 ? "text-destructive" : 
-              timeLeft <= 180 ? "text-yellow-500" : "text-foreground"
+              timeLeft <= 180 ? "text-yellow-500" : "text-primary"
             )}>
               {formatTime(timeLeft)}
             </span>
@@ -152,10 +152,9 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
           <Progress 
             value={progressPercentage} 
             className={cn(
-              "h-2 transition-all bg-muted",
+              "h-2 transition-all",
               timeLeft <= 60 && "[&>div]:bg-destructive",
-              timeLeft <= 180 && timeLeft > 60 && "[&>div]:bg-yellow-500",
-              timeLeft > 180 && "[&>div]:bg-primary"
+              timeLeft <= 180 && timeLeft > 60 && "[&>div]:bg-yellow-500"
             )}
           />
         </div>
@@ -166,11 +165,11 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
         "relative rounded-xl overflow-hidden transition-all",
         isExpired && "opacity-50"
       )}>
-        <div className="bg-white p-4 rounded-xl flex justify-center mx-auto max-w-[280px]">
+        <div className="bg-white p-4 rounded-xl flex justify-center">
           <img 
             src={`data:image/png;base64,${paymentData.qr_code_base64}`}
             alt="QR Code PIX"
-            className="w-48 h-48 sm:w-56 sm:h-56"
+            className="w-52 h-52 sm:w-56 sm:h-56"
           />
         </div>
         
@@ -192,9 +191,7 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
         variant={copied ? "secondary" : "default"}
         className={cn(
           "w-full h-11 font-semibold rounded-xl transition-all",
-          copied 
-            ? "bg-green-600 hover:bg-green-700 text-white" 
-            : "bg-primary hover:bg-primary/90 text-primary-foreground"
+          copied && "bg-green-600 hover:bg-green-700 text-white"
         )}
         size="lg"
       >
@@ -212,7 +209,7 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
       </Button>
 
       {/* Instructions */}
-      <div className="bg-muted/30 rounded-xl p-4 space-y-3 border border-border">
+      <div className="bg-muted/50 rounded-xl p-4 space-y-3">
         <p className="text-sm font-medium text-foreground flex items-center gap-2">
           <Smartphone className="h-4 w-4 text-primary" />
           Como pagar
@@ -227,13 +224,13 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
 
       {/* Payment Status */}
       <div className={cn(
-        "rounded-xl p-4 transition-all border",
-        isApproved && "bg-green-500/10 border-green-500/30",
-        isRejected && "bg-destructive/10 border-destructive/30",
-        !isApproved && !isRejected && "bg-muted/30 border-border"
+        "rounded-xl p-4 transition-all",
+        isApproved && "bg-green-500/10 border border-green-500/30",
+        isRejected && "bg-destructive/10 border border-destructive/30",
+        !isApproved && !isRejected && "bg-primary/5 border border-primary/20"
       )}>
         {isApproved ? (
-          <div className="flex items-center justify-center gap-2 text-green-500">
+          <div className="flex items-center justify-center gap-2 text-green-600">
             <CheckCircle className="h-5 w-5" />
             <span className="font-semibold">Pagamento Aprovado!</span>
           </div>
