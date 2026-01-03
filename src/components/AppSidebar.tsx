@@ -59,16 +59,14 @@ export function AppSidebar({
         console.log('✅ Caixa aberto, redirecionando para PDV');
         navigate('/');
       } else {
-        console.log('❌ Caixa fechado, abrindo modal de abertura');
-        if (onOpenCashRegister) {
-          onOpenCashRegister();
-        }
+        console.log('❌ Caixa fechado, redirecionando para PDV para abrir caixa');
+        // Sempre navegar para o PDV - lá o modal de abertura será exibido automaticamente
+        navigate('/');
       }
     } catch (error) {
       console.error('Erro ao verificar status do caixa:', error);
-      if (onOpenCashRegister) {
-        onOpenCashRegister();
-      }
+      // Em caso de erro, navegar para o PDV
+      navigate('/');
     }
   };
 
