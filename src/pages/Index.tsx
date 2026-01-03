@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -108,6 +108,21 @@ const Index: React.FC = () => {
     missing: number;
   } | null>(null);
   const { user } = useAuth();
+  
+  // Ref para controlar a aba do mobile layout
+  const mobileTabSetterRef = useRef<((tab: 'scale' | 'materials' | 'orders' | 'menu') => void) | null>(null);
+  
+  // Callback para navegar para a aba da balança (usado pelo MaterialModal)
+  const handleNavigateToScale = useCallback(() => {
+    if (mobileTabSetterRef.current) {
+      mobileTabSetterRef.current('scale');
+    }
+  }, []);
+  
+  // Callback para armazenar o setter da aba mobile
+  const setMobileTabSetter = useCallback((setter: (tab: 'scale' | 'materials' | 'orders' | 'menu') => void) => {
+    mobileTabSetterRef.current = setter;
+  }, []);
 
   // Memoized calculations para melhor performance
   const totalMaterial = useMemo(() => {
@@ -962,6 +977,7 @@ const Index: React.FC = () => {
         handleMenuClick={handleMenuClick}
         setShowAddFundsModal={setShowCashRegisterAddFundsModal}
         setShowMaterialsPrintModal={setShowMaterialsPrintModal}
+        setActiveTabRef={setMobileTabSetter}
       />
     </React.Suspense>
   );
@@ -1054,7 +1070,7 @@ const Index: React.FC = () => {
           
           {/* Modals com Suspense para carregamento assíncrono */}
           <React.Suspense fallback={null}>
-            {selectedMaterialModal && <MaterialModal open={!!selectedMaterialModal} material={selectedMaterialModal} peso={pesoModal} total={totalMaterial} onAdd={handleAddMaterialToOrder} onCancel={() => setSelectedMaterialModal(null)} isSaleMode={isSaleMode} />}
+            {selectedMaterialModal && <MaterialModal open={!!selectedMaterialModal} material={selectedMaterialModal} peso={pesoModal} total={totalMaterial} onAdd={handleAddMaterialToOrder} onCancel={() => setSelectedMaterialModal(null)} isSaleMode={isSaleMode} onRequestWeight={handleNavigateToScale} />}
           </React.Suspense>
           
           <React.Suspense fallback={null}>
