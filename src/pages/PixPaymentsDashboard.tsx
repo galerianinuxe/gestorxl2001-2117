@@ -177,16 +177,16 @@ const PixPaymentsDashboard = () => {
     const subscription = subscriptions.find(s => s.payment_reference === payment.payment_id);
     
     if (payment.status === 'approved' && subscription && subscription.is_active) {
-      return { label: 'Pago e Ativado', color: 'bg-green-600', textColor: 'text-green-400', icon: CheckCircle };
+      return { label: 'Pago e Ativado', color: 'bg-emerald-600', textColor: 'text-emerald-400', icon: CheckCircle };
     } else if (payment.status === 'approved' && !subscription) {
-      return { label: 'Pago sem Ativação', color: 'bg-yellow-600', textColor: 'text-yellow-400', icon: AlertTriangle };
+      return { label: 'Pago sem Ativação', color: 'bg-amber-500', textColor: 'text-amber-400', icon: AlertTriangle };
     } else if (payment.status === 'pending') {
-      return { label: 'Pendente', color: 'bg-blue-600', textColor: 'text-blue-400', icon: Clock };
+      return { label: 'Pendente', color: 'bg-amber-500', textColor: 'text-amber-400', icon: Clock };
     } else if (payment.status === 'rejected' || payment.status === 'cancelled') {
-      return { label: 'Rejeitado/Cancelado', color: 'bg-red-600', textColor: 'text-red-400', icon: XCircle };
+      return { label: 'Rejeitado/Cancelado', color: 'bg-destructive', textColor: 'text-destructive', icon: XCircle };
     }
     
-    return { label: payment.status, color: 'bg-gray-600', textColor: 'text-gray-400', icon: Clock };
+    return { label: payment.status, color: 'bg-muted', textColor: 'text-muted-foreground', icon: Clock };
   };
 
   const computedStats = {
@@ -310,20 +310,20 @@ const PixPaymentsDashboard = () => {
         <Card className="bg-card border-border">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <CheckCircle className="h-4 w-4 text-green-400" />
+              <CheckCircle className="h-4 w-4 text-emerald-400" />
               <span className="text-muted-foreground text-xs uppercase tracking-wide">Aprovados</span>
             </div>
-            <div className="text-2xl font-bold text-green-400">{computedStats.approved}</div>
+            <div className="text-2xl font-bold text-emerald-400">{computedStats.approved}</div>
           </CardContent>
         </Card>
 
         <Card className="bg-card border-border">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <Clock className="h-4 w-4 text-blue-400" />
+              <Clock className="h-4 w-4 text-amber-400" />
               <span className="text-muted-foreground text-xs uppercase tracking-wide">Pendentes</span>
             </div>
-            <div className="text-2xl font-bold text-blue-400">{computedStats.pending}</div>
+            <div className="text-2xl font-bold text-amber-400">{computedStats.pending}</div>
           </CardContent>
         </Card>
 
@@ -340,20 +340,20 @@ const PixPaymentsDashboard = () => {
         <Card className="bg-card border-border">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <AlertTriangle className="h-4 w-4 text-yellow-400" />
+              <AlertTriangle className="h-4 w-4 text-amber-400" />
               <span className="text-muted-foreground text-xs uppercase tracking-wide">Não Ativados</span>
             </div>
-            <div className="text-2xl font-bold text-yellow-400">{computedStats.notActivated}</div>
+            <div className="text-2xl font-bold text-amber-400">{computedStats.notActivated}</div>
           </CardContent>
         </Card>
 
         <Card className="bg-card border-border">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="h-4 w-4 text-green-400" />
+              <TrendingUp className="h-4 w-4 text-emerald-400" />
               <span className="text-muted-foreground text-xs uppercase tracking-wide">Receita</span>
             </div>
-            <div className="text-xl font-bold text-green-400">{formatCurrency(computedStats.totalRevenue)}</div>
+            <div className="text-xl font-bold text-emerald-400">{formatCurrency(computedStats.totalRevenue)}</div>
           </CardContent>
         </Card>
       </div>
