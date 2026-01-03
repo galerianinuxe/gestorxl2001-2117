@@ -1,11 +1,12 @@
-import React, { useState, memo } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Bell, Printer, MessageSquare, DollarSign, Receipt, Calculator, X, Clock, Wifi, Server, ChevronRight, Settings } from 'lucide-react';
+import { Bell, Printer, MessageSquare, DollarSign, Receipt, Calculator, X, Clock, Wifi, Server, ChevronRight, Settings, WifiOff, ServerOff } from 'lucide-react';
 import MobileBottomNav, { MobileTab } from './MobileBottomNav';
 import { Customer, Order, Material } from '@/types/pdv';
 import { useNavigate } from 'react-router-dom';
+import PasswordPromptModal from './PasswordPromptModal';
 
 // Lazy loaded components
 const OrderList = React.lazy(() => import('./OrderList'));
@@ -48,6 +49,10 @@ interface MobilePDVLayoutProps {
   setShowErrorReportModal: (show: boolean) => void;
   updateCashRegisterBalance: () => Promise<void>;
   handleMenuClick: () => void;
+  
+  // Menu Actions
+  setShowAddFundsModal?: (show: boolean) => void;
+  setShowMaterialsPrintModal?: (show: boolean) => void;
 }
 
 const MobilePDVLayout: React.FC<MobilePDVLayoutProps> = ({
@@ -74,10 +79,71 @@ const MobilePDVLayout: React.FC<MobilePDVLayoutProps> = ({
   setShowNotificationsModal,
   setShowErrorReportModal,
   updateCashRegisterBalance,
-  handleMenuClick
+  handleMenuClick,
+  setShowAddFundsModal,
+  setShowMaterialsPrintModal
 }) => {
   const [activeTab, setActiveTab] = useState<MobileTab>('scale');
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  // Update time every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Track online status
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Handle menu action after password auth
+  const handlePasswordAuthenticated = () => {
+    setShowPasswordModal(false);
+    if (pendingAction === 'addFunds' && setShowAddFundsModal) {
+      setShowAddFundsModal(true);
+    } else if (pendingAction === 'expense') {
+      // Use handleMenuClick for expense if no specific modal
+      handleMenuClick();
+    } else if (pendingAction === 'closeDay') {
+      // Use handleMenuClick for closeDay if no specific modal  
+      handleMenuClick();
+    }
+    setPendingAction(null);
+  };
+
+  // Handle menu action with password
+  const handleMenuAction = (action: string) => {
+    if (action === 'addFunds') {
+      setPendingAction(action);
+      setShowPasswordModal(true);
+    } else if (action === 'expense' || action === 'closeDay') {
+      setPendingAction(action);
+      setShowPasswordModal(true);
+    } else if (action === 'calculator') {
+      // Calculator doesn't need password
+      handleMenuClick();
+    } else if (action === 'print' && setShowMaterialsPrintModal) {
+      setShowMaterialsPrintModal(true);
+    } else if (action === 'settings') {
+      navigate('/settings');
+    }
+  };
 
   // Contagem de pedidos em aberto
   const openOrdersCount = customers.reduce((count, customer) => {
@@ -285,33 +351,33 @@ const MobilePDVLayout: React.FC<MobilePDVLayoutProps> = ({
                   <MenuItem 
                     icon={<DollarSign className="w-5 h-5" />}
                     label="Adicionar Saldo"
-                    onClick={() => handleMenuClick()}
+                    onClick={() => handleMenuAction('addFunds')}
                   />
                   <MenuItem 
                     icon={<Receipt className="w-5 h-5" />}
                     label="Adicionar Despesa"
-                    onClick={() => handleMenuClick()}
+                    onClick={() => handleMenuAction('expense')}
                   />
                   <MenuItem 
                     icon={<Calculator className="w-5 h-5" />}
                     label="Calculadora"
-                    onClick={() => handleMenuClick()}
+                    onClick={() => handleMenuAction('calculator')}
                   />
                   <MenuItem 
                     icon={<Printer className="w-5 h-5" />}
                     label="Imprimir Tabela"
-                    onClick={() => {}}
+                    onClick={() => handleMenuAction('print')}
                   />
                   <MenuItem 
                     icon={<Settings className="w-5 h-5" />}
                     label="Configurações"
-                    onClick={() => navigate('/settings')}
+                    onClick={() => handleMenuAction('settings')}
                   />
                 </div>
 
                 {/* Fechar Dia */}
                 <button 
-                  onClick={() => handleMenuClick()}
+                  onClick={() => handleMenuAction('closeDay')}
                   className="w-full bg-red-600/10 border border-red-500/30 rounded-lg p-4 flex items-center gap-3 hover:bg-red-600/20 transition-colors"
                 >
                   <div className="w-10 h-10 rounded-full bg-red-600/20 flex items-center justify-center">
@@ -322,25 +388,48 @@ const MobilePDVLayout: React.FC<MobilePDVLayoutProps> = ({
 
                 {/* Status */}
                 <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <Server className="w-4 h-4 text-emerald-500" />
-                      <span className="text-slate-400">Servidor</span>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {isOnline ? (
+                          <Server className="w-4 h-4 text-emerald-500" />
+                        ) : (
+                          <ServerOff className="w-4 h-4 text-red-500" />
+                        )}
+                        <span className={`text-xs ${isOnline ? 'text-emerald-400' : 'text-red-400'}`}>
+                          {isOnline ? 'Servidor Online' : 'Servidor Offline'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {isOnline ? (
+                          <Wifi className="w-4 h-4 text-emerald-500" />
+                        ) : (
+                          <WifiOff className="w-4 h-4 text-red-500" />
+                        )}
+                        <span className={`text-xs ${isOnline ? 'text-emerald-400' : 'text-red-400'}`}>
+                          {isOnline ? 'Internet Conectada' : 'Internet Desconectada'}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Wifi className="w-4 h-4 text-emerald-500" />
-                      <span className="text-slate-400">Internet</span>
-                    </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center gap-2 pt-1 border-t border-slate-700">
                       <Clock className="w-4 h-4 text-slate-400" />
-                      <span className="text-slate-400">
-                        {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                      <span className="text-slate-300 text-sm font-mono">
+                        {currentTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                       </span>
                     </div>
                   </div>
                 </div>
               </div>
             </ScrollArea>
+            
+            {/* Password Modal for menu actions */}
+            <PasswordPromptModal
+              open={showPasswordModal}
+              onOpenChange={setShowPasswordModal}
+              onAuthenticated={handlePasswordAuthenticated}
+              title="Autenticação Necessária"
+              description="Digite sua senha para continuar"
+            />
           </div>
         );
 

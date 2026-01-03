@@ -958,6 +958,8 @@ const Index: React.FC = () => {
         setShowErrorReportModal={setShowErrorReportModal}
         updateCashRegisterBalance={updateCashRegisterBalance}
         handleMenuClick={handleMenuClick}
+        setShowAddFundsModal={setShowCashRegisterAddFundsModal}
+        setShowMaterialsPrintModal={setShowMaterialsPrintModal}
       />
     </React.Suspense>
   );

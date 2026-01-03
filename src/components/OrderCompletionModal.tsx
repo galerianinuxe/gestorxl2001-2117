@@ -546,7 +546,7 @@ const OrderCompletionModal: React.FC<OrderCompletionModalProps> = ({
           <DialogTitle className={`text-white 
             ${isMobile || isTablet ? 'text-base px-1' : 'text-xl'}
           `}>
-            {isSaleMode ? "Resumo da Venda" : "Resumo do Pedido"} - {customer.name} ({receiptFormat})
+            {isSaleMode ? "Resumo da Venda" : "Resumo do Pedido"} - {customer.name}
           </DialogTitle>
         </DialogHeader>
         
