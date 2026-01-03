@@ -33,6 +33,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { SecurityDashboard } from '@/components/admin/SecurityDashboard';
 import { FeatureFlagsPanel } from '@/components/admin/FeatureFlagsPanel';
 import { FinancialDashboard } from '@/components/admin/FinancialDashboard';
+import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard';
 
 const Covildomal = () => {
   const navigate = useNavigate();
@@ -159,16 +160,7 @@ const Covildomal = () => {
           </Card>
         );
       case 'analytics':
-        return (
-          <Card className="bg-gray-800 border-gray-700">
-            <CardHeader>
-              <CardTitle className="text-white">Dashboard Analytics</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-400">Em desenvolvimento - Métricas de uso e conversão</p>
-            </CardContent>
-          </Card>
-        );
+        return <AnalyticsDashboard />;
       case 'online':
         return <ActiveUsersList />;
       default:
