@@ -150,10 +150,10 @@ const Covildomal = () => {
 
   if (loading && !stats.totalUsers) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-900">
+      <div className="flex items-center justify-center h-screen bg-background">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-400 mx-auto mb-4"></div>
-          <p className="text-white text-lg">Carregando dados do sistema...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-foreground text-lg">Carregando dados do sistema...</p>
         </div>
       </div>
     );
@@ -161,13 +161,13 @@ const Covildomal = () => {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-900">
+      <div className="flex items-center justify-center h-screen bg-background">
         <div className="text-center">
-          <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-          <p className="text-white text-lg mb-4">Erro ao carregar dados: {error}</p>
+          <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+          <p className="text-foreground text-lg mb-4">Erro ao carregar dados: {error}</p>
           <button 
             onClick={handleRefresh} 
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+            className="bg-destructive hover:bg-destructive/90 text-white px-4 py-2 rounded"
           >
             Tentar Novamente
           </button>
@@ -178,7 +178,7 @@ const Covildomal = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-900">
+      <div className="min-h-screen flex w-full bg-background">
         <AdminSidebar
           activeTab={activeTab}
           onTabClick={handleTabClick}
@@ -190,8 +190,8 @@ const Covildomal = () => {
           unreadErrorReports={unreadErrorReports}
         />
         
-        <SidebarInset className="flex-1 bg-gray-800">
-          <main className="p-6 overflow-auto bg-gray-800 min-h-screen">
+        <SidebarInset className="flex-1 bg-background">
+          <main className="p-6 overflow-auto bg-background min-h-screen">
             {activeTab === 'dashboard' ? (
               <>
                 {/* Error Reports Alert */}
@@ -223,64 +223,64 @@ const Covildomal = () => {
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                  <Card className="bg-gray-800 border-gray-700">
+                  <Card className="bg-card border-border">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-3">
-                        <Users className="h-6 w-6 text-blue-400" />
-                        <Badge variant="outline" className="text-xs border-blue-400 text-blue-400">
+                        <Users className="h-6 w-6 text-primary" />
+                        <Badge variant="outline" className="text-xs border-primary text-primary">
                           Total: {stats.totalUsers}
                         </Badge>
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-400">Registrados</span>
-                          <span className="text-lg font-bold text-white">{stats.totalUsers}</span>
+                          <span className="text-sm text-muted-foreground">Registrados</span>
+                          <span className="text-lg font-bold text-foreground">{stats.totalUsers}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-xs text-gray-500">Logins (30d)</span>
-                          <span className="text-sm text-purple-400">{stats.recentLogins}</span>
+                          <span className="text-xs text-muted-foreground">Logins (30d)</span>
+                          <span className="text-sm text-primary">{stats.recentLogins}</span>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
 
-                  <Card className="bg-gray-800 border-gray-700">
+                  <Card className="bg-card border-border">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-3">
-                        <CreditCard className="h-6 w-6 text-green-400" />
-                        <Badge variant="outline" className="text-xs border-green-400 text-green-400">
+                        <CreditCard className="h-6 w-6 text-emerald-400" />
+                        <Badge variant="outline" className="text-xs border-emerald-400 text-emerald-400">
                           Ativas: {stats.activeSubscriptions}
                         </Badge>
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-400">Pagas</span>
-                          <span className="text-lg font-bold text-green-400">{stats.activeSubscriptions}</span>
+                          <span className="text-sm text-muted-foreground">Pagas</span>
+                          <span className="text-lg font-bold text-emerald-400">{stats.activeSubscriptions}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-xs text-gray-500">Em teste</span>
-                          <span className="text-sm text-blue-400">{stats.trialUsers}</span>
+                          <span className="text-xs text-muted-foreground">Em teste</span>
+                          <span className="text-sm text-primary">{stats.trialUsers}</span>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
 
-                  <Card className="bg-gray-800 border-gray-700">
+                  <Card className="bg-card border-border">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-3">
-                        <DollarSign className="h-6 w-6 text-green-400" />
-                        <Badge variant="outline" className="text-xs border-green-400 text-green-400">
+                        <DollarSign className="h-6 w-6 text-emerald-400" />
+                        <Badge variant="outline" className="text-xs border-emerald-400 text-emerald-400">
                           Mensal
                         </Badge>
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-400">Receita</span>
-                          <span className="text-lg font-bold text-green-400">{formatCurrency(stats.monthlyRevenue)}</span>
+                          <span className="text-sm text-muted-foreground">Receita</span>
+                          <span className="text-lg font-bold text-emerald-400">{formatCurrency(stats.monthlyRevenue)}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-xs text-gray-500">Valor médio</span>
-                          <span className="text-sm text-gray-200">
+                          <span className="text-xs text-muted-foreground">Valor médio</span>
+                          <span className="text-sm text-foreground">
                             {formatCurrency(stats.activeSubscriptions > 0 ? stats.monthlyRevenue / stats.activeSubscriptions : 0)}
                           </span>
                         </div>
@@ -288,123 +288,123 @@ const Covildomal = () => {
                     </CardContent>
                   </Card>
 
-                  <Card className="bg-gray-800 border-gray-700">
+                  <Card className="bg-card border-border">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-3">
-                        <AlertCircle className="h-6 w-6 text-yellow-400" />
-                        <Badge variant="outline" className="text-xs border-yellow-400 text-yellow-400">
+                        <AlertCircle className="h-6 w-6 text-amber-400" />
+                        <Badge variant="outline" className="text-xs border-amber-400 text-amber-400">
                           Alertas
                         </Badge>
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-400">Expirados</span>
-                          <span className="text-lg font-bold text-yellow-400">{stats.expiredTests}</span>
+                          <span className="text-sm text-muted-foreground">Expirados</span>
+                          <span className="text-lg font-bold text-amber-400">{stats.expiredTests}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-xs text-gray-500">Inativos</span>
-                          <span className="text-sm text-red-400">{stats.inactiveUsers}</span>
+                          <span className="text-xs text-muted-foreground">Inativos</span>
+                          <span className="text-sm text-destructive">{stats.inactiveUsers}</span>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
                 </div>
 
-                <Card className="bg-gray-800 border-gray-700">
+                <Card className="bg-card border-border">
                   <CardHeader className="pb-4">
-                    <CardTitle className="text-white flex items-center gap-2">
-                      <Activity className="h-5 w-5 text-red-400" />
+                    <CardTitle className="text-foreground flex items-center gap-2">
+                      <Activity className="h-5 w-5 text-primary" />
                       Resumo do Sistema
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       <div className="space-y-3">
-                        <h4 className="text-sm font-semibold text-gray-300 border-b border-gray-700 pb-2">Status do Sistema</h4>
+                        <h4 className="text-sm font-semibold text-muted-foreground border-b border-border pb-2">Status do Sistema</h4>
                         
                         <div className="space-y-2">
                           <div className="flex items-center justify-between py-1">
-                            <span className="text-sm text-gray-400 flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground flex items-center gap-2">
                               <Server className="h-3 w-3" />
                               Servidor
                             </span>
-                            <Badge variant="default" className="bg-green-600 text-xs">Online</Badge>
+                            <Badge className="bg-emerald-600 text-white text-xs">Online</Badge>
                           </div>
                           
                           <div className="flex items-center justify-between py-1">
-                            <span className="text-sm text-gray-400 flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground flex items-center gap-2">
                               <Database className="h-3 w-3" />
                               Database
                             </span>
-                            <Badge variant="default" className="bg-green-600 text-xs">Conectado</Badge>
+                            <Badge className="bg-emerald-600 text-white text-xs">Conectado</Badge>
                           </div>
                           
                           <div className="flex items-center justify-between py-1">
-                            <span className="text-sm text-gray-400 flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground flex items-center gap-2">
                               <Shield className="h-3 w-3" />
                               Segurança
                             </span>
-                            <Badge variant="default" className="bg-green-600 text-xs">RBAC Ativo</Badge>
+                            <Badge className="bg-emerald-600 text-white text-xs">RBAC Ativo</Badge>
                           </div>
                         </div>
                       </div>
                       
                       <div className="space-y-3">
-                        <h4 className="text-sm font-semibold text-gray-300 border-b border-gray-700 pb-2">Métricas</h4>
+                        <h4 className="text-sm font-semibold text-muted-foreground border-b border-border pb-2">Métricas</h4>
                         
                         <div className="space-y-2">
                           <div className="flex items-center justify-between py-1">
-                            <span className="text-sm text-gray-400 flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground flex items-center gap-2">
                               <Percent className="h-3 w-3" />
                               Conversão
                             </span>
-                            <span className="text-sm text-gray-200">{systemStatus.conversionRate}</span>
+                            <span className="text-sm text-foreground">{systemStatus.conversionRate}</span>
                           </div>
                           
                           <div className="flex items-center justify-between py-1">
-                            <span className="text-sm text-gray-400 flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground flex items-center gap-2">
                               <BarChart3 className="h-3 w-3" />
                               Transações
                             </span>
-                            <span className="text-sm text-gray-200">{systemStatus.totalTransactions}</span>
+                            <span className="text-sm text-foreground">{systemStatus.totalTransactions}</span>
                           </div>
                           
                           <div className="flex items-center justify-between py-1">
-                            <span className="text-sm text-gray-400 flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground flex items-center gap-2">
                               <Users className="h-3 w-3" />
                               Ativos/Mês
                             </span>
-                            <span className="text-sm text-gray-200">{systemStatus.monthlyActiveUsers}</span>
+                            <span className="text-sm text-foreground">{systemStatus.monthlyActiveUsers}</span>
                           </div>
                         </div>
                       </div>
                       
                       <div className="space-y-3">
-                        <h4 className="text-sm font-semibold text-gray-300 border-b border-gray-700 pb-2">Sistema</h4>
+                        <h4 className="text-sm font-semibold text-muted-foreground border-b border-border pb-2">Sistema</h4>
                         
                         <div className="space-y-2">
                           <div className="flex items-center justify-between py-1">
-                            <span className="text-sm text-gray-400 flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground flex items-center gap-2">
                               <Settings className="h-3 w-3" />
                               Versão
                             </span>
-                            <span className="text-sm text-gray-200">{systemStatus.systemVersion}</span>
+                            <span className="text-sm text-foreground">{systemStatus.systemVersion}</span>
                           </div>
                           
                           <div className="flex items-center justify-between py-1">
-                            <span className="text-sm text-gray-400 flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground flex items-center gap-2">
                               <Shield className="h-3 w-3" />
                               Backup
                             </span>
-                            <Badge variant="default" className="bg-green-600 text-xs">Ativo</Badge>
+                            <Badge className="bg-emerald-600 text-white text-xs">Ativo</Badge>
                           </div>
                           
                           <div className="flex items-center justify-between py-1">
-                            <span className="text-sm text-gray-400 flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground flex items-center gap-2">
                               <Activity className="h-3 w-3" />
                               Última Atualização
                             </span>
-                            <span className="text-sm text-gray-200">{systemStatus.lastUpdate}</span>
+                            <span className="text-sm text-foreground">{systemStatus.lastUpdate}</span>
                           </div>
                         </div>
                       </div>
