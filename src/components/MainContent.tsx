@@ -149,19 +149,19 @@ export function MainContent({
   ];
 
   return (
-    <div className="flex-1 overflow-auto p-4 lg:p-5 bg-gray-950">
+    <div className="flex-1 overflow-auto p-3 lg:p-4 bg-gray-950">
       {/* Header */}
-      <div className="mb-5">
-        <h1 className="text-xl md:text-2xl font-bold text-white mb-1">
+      <div className="mb-3">
+        <h1 className="text-lg md:text-xl font-bold text-white mb-0.5">
           Sistema PDV
         </h1>
-        <p className="text-gray-500 text-xs">
+        <p className="text-gray-500 text-[11px]">
           {profile?.name ? `Olá, ${profile.name}` : 'Bem-vindo'} — Gestão completa para seu negócio
         </p>
       </div>
 
       {/* Quick Access Grid - Monocromático */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3 mb-5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-3">
         {quickAccessCards.map((card, index) => (
           <Card 
             key={index} 
@@ -183,7 +183,7 @@ export function MainContent({
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
         {/* Profile Section */}
         <Card className="bg-gray-900 border-gray-800 lg:col-span-2">
           <CardHeader className="py-3 px-4">
@@ -372,7 +372,7 @@ export function MainContent({
       </div>
 
       {/* Features Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3">
         {systemFeatures.map((feature, index) => (
           <Card key={index} className="bg-gray-900 border-gray-800">
             <CardContent className="p-3">
@@ -391,8 +391,8 @@ export function MainContent({
       </div>
 
       {/* Support Options */}
-      <div className="mt-4">
-        <h2 className="text-xs font-medium text-gray-500 mb-2">Suporte</h2>
+      <div className="mt-3">
+        <h2 className="text-[11px] font-medium text-gray-500 mb-1.5">Suporte</h2>
         <div className="grid grid-cols-3 gap-2">
           {supportOptions.map((option, index) => (
             <Card 

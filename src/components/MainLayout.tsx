@@ -75,7 +75,7 @@ export function MainLayout({ children, onOpenCashRegister }: MainLayoutProps) {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-gray-900">
+      <div className="min-h-screen flex w-full bg-gray-950">
         {/* Sidebar */}
         <AppSidebar
           isAdmin={isAdmin}
@@ -83,23 +83,23 @@ export function MainLayout({ children, onOpenCashRegister }: MainLayoutProps) {
           onOpenCashRegister={onOpenCashRegister}
         />
 
-        {/* Main Content Area */}
-        <div className="flex-1 flex flex-col">
+        {/* Main Content Area - sem margem/padding extra */}
+        <div className="flex-1 flex flex-col min-w-0">
           {/* Header with mobile menu trigger */}
-          <header className="bg-gray-800 border-b border-gray-700 p-4 flex items-center justify-between lg:hidden">
+          <header className="bg-gray-900 border-b border-gray-800 px-3 py-2 flex items-center justify-between lg:hidden">
             <div className="flex items-center gap-2">
-              <SidebarTrigger className="text-white hover:bg-gray-700" />
-              <h1 className="text-white font-bold text-lg">Sistema PDV</h1>
+              <SidebarTrigger className="text-white hover:bg-gray-800" />
+              <h1 className="text-white font-bold text-base">Sistema PDV</h1>
             </div>
             {profile?.name && (
-              <span className="text-gray-300 text-sm">
+              <span className="text-gray-400 text-xs">
                 Olá, {profile.name}!
               </span>
             )}
           </header>
 
           {/* Main Content */}
-          <main className="flex-1">
+          <main className="flex-1 overflow-auto">
             {children}
           </main>
         </div>
