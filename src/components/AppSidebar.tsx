@@ -134,8 +134,13 @@ export function AppSidebar({
       return (
         <button
           key={item.title}
-          onClick={item.action}
-          className={baseClass}
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            item.action();
+          }}
+          className={`${baseClass} relative z-10 cursor-pointer`}
         >
           <item.icon className="h-4 w-4 flex-shrink-0" />
           {!collapsed && <span className="text-sm">{item.title}</span>}
