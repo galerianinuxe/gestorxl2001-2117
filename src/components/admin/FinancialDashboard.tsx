@@ -11,7 +11,7 @@ import {
   DollarSign, CreditCard, TrendingUp, Users, TestTube, AlertTriangle,
   CheckCircle, XCircle, Clock, RefreshCw, Trash2, Gift, Calendar,
   Settings, Wallet, ArrowUpRight, ArrowDownRight, Search, Filter,
-  BarChart3, PieChart
+  BarChart3, PieChart, Eye, Download, Share2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -19,6 +19,7 @@ import { format, formatDistanceToNow, subDays, startOfMonth, endOfMonth } from '
 import { ptBR } from 'date-fns/locale';
 import { PlansManagement } from './PlansManagement';
 import { useAuditLog } from '@/hooks/useAuditLog';
+import { PaymentReceiptModal } from './PaymentReceiptModal';
 
 interface SubscriptionData {
   id: string;
@@ -82,7 +83,14 @@ export const FinancialDashboard = () => {
   const [paymentFilter, setPaymentFilter] = useState('all');
   const [subscriptionSearch, setSubscriptionSearch] = useState('');
   const [paymentSearch, setPaymentSearch] = useState('');
+  const [selectedPayment, setSelectedPayment] = useState<PixPayment | null>(null);
+  const [receiptModalOpen, setReceiptModalOpen] = useState(false);
   const { logAction } = useAuditLog();
+
+  const handleViewReceipt = (payment: PixPayment) => {
+    setSelectedPayment(payment);
+    setReceiptModalOpen(true);
+  };
 
   useEffect(() => {
     fetchData();
@@ -650,6 +658,7 @@ export const FinancialDashboard = () => {
                       <TableHead>Valor</TableHead>
                       <TableHead>Data</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -666,6 +675,17 @@ export const FinancialDashboard = () => {
                         <TableCell>
                           {getPaymentStatusBadge(payment.status)}
                         </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleViewReceipt(payment)}
+                            className="h-8 px-2 text-muted-foreground hover:text-foreground"
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            Ver
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -680,6 +700,13 @@ export const FinancialDashboard = () => {
           <PlansManagement />
         </TabsContent>
       </Tabs>
+
+      {/* Payment Receipt Modal */}
+      <PaymentReceiptModal
+        open={receiptModalOpen}
+        onOpenChange={setReceiptModalOpen}
+        payment={selectedPayment}
+      />
     </div>
   );
 };
