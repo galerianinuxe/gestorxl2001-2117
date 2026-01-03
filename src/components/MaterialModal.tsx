@@ -284,15 +284,15 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
     }
   };
 
-  // Tara Popover Component
+  // Tara Popover Component - Responsive for mobile/tablet
   const TaraPopoverContent = () => (
-    <div className="bg-pdv-dark text-white rounded-lg shadow-lg px-6 py-4 w-[400px]">
-      <h3 className="text-xl font-bold text-center mb-1">Peso da Tara</h3>
-      <p className="text-white text-sm text-center mb-4">
+    <div className={`bg-pdv-dark text-white rounded-lg shadow-lg ${isMobileOrTablet ? 'px-3 py-3 w-[calc(100vw-32px)] max-w-[360px]' : 'px-6 py-4 w-[400px]'}`}>
+      <h3 className={`font-bold text-center ${isMobileOrTablet ? 'text-lg mb-0.5' : 'text-xl mb-1'}`}>Peso da Tara</h3>
+      <p className={`text-white text-center ${isMobileOrTablet ? 'text-xs mb-2' : 'text-sm mb-4'}`}>
         Informe o peso da tara para descontar do peso total
       </p>
       
-      <div className="h-[350px] w-full border border-gray-800 rounded-md overflow-hidden">
+      <div className={`w-full border border-gray-800 rounded-md overflow-hidden ${isMobileOrTablet ? 'h-[280px]' : 'h-[350px]'}`}>
         <NumberPad 
           onSubmit={(value) => handleTaraInput(value)} 
           onClear={() => setTempTaraValue(0)}
@@ -300,17 +300,17 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
         />
       </div>
       
-      <div className="mt-4 flex justify-end space-x-2">
+      <div className={`flex justify-center gap-2 ${isMobileOrTablet ? 'mt-2' : 'mt-4'}`}>
         <Button 
           variant="secondary" 
           onClick={() => setShowTaraPopover(false)} 
-          className="px-6 py-3"
+          className={isMobileOrTablet ? 'px-4 py-2 text-sm h-9' : 'px-6 py-3'}
         >
           Cancelar
         </Button>
         <Button 
           onClick={applyTaraValue}
-          className="bg-pdv-green hover:bg-pdv-green/90 px-6 py-3"
+          className={`bg-pdv-green hover:bg-pdv-green/90 ${isMobileOrTablet ? 'px-4 py-2 text-sm h-9' : 'px-6 py-3'}`}
         >
           Aplicar
         </Button>
@@ -318,49 +318,49 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
     </div>
   );
 
-  // Diferença Popover Component with currency mask
+  // Diferença Popover Component with currency mask - Responsive for mobile/tablet
   const DiferencaPopoverContent = () => (
-    <div className="bg-pdv-dark text-white rounded-lg shadow-lg px-6 py-4 w-[400px]">
-      <h3 className="text-xl font-bold text-center mb-4">Diferença no Valor</h3>
+    <div className={`bg-pdv-dark text-white rounded-lg shadow-lg ${isMobileOrTablet ? 'px-3 py-3 w-[calc(100vw-32px)] max-w-[360px]' : 'px-6 py-4 w-[400px]'}`}>
+      <h3 className={`font-bold text-center ${isMobileOrTablet ? 'text-base mb-2' : 'text-xl mb-4'}`}>Diferença no Valor</h3>
       
-      <div className="flex justify-center space-x-4 my-4 border-t border-b border-gray-700 py-4">
+      <div className={`flex justify-center gap-2 border-t border-b border-gray-700 ${isMobileOrTablet ? 'py-2' : 'py-4 my-4'}`}>
         <Button 
-          className={`px-6 py-3 ${diferencaTipo === 'acrescimo' ? 'bg-pdv-green' : 'bg-gray-700'}`}
+          className={`${diferencaTipo === 'acrescimo' ? 'bg-pdv-green' : 'bg-gray-700'} ${isMobileOrTablet ? 'px-4 py-2 text-sm h-9' : 'px-6 py-3'}`}
           onClick={() => setDiferencaTipo('acrescimo')}
         >
           Acréscimo
         </Button>
         <Button 
-          className={`px-6 py-3 ${diferencaTipo === 'desconto' ? 'bg-red-600' : 'bg-gray-700'}`}
+          className={`${diferencaTipo === 'desconto' ? 'bg-red-600' : 'bg-gray-700'} ${isMobileOrTablet ? 'px-4 py-2 text-sm h-9' : 'px-6 py-3'}`}
           onClick={() => setDiferencaTipo('desconto')}
         >
           Desconto
         </Button>
       </div>
       
-      <div className="mb-4">
+      <div className={isMobileOrTablet ? 'my-2' : 'mb-4'}>
         <Input
           type="text"
           value={diferencaInputValue}
           onChange={handleDiferencaInputChange}
           placeholder="R$ 0,00"
-          className="bg-gray-900 border border-gray-700 rounded text-center text-2xl font-bold"
-          style={{ color: '#10B981', fontSize: '1.69em' }}
+          className={`bg-gray-900 border border-gray-700 rounded text-center font-bold ${isMobileOrTablet ? 'text-xl h-12' : 'text-2xl'}`}
+          style={{ color: '#10B981', fontSize: isMobileOrTablet ? '1.25em' : '1.69em' }}
           autoFocus
         />
       </div>
       
-      <div className="mt-4 flex justify-end space-x-2">
+      <div className={`flex justify-center gap-2 ${isMobileOrTablet ? 'mt-2' : 'mt-4'}`}>
         <Button 
           variant="secondary" 
           onClick={() => setShowDiferencaPopover(false)} 
-          className="px-6 py-3"
+          className={isMobileOrTablet ? 'px-4 py-2 text-sm h-9' : 'px-6 py-3'}
         >
           Cancelar
         </Button>
         <Button 
           onClick={applyDiferencaValue}
-          className="bg-pdv-green hover:bg-pdv-green/90 px-6 py-3"
+          className={`bg-pdv-green hover:bg-pdv-green/90 ${isMobileOrTablet ? 'px-4 py-2 text-sm h-9' : 'px-6 py-3'}`}
         >
           Aplicar
         </Button>
