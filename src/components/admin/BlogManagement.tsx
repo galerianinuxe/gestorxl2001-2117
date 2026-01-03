@@ -34,6 +34,7 @@ import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { AIImageGenerator } from './AIImageGenerator';
 
 interface BlogPost {
   id: string;
@@ -668,16 +669,26 @@ export const BlogManagement = () => {
                                 />
                               </div>
                               <div>
-                                <Label className="flex items-center gap-2">
+                                <Label className="flex items-center gap-2 mb-2">
                                   <ImageIcon className="h-4 w-4" />
-                                  Imagem de Capa (URL)
+                                  Imagem de Capa (OG Image)
                                 </Label>
-                                <Input
-                                  value={postForm.og_image}
-                                  onChange={(e) => setPostForm({ ...postForm, og_image: e.target.value })}
-                                  placeholder="https://exemplo.com/imagem.jpg"
-                                  className="bg-gray-700 border-gray-600"
-                                />
+                                <div className="flex gap-2 mb-2">
+                                  <Input
+                                    value={postForm.og_image}
+                                    onChange={(e) => setPostForm({ ...postForm, og_image: e.target.value })}
+                                    placeholder="https://exemplo.com/imagem.jpg"
+                                    className="bg-gray-700 border-gray-600 flex-1"
+                                  />
+                                  <AIImageGenerator
+                                    title={postForm.title}
+                                    content={postForm.content_md}
+                                    articleType="blog"
+                                    keywords={postForm.tags}
+                                    currentImage={postForm.og_image}
+                                    onImageGenerated={(url) => setPostForm({ ...postForm, og_image: url })}
+                                  />
+                                </div>
                                 {postForm.og_image && (
                                   <div className="mt-2 relative rounded-lg overflow-hidden">
                                     <img
