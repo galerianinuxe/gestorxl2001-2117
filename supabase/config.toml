@@ -14,3 +14,15 @@ verify_jwt = true
 
 [functions.get-system-stats]
 verify_jwt = true
+
+[functions.check-rate-limit]
+verify_jwt = false
+
+[functions.generate-sitemap]
+verify_jwt = false
+
+[functions.export-user-data]
+verify_jwt = true
+
+[functions.follow-up-pending-pix]
+verify_jwt = false

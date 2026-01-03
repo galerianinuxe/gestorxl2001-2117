@@ -3,6 +3,7 @@ import { Clock, Calendar, ArrowLeft, ArrowRight, Share2, Copy, Check } from 'luc
 import { useState, useEffect } from 'react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
+import { sanitizeJsonLd } from '@/utils/sanitization';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -110,7 +111,7 @@ const BlogPost = () => {
 
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }}
+        dangerouslySetInnerHTML={{ __html: sanitizeJsonLd(schemaData) }}
       />
 
       <article className="container mx-auto px-4 py-8 md:py-12">
