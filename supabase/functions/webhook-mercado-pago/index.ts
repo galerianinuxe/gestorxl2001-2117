@@ -193,6 +193,38 @@ serve(async (req) => {
       throw error
     }
 
+    // Record in immutable payment_ledger for financial audit trail
+    const externalRefParts = paymentData.external_reference?.split('_') || []
+    const ledgerUserId = externalRefParts.length >= 2 && externalRefParts[0] === 'user' 
+      ? externalRefParts[1] 
+      : null
+
+    if (ledgerUserId) {
+      const { error: ledgerError } = await supabase
+        .from('payment_ledger')
+        .insert({
+          user_id: ledgerUserId,
+          amount: paymentData.transaction_amount,
+          currency: paymentData.currency_id || 'BRL',
+          provider: 'mercadopago',
+          provider_event_id: paymentId.toString(),
+          operation_type: 'payment',
+          status: paymentData.status,
+          metadata: {
+            external_reference: paymentData.external_reference,
+            payment_method: paymentData.payment_method_id,
+            payer_email: sanitizeForLog({ payer_email: paymentData.payer?.email }).payer_email,
+            status_detail: paymentData.status_detail
+          }
+        })
+
+      if (ledgerError && ledgerError.code !== '23505') {
+        console.error('⚠️ Failed to record in payment_ledger:', ledgerError)
+      } else if (!ledgerError) {
+        console.log('📒 Payment recorded in immutable ledger')
+      }
+    }
+
     console.log(`✅ Payment status updated to: ${paymentData.status}`)
 
     // If payment is approved, activate user subscription

@@ -5,33 +5,78 @@
 
   <!-- Página inicial -->
   <url>
-    <loc>https://www.xlata.site/</loc>
-    <lastmod>2025-11-20</lastmod>
+    <loc>https://xlata.site/</loc>
+    <lastmod>2026-01-03</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
 
   <url>
-    <loc>https://www.xlata.site/landing</loc>
-    <lastmod>2025-11-20</lastmod>
+    <loc>https://xlata.site/landing</loc>
+    <lastmod>2026-01-03</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
 
   <!-- Página de Login -->
   <url>
-    <loc>https://www.xlata.site/login</loc>
-    <lastmod>2025-11-20</lastmod>
+    <loc>https://xlata.site/login</loc>
+    <lastmod>2026-01-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
+  <!-- Página de Registro -->
+  <url>
+    <loc>https://xlata.site/register</loc>
+    <lastmod>2026-01-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
   <!-- Página de Planos -->
   <url>
-    <loc>https://www.xlata.site/plans</loc>
-    <lastmod>2025-11-20</lastmod>
+    <loc>https://xlata.site/planos</loc>
+    <lastmod>2026-01-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- Portal de Conteúdo -->
+  <url>
+    <loc>https://xlata.site/blog</loc>
+    <lastmod>2026-01-03</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://xlata.site/ajuda</loc>
+    <lastmod>2026-01-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://xlata.site/solucoes</loc>
+    <lastmod>2026-01-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://xlata.site/glossario</loc>
+    <lastmod>2026-01-03</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+
+  <!-- Termos de Uso -->
+  <url>
+    <loc>https://xlata.site/termos-de-uso</loc>
+    <lastmod>2026-01-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
   </url>
 
 </urlset>

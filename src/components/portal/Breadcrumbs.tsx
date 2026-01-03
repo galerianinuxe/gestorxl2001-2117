@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ChevronRight, Home } from 'lucide-react';
+import { sanitizeJsonLd } from '@/utils/sanitization';
 
 interface BreadcrumbItem {
   label: string;
@@ -34,7 +35,7 @@ export const Breadcrumbs = ({ items }: BreadcrumbsProps) => {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }}
+        dangerouslySetInnerHTML={{ __html: sanitizeJsonLd(schemaData) }}
       />
       <nav aria-label="Breadcrumb" className="mb-6">
         <ol className="flex items-center flex-wrap gap-1 text-sm text-muted-foreground">

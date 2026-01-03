@@ -55,7 +55,17 @@ const GlossaryTerm = lazy(() => import('./pages/portal/GlossaryTerm'));
 
 import { useEffect } from "react";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutos - dados considerados frescos
+      gcTime: 30 * 60 * 1000, // 30 minutos - tempo de cache
+      retry: 1,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
+    },
+  },
+});
 
 // Loading fallback otimizado
 const PageLoader = () => (
