@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   FileText, 
   Plus, 
@@ -18,8 +20,18 @@ import {
   FolderOpen,
   Tag,
   Calendar,
-  ExternalLink
+  ExternalLink,
+  Copy,
+  Star,
+  Filter,
+  LayoutGrid,
+  List,
+  ImageIcon,
+  Sparkles,
+  TrendingUp
 } from 'lucide-react';
+import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
@@ -56,10 +68,14 @@ export const BlogManagement = () => {
   const [categories, setCategories] = useState<BlogCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'published'>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
   const [editingCategory, setEditingCategory] = useState<BlogCategory | null>(null);
   const [isPostDialogOpen, setIsPostDialogOpen] = useState(false);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   
   const [postForm, setPostForm] = useState({
     title: '',
@@ -136,9 +152,10 @@ export const BlogManagement = () => {
         seo_title: postForm.seo_title || null,
         seo_description: postForm.seo_description || null,
         og_image: postForm.og_image || null,
-        tags: postForm.tags ? postForm.tags.split(',').map(t => t.trim()) : null,
+        tags: postForm.tags ? postForm.tags.split(',').map(t => t.trim()).filter(Boolean) : null,
         is_featured: postForm.is_featured,
-        reading_time_minutes: Math.ceil((postForm.content_md?.split(' ').length || 0) / 200)
+        reading_time_minutes: Math.ceil((postForm.content_md?.split(' ').length || 0) / 200),
+        published_at: postForm.status === 'published' ? new Date().toISOString() : null
       };
 
       if (editingPost) {
@@ -147,13 +164,13 @@ export const BlogManagement = () => {
           .update(postData)
           .eq('id', editingPost.id);
         if (error) throw error;
-        toast({ title: "Sucesso", description: "Post atualizado" });
+        toast({ title: "Sucesso", description: "Post atualizado com sucesso!" });
       } else {
         const { error } = await supabase
           .from('blog_posts')
           .insert([postData]);
         if (error) throw error;
-        toast({ title: "Sucesso", description: "Post criado" });
+        toast({ title: "Sucesso", description: "Post criado com sucesso!" });
       }
 
       setIsPostDialogOpen(false);
@@ -200,7 +217,7 @@ export const BlogManagement = () => {
   };
 
   const handleDeletePost = async (id: string) => {
-    if (!confirm('Excluir este post?')) return;
+    if (!confirm('Excluir este post permanentemente?')) return;
     try {
       const { error } = await supabase.from('blog_posts').delete().eq('id', id);
       if (error) throw error;
@@ -220,6 +237,38 @@ export const BlogManagement = () => {
       loadData();
     } catch (error) {
       toast({ title: "Erro", description: "Falha ao excluir", variant: "destructive" });
+    }
+  };
+
+  const handleDuplicatePost = (post: BlogPost) => {
+    setEditingPost(null);
+    setPostForm({
+      title: `${post.title} (Cópia)`,
+      slug: `${post.slug}-copia`,
+      excerpt: post.excerpt || '',
+      content_md: post.content_md || '',
+      status: 'draft',
+      category_id: post.category_id || '',
+      seo_title: post.seo_title || '',
+      seo_description: post.seo_description || '',
+      og_image: post.og_image || '',
+      tags: post.tags?.join(', ') || '',
+      is_featured: false
+    });
+    setIsPostDialogOpen(true);
+  };
+
+  const handleToggleFeatured = async (post: BlogPost) => {
+    try {
+      const { error } = await supabase
+        .from('blog_posts')
+        .update({ is_featured: !post.is_featured })
+        .eq('id', post.id);
+      if (error) throw error;
+      toast({ title: "Sucesso", description: post.is_featured ? "Removido dos destaques" : "Adicionado aos destaques" });
+      loadData();
+    } catch (error) {
+      toast({ title: "Erro", description: "Falha ao atualizar", variant: "destructive" });
     }
   };
 
@@ -259,6 +308,7 @@ export const BlogManagement = () => {
       title: '', slug: '', excerpt: '', content_md: '', status: 'draft',
       category_id: '', seo_title: '', seo_description: '', og_image: '', tags: '', is_featured: false
     });
+    setShowPreview(false);
   };
 
   const resetCategoryForm = () => {
@@ -266,33 +316,104 @@ export const BlogManagement = () => {
     setCategoryForm({ name: '', slug: '', description: '', icon: '', sort_order: 0 });
   };
 
-  const filteredPosts = posts.filter(post =>
-    post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    post.slug.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredPosts = posts.filter(post => {
+    const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      post.slug.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || post.status === statusFilter;
+    const matchesCategory = categoryFilter === 'all' || post.category_id === categoryFilter;
+    return matchesSearch && matchesStatus && matchesCategory;
+  });
 
   const getCategoryName = (id: string | null) => {
     if (!id) return 'Sem categoria';
     return categories.find(c => c.id === id)?.name || 'Sem categoria';
   };
 
+  const getPreviewHtml = () => {
+    if (!postForm.content_md) return '';
+    return DOMPurify.sanitize(marked(postForm.content_md) as string);
+  };
+
+  const stats = {
+    total: posts.length,
+    published: posts.filter(p => p.status === 'published').length,
+    draft: posts.filter(p => p.status === 'draft').length,
+    featured: posts.filter(p => p.is_featured).length
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="bg-gray-800 border-gray-700">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-emerald-500/20 rounded-lg">
+                <FileText className="h-5 w-5 text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-white">{stats.total}</p>
+                <p className="text-xs text-gray-400">Total de Posts</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gray-800 border-gray-700">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-500/20 rounded-lg">
+                <Eye className="h-5 w-5 text-green-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-white">{stats.published}</p>
+                <p className="text-xs text-gray-400">Publicados</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gray-800 border-gray-700">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-yellow-500/20 rounded-lg">
+                <Edit className="h-5 w-5 text-yellow-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-white">{stats.draft}</p>
+                <p className="text-xs text-gray-400">Rascunhos</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gray-800 border-gray-700">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-500/20 rounded-lg">
+                <Star className="h-5 w-5 text-purple-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-white">{stats.featured}</p>
+                <p className="text-xs text-gray-400">Em Destaque</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <Tabs defaultValue="posts" className="w-full">
         <TabsList className="bg-gray-800 border-gray-700">
-          <TabsTrigger value="posts" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">
+          <TabsTrigger value="posts" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
             <FileText className="h-4 w-4 mr-2" />
             Posts ({posts.length})
           </TabsTrigger>
-          <TabsTrigger value="categories" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">
+          <TabsTrigger value="categories" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
             <FolderOpen className="h-4 w-4 mr-2" />
             Categorias ({categories.length})
           </TabsTrigger>
@@ -301,155 +422,318 @@ export const BlogManagement = () => {
         {/* Posts Tab */}
         <TabsContent value="posts" className="mt-4">
           <Card className="bg-gray-800 border-gray-700">
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <CardTitle className="text-white flex items-center gap-2">
                 <FileText className="h-5 w-5" />
                 Gerenciar Posts
               </CardTitle>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Search */}
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
                     placeholder="Buscar posts..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9 bg-gray-700 border-gray-600 text-white w-64"
+                    className="pl-9 bg-gray-700 border-gray-600 text-white w-48"
                   />
                 </div>
+                
+                {/* Status Filter */}
+                <Select value={statusFilter} onValueChange={(v: 'all' | 'draft' | 'published') => setStatusFilter(v)}>
+                  <SelectTrigger className="bg-gray-700 border-gray-600 text-white w-36">
+                    <Filter className="h-4 w-4 mr-2" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-700 border-gray-600">
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="published">Publicados</SelectItem>
+                    <SelectItem value="draft">Rascunhos</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Category Filter */}
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="bg-gray-700 border-gray-600 text-white w-40">
+                    <FolderOpen className="h-4 w-4 mr-2" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-700 border-gray-600">
+                    <SelectItem value="all">Todas Categorias</SelectItem>
+                    {categories.map(cat => (
+                      <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* View Mode */}
+                <div className="flex bg-gray-700 rounded-md">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setViewMode('list')}
+                    className={viewMode === 'list' ? 'bg-gray-600' : ''}
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setViewMode('grid')}
+                    className={viewMode === 'grid' ? 'bg-gray-600' : ''}
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                {/* New Post Button */}
                 <Dialog open={isPostDialogOpen} onOpenChange={setIsPostDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button onClick={resetPostForm} className="bg-green-600 hover:bg-green-700">
+                    <Button onClick={resetPostForm} className="bg-emerald-600 hover:bg-emerald-700">
                       <Plus className="h-4 w-4 mr-2" />
                       Novo Post
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-gray-800 border-gray-700 text-white">
-                    <DialogHeader>
-                      <DialogTitle>{editingPost ? 'Editar Post' : 'Novo Post'}</DialogTitle>
+                  <DialogContent className="max-w-5xl max-h-[95vh] overflow-hidden bg-gray-800 border-gray-700 text-white p-0">
+                    <DialogHeader className="p-6 pb-0">
+                      <DialogTitle className="flex items-center justify-between">
+                        <span className="flex items-center gap-2">
+                          <Sparkles className="h-5 w-5 text-emerald-400" />
+                          {editingPost ? 'Editar Post' : 'Novo Post'}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <Label className="text-sm text-gray-400">Preview</Label>
+                          <Switch
+                            checked={showPreview}
+                            onCheckedChange={setShowPreview}
+                          />
+                        </div>
+                      </DialogTitle>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label>Título *</Label>
-                          <Input
-                            value={postForm.title}
-                            onChange={(e) => setPostForm({ ...postForm, title: e.target.value })}
-                            className="bg-gray-700 border-gray-600"
-                          />
-                        </div>
-                        <div>
-                          <Label>Slug</Label>
-                          <Input
-                            value={postForm.slug}
-                            onChange={(e) => setPostForm({ ...postForm, slug: e.target.value })}
-                            placeholder="Gerado automaticamente"
-                            className="bg-gray-700 border-gray-600"
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label>Categoria</Label>
-                          <Select
-                            value={postForm.category_id}
-                            onValueChange={(value) => setPostForm({ ...postForm, category_id: value })}
-                          >
-                            <SelectTrigger className="bg-gray-700 border-gray-600">
-                              <SelectValue placeholder="Selecione" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-gray-700 border-gray-600">
-                              {categories.map(cat => (
-                                <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label>Status</Label>
-                          <Select
-                            value={postForm.status}
-                            onValueChange={(value: 'draft' | 'published') => setPostForm({ ...postForm, status: value })}
-                          >
-                            <SelectTrigger className="bg-gray-700 border-gray-600">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="bg-gray-700 border-gray-600">
-                              <SelectItem value="draft">Rascunho</SelectItem>
-                              <SelectItem value="published">Publicado</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      <div>
-                        <Label>Resumo</Label>
-                        <Textarea
-                          value={postForm.excerpt}
-                          onChange={(e) => setPostForm({ ...postForm, excerpt: e.target.value })}
-                          className="bg-gray-700 border-gray-600"
-                          rows={2}
-                        />
-                      </div>
-
-                      <div>
-                        <Label>Conteúdo (Markdown)</Label>
-                        <Textarea
-                          value={postForm.content_md}
-                          onChange={(e) => setPostForm({ ...postForm, content_md: e.target.value })}
-                          className="bg-gray-700 border-gray-600 font-mono text-sm"
-                          rows={10}
-                        />
-                      </div>
-
-                      <div>
-                        <Label>Tags (separadas por vírgula)</Label>
-                        <Input
-                          value={postForm.tags}
-                          onChange={(e) => setPostForm({ ...postForm, tags: e.target.value })}
-                          placeholder="reciclagem, dicas, sustentabilidade"
-                          className="bg-gray-700 border-gray-600"
-                        />
-                      </div>
-
-                      <div className="border-t border-gray-700 pt-4">
-                        <h4 className="text-sm font-medium text-gray-300 mb-3">SEO</h4>
-                        <div className="grid gap-3">
-                          <div>
-                            <Label>Título SEO</Label>
-                            <Input
-                              value={postForm.seo_title}
-                              onChange={(e) => setPostForm({ ...postForm, seo_title: e.target.value })}
-                              className="bg-gray-700 border-gray-600"
-                            />
+                    
+                    <div className="flex h-[calc(95vh-140px)]">
+                      {/* Editor */}
+                      <ScrollArea className={`${showPreview ? 'w-1/2' : 'w-full'} p-6`}>
+                        <div className="space-y-4">
+                          {/* Title & Slug */}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label>Título *</Label>
+                              <Input
+                                value={postForm.title}
+                                onChange={(e) => setPostForm({ ...postForm, title: e.target.value })}
+                                className="bg-gray-700 border-gray-600"
+                                placeholder="Título do artigo"
+                              />
+                            </div>
+                            <div>
+                              <Label>Slug (URL)</Label>
+                              <Input
+                                value={postForm.slug}
+                                onChange={(e) => setPostForm({ ...postForm, slug: e.target.value })}
+                                placeholder={generateSlug(postForm.title) || 'gerado-automaticamente'}
+                                className="bg-gray-700 border-gray-600"
+                              />
+                            </div>
                           </div>
+                          
+                          {/* Category, Status, Featured */}
+                          <div className="grid grid-cols-3 gap-4">
+                            <div>
+                              <Label>Categoria</Label>
+                              <Select
+                                value={postForm.category_id}
+                                onValueChange={(value) => setPostForm({ ...postForm, category_id: value })}
+                              >
+                                <SelectTrigger className="bg-gray-700 border-gray-600">
+                                  <SelectValue placeholder="Selecione" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-gray-700 border-gray-600">
+                                  {categories.map(cat => (
+                                    <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <Label>Status</Label>
+                              <Select
+                                value={postForm.status}
+                                onValueChange={(value: 'draft' | 'published') => setPostForm({ ...postForm, status: value })}
+                              >
+                                <SelectTrigger className="bg-gray-700 border-gray-600">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="bg-gray-700 border-gray-600">
+                                  <SelectItem value="draft">📝 Rascunho</SelectItem>
+                                  <SelectItem value="published">✅ Publicado</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="flex items-end">
+                              <div className="flex items-center gap-2 p-2 bg-gray-700 rounded-md w-full">
+                                <Switch
+                                  checked={postForm.is_featured}
+                                  onCheckedChange={(checked) => setPostForm({ ...postForm, is_featured: checked })}
+                                />
+                                <Label className="text-sm">Destaque</Label>
+                                <Star className={`h-4 w-4 ml-auto ${postForm.is_featured ? 'text-yellow-400 fill-yellow-400' : 'text-gray-500'}`} />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Excerpt */}
                           <div>
-                            <Label>Meta Descrição</Label>
+                            <Label>Resumo (Excerpt)</Label>
                             <Textarea
-                              value={postForm.seo_description}
-                              onChange={(e) => setPostForm({ ...postForm, seo_description: e.target.value })}
+                              value={postForm.excerpt}
+                              onChange={(e) => setPostForm({ ...postForm, excerpt: e.target.value })}
                               className="bg-gray-700 border-gray-600"
                               rows={2}
+                              placeholder="Breve descrição do artigo (exibido nos cards)"
                             />
                           </div>
+
+                          {/* Content */}
                           <div>
-                            <Label>Imagem OG</Label>
+                            <div className="flex items-center justify-between mb-2">
+                              <Label>Conteúdo (Markdown)</Label>
+                              <span className="text-xs text-gray-400">
+                                ~{Math.ceil((postForm.content_md?.split(' ').length || 0) / 200)} min de leitura
+                              </span>
+                            </div>
+                            <Textarea
+                              value={postForm.content_md}
+                              onChange={(e) => setPostForm({ ...postForm, content_md: e.target.value })}
+                              className="bg-gray-700 border-gray-600 font-mono text-sm"
+                              rows={12}
+                              placeholder="# Título&#10;&#10;Escreva seu conteúdo em Markdown..."
+                            />
+                          </div>
+
+                          {/* Tags */}
+                          <div>
+                            <Label>Tags (separadas por vírgula)</Label>
                             <Input
-                              value={postForm.og_image}
-                              onChange={(e) => setPostForm({ ...postForm, og_image: e.target.value })}
-                              placeholder="URL da imagem"
+                              value={postForm.tags}
+                              onChange={(e) => setPostForm({ ...postForm, tags: e.target.value })}
+                              placeholder="reciclagem, dicas, sustentabilidade"
                               className="bg-gray-700 border-gray-600"
                             />
+                            {postForm.tags && (
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {postForm.tags.split(',').filter(Boolean).map((tag, i) => (
+                                  <Badge key={i} variant="secondary" className="bg-emerald-600/20 text-emerald-300">
+                                    {tag.trim()}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* SEO Section */}
+                          <div className="border-t border-gray-700 pt-4 mt-4">
+                            <h4 className="text-sm font-medium text-emerald-400 mb-3 flex items-center gap-2">
+                              <TrendingUp className="h-4 w-4" />
+                              SEO & Meta Tags
+                            </h4>
+                            <div className="space-y-3">
+                              <div>
+                                <div className="flex justify-between">
+                                  <Label>Título SEO</Label>
+                                  <span className={`text-xs ${(postForm.seo_title?.length || 0) > 60 ? 'text-red-400' : 'text-gray-400'}`}>
+                                    {postForm.seo_title?.length || 0}/60
+                                  </span>
+                                </div>
+                                <Input
+                                  value={postForm.seo_title}
+                                  onChange={(e) => setPostForm({ ...postForm, seo_title: e.target.value })}
+                                  className="bg-gray-700 border-gray-600"
+                                  placeholder={postForm.title || "Título para mecanismos de busca"}
+                                />
+                              </div>
+                              <div>
+                                <div className="flex justify-between">
+                                  <Label>Meta Descrição</Label>
+                                  <span className={`text-xs ${(postForm.seo_description?.length || 0) > 160 ? 'text-red-400' : 'text-gray-400'}`}>
+                                    {postForm.seo_description?.length || 0}/160
+                                  </span>
+                                </div>
+                                <Textarea
+                                  value={postForm.seo_description}
+                                  onChange={(e) => setPostForm({ ...postForm, seo_description: e.target.value })}
+                                  className="bg-gray-700 border-gray-600"
+                                  rows={2}
+                                  placeholder={postForm.excerpt || "Descrição para mecanismos de busca"}
+                                />
+                              </div>
+                              <div>
+                                <Label className="flex items-center gap-2">
+                                  <ImageIcon className="h-4 w-4" />
+                                  Imagem de Capa (URL)
+                                </Label>
+                                <Input
+                                  value={postForm.og_image}
+                                  onChange={(e) => setPostForm({ ...postForm, og_image: e.target.value })}
+                                  placeholder="https://exemplo.com/imagem.jpg"
+                                  className="bg-gray-700 border-gray-600"
+                                />
+                                {postForm.og_image && (
+                                  <div className="mt-2 relative rounded-lg overflow-hidden">
+                                    <img
+                                      src={postForm.og_image}
+                                      alt="Preview"
+                                      className="w-full h-32 object-cover"
+                                      onError={(e) => (e.currentTarget.style.display = 'none')}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      </ScrollArea>
+
+                      {/* Preview */}
+                      {showPreview && (
+                        <div className="w-1/2 border-l border-gray-700 bg-white overflow-hidden">
+                          <div className="p-4 bg-gray-100 border-b text-gray-600 text-sm flex items-center gap-2">
+                            <Eye className="h-4 w-4" />
+                            Preview do Artigo
+                          </div>
+                          <ScrollArea className="h-full p-6">
+                            <article className="prose prose-lg max-w-none">
+                              {postForm.og_image && (
+                                <img 
+                                  src={postForm.og_image} 
+                                  alt="Capa" 
+                                  className="w-full h-48 object-cover rounded-lg mb-4"
+                                  onError={(e) => (e.currentTarget.style.display = 'none')}
+                                />
+                              )}
+                              <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                                {postForm.title || 'Título do Artigo'}
+                              </h1>
+                              {postForm.excerpt && (
+                                <p className="text-gray-600 italic mb-4">{postForm.excerpt}</p>
+                              )}
+                              <div 
+                                className="prose-emerald"
+                                dangerouslySetInnerHTML={{ __html: getPreviewHtml() }} 
+                              />
+                            </article>
+                          </ScrollArea>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex justify-end gap-2">
+
+                    {/* Footer */}
+                    <div className="p-4 border-t border-gray-700 flex justify-end gap-2">
                       <Button variant="outline" onClick={() => setIsPostDialogOpen(false)}>
                         Cancelar
                       </Button>
-                      <Button onClick={handleSavePost} className="bg-green-600 hover:bg-green-700">
-                        {editingPost ? 'Atualizar' : 'Criar'}
+                      <Button onClick={handleSavePost} className="bg-emerald-600 hover:bg-emerald-700">
+                        {editingPost ? 'Atualizar Post' : 'Criar Post'}
                       </Button>
                     </div>
                   </DialogContent>
@@ -457,66 +741,151 @@ export const BlogManagement = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {filteredPosts.map(post => (
-                  <div key={post.id} className="flex items-center justify-between p-4 bg-gray-700/50 rounded-lg border border-gray-600">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-medium text-white">{post.title}</h4>
-                        <Badge className={post.status === 'published' ? 'bg-green-600' : 'bg-yellow-600'}>
-                          {post.status === 'published' ? 'Publicado' : 'Rascunho'}
-                        </Badge>
-                        {post.is_featured && <Badge className="bg-purple-600">Destaque</Badge>}
+              {viewMode === 'list' ? (
+                <div className="space-y-3">
+                  {filteredPosts.map(post => (
+                    <div key={post.id} className="flex items-center justify-between p-4 bg-gray-700/50 rounded-lg border border-gray-600 hover:border-emerald-500/50 transition-colors">
+                      <div className="flex items-start gap-4 flex-1">
+                        {post.og_image && (
+                          <img
+                            src={post.og_image}
+                            alt={post.title}
+                            className="w-20 h-14 object-cover rounded-md hidden sm:block"
+                          />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <h4 className="font-medium text-white truncate">{post.title}</h4>
+                            <Badge className={post.status === 'published' ? 'bg-emerald-600' : 'bg-yellow-600'}>
+                              {post.status === 'published' ? 'Publicado' : 'Rascunho'}
+                            </Badge>
+                            {post.is_featured && (
+                              <Badge className="bg-purple-600">
+                                <Star className="h-3 w-3 mr-1 fill-current" />
+                                Destaque
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-gray-400 flex-wrap">
+                            <span className="flex items-center gap-1">
+                              <FolderOpen className="h-3 w-3" />
+                              {getCategoryName(post.category_id)}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {new Date(post.created_at).toLocaleDateString('pt-BR')}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Eye className="h-3 w-3" />
+                              {post.view_count || 0} views
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-gray-400">
-                        <span className="flex items-center gap-1">
-                          <FolderOpen className="h-3 w-3" />
-                          {getCategoryName(post.category_id)}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {new Date(post.created_at).toLocaleDateString('pt-BR')}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Eye className="h-3 w-3" />
-                          {post.view_count || 0} views
-                        </span>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleToggleFeatured(post)}
+                          className={`${post.is_featured ? 'text-yellow-400' : 'text-gray-400'} hover:text-yellow-400`}
+                          title={post.is_featured ? 'Remover destaque' : 'Destacar'}
+                        >
+                          <Star className={`h-4 w-4 ${post.is_featured ? 'fill-current' : ''}`} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDuplicatePost(post)}
+                          className="text-gray-400 hover:text-white"
+                          title="Duplicar"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => window.open(`/blog/${post.slug}`, '_blank')}
+                          className="text-gray-400 hover:text-white"
+                          title="Visualizar"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => editPost(post)}
+                          className="text-gray-400 hover:text-white"
+                          title="Editar"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeletePost(post.id)}
+                          className="text-gray-400 hover:text-red-400"
+                          title="Excluir"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => window.open(`/blog/${post.slug}`, '_blank')}
-                        className="text-gray-400 hover:text-white"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => editPost(post)}
-                        className="text-gray-400 hover:text-white"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeletePost(post.id)}
-                        className="text-gray-400 hover:text-red-400"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                  ))}
+                  {filteredPosts.length === 0 && (
+                    <div className="text-center py-12 text-gray-400">
+                      <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>Nenhum post encontrado</p>
+                      <p className="text-sm mt-1">Tente ajustar os filtros ou criar um novo post</p>
                     </div>
-                  </div>
-                ))}
-                {filteredPosts.length === 0 && (
-                  <div className="text-center py-8 text-gray-400">
-                    Nenhum post encontrado
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredPosts.map(post => (
+                    <Card key={post.id} className="bg-gray-700/50 border-gray-600 hover:border-emerald-500/50 transition-colors overflow-hidden">
+                      {post.og_image && (
+                        <div className="h-32 overflow-hidden">
+                          <img
+                            src={post.og_image}
+                            alt={post.title}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge className={post.status === 'published' ? 'bg-emerald-600' : 'bg-yellow-600'}>
+                            {post.status === 'published' ? 'Publicado' : 'Rascunho'}
+                          </Badge>
+                          {post.is_featured && (
+                            <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                          )}
+                        </div>
+                        <h4 className="font-medium text-white line-clamp-2 mb-2">{post.title}</h4>
+                        <p className="text-sm text-gray-400 line-clamp-2 mb-3">{post.excerpt}</p>
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                          <span>{getCategoryName(post.category_id)}</span>
+                          <span>{post.view_count || 0} views</span>
+                        </div>
+                        <div className="flex items-center gap-1 mt-3 pt-3 border-t border-gray-600">
+                          <Button variant="ghost" size="icon" onClick={() => editPost(post)} className="h-8 w-8">
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleDuplicatePost(post)} className="h-8 w-8">
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => window.open(`/blog/${post.slug}`, '_blank')} className="h-8 w-8">
+                            <ExternalLink className="h-3 w-3" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleDeletePost(post.id)} className="h-8 w-8 hover:text-red-400">
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -531,7 +900,7 @@ export const BlogManagement = () => {
               </CardTitle>
               <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button onClick={resetCategoryForm} className="bg-green-600 hover:bg-green-700">
+                  <Button onClick={resetCategoryForm} className="bg-emerald-600 hover:bg-emerald-700">
                     <Plus className="h-4 w-4 mr-2" />
                     Nova Categoria
                   </Button>
@@ -547,6 +916,7 @@ export const BlogManagement = () => {
                         value={categoryForm.name}
                         onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
                         className="bg-gray-700 border-gray-600"
+                        placeholder="Nome da categoria"
                       />
                     </div>
                     <div>
@@ -554,7 +924,7 @@ export const BlogManagement = () => {
                       <Input
                         value={categoryForm.slug}
                         onChange={(e) => setCategoryForm({ ...categoryForm, slug: e.target.value })}
-                        placeholder="Gerado automaticamente"
+                        placeholder={generateSlug(categoryForm.name) || 'gerado-automaticamente'}
                         className="bg-gray-700 border-gray-600"
                       />
                     </div>
@@ -564,15 +934,16 @@ export const BlogManagement = () => {
                         value={categoryForm.description}
                         onChange={(e) => setCategoryForm({ ...categoryForm, description: e.target.value })}
                         className="bg-gray-700 border-gray-600"
+                        placeholder="Breve descrição da categoria"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label>Ícone (Lucide)</Label>
+                        <Label>Emoji/Ícone</Label>
                         <Input
                           value={categoryForm.icon}
                           onChange={(e) => setCategoryForm({ ...categoryForm, icon: e.target.value })}
-                          placeholder="ex: Recycle"
+                          placeholder="📦 ou Recycle"
                           className="bg-gray-700 border-gray-600"
                         />
                       </div>
@@ -586,12 +957,22 @@ export const BlogManagement = () => {
                         />
                       </div>
                     </div>
+                    {/* Preview Badge */}
+                    <div>
+                      <Label className="text-gray-400">Preview</Label>
+                      <div className="mt-2">
+                        <Badge className="bg-emerald-100 text-emerald-700 px-3 py-1">
+                          {categoryForm.icon && <span className="mr-1">{categoryForm.icon}</span>}
+                          {categoryForm.name || 'Nome da Categoria'}
+                        </Badge>
+                      </div>
+                    </div>
                   </div>
                   <div className="flex justify-end gap-2">
                     <Button variant="outline" onClick={() => setIsCategoryDialogOpen(false)}>
                       Cancelar
                     </Button>
-                    <Button onClick={handleSaveCategory} className="bg-green-600 hover:bg-green-700">
+                    <Button onClick={handleSaveCategory} className="bg-emerald-600 hover:bg-emerald-700">
                       {editingCategory ? 'Atualizar' : 'Criar'}
                     </Button>
                   </div>
@@ -601,38 +982,50 @@ export const BlogManagement = () => {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {categories.map(category => (
-                  <div key={category.id} className="p-4 bg-gray-700/50 rounded-lg border border-gray-600">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-white">{category.name}</h4>
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => editCategory(category)}
-                          className="h-8 w-8 text-gray-400 hover:text-white"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteCategory(category.id)}
-                          className="h-8 w-8 text-gray-400 hover:text-red-400"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                  <Card key={category.id} className="bg-gray-700/50 border-gray-600 hover:border-emerald-500/50 transition-colors">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <Badge className="bg-emerald-100 text-emerald-700">
+                          {category.icon && <span className="mr-1">{category.icon}</span>}
+                          {category.name}
+                        </Badge>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => editCategory(category)}
+                            className="h-8 w-8 text-gray-400 hover:text-white"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteCategory(category.id)}
+                            className="h-8 w-8 text-gray-400 hover:text-red-400"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                    <p className="text-sm text-gray-400 mb-2">{category.description || 'Sem descrição'}</p>
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <Tag className="h-3 w-3" />
-                      /{category.slug}
-                    </div>
-                  </div>
+                      <p className="text-sm text-gray-400 mb-3 line-clamp-2">
+                        {category.description || 'Sem descrição'}
+                      </p>
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <span className="flex items-center gap-1">
+                          <Tag className="h-3 w-3" />
+                          /{category.slug}
+                        </span>
+                        <span>Ordem: {category.sort_order || 0}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))}
                 {categories.length === 0 && (
-                  <div className="col-span-full text-center py-8 text-gray-400">
-                    Nenhuma categoria encontrada
+                  <div className="col-span-full text-center py-12 text-gray-400">
+                    <FolderOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>Nenhuma categoria encontrada</p>
+                    <p className="text-sm mt-1">Crie categorias para organizar seus posts</p>
                   </div>
                 )}
               </div>
