@@ -402,7 +402,7 @@ const Register: React.FC = () => {
               
               {supabaseStatus === 'disconnected' && (
                 <div className="text-center text-red-400 text-sm">
-                  ⚠️ Cadastro bloqueado - Supabase desconectado
+                  ⚠️ Cadastro bloqueado - Servidor desconectado
                 </div>
               )}
 

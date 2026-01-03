@@ -30,6 +30,7 @@ const PasswordPromptModal: React.FC<PasswordPromptModalProps> = ({
   description = "Digite sua senha para continuar"
 }) => {
   const { authenticateUser, isAuthenticating } = usePasswordAuth();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -41,15 +42,19 @@ const PasswordPromptModal: React.FC<PasswordPromptModalProps> = ({
   useEffect(() => {
     if (open) {
       form.reset();
+      setErrorMessage(null);
     }
   }, [open, form]);
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    setErrorMessage(null);
     const isAuthenticated = await authenticateUser(data.password);
     
     if (isAuthenticated) {
       onAuthenticated();
       onOpenChange(false);
+    } else {
+      setErrorMessage("Senha incorreta. Tente novamente.");
     }
   };
 
@@ -86,11 +91,18 @@ const PasswordPromptModal: React.FC<PasswordPromptModalProps> = ({
                     <Input 
                       type="password"
                       placeholder="Digite sua senha" 
-                      className="bg-gray-800 border-gray-700 text-white"
+                      className={`bg-gray-800 border-gray-700 text-white ${errorMessage ? 'border-red-500' : ''}`}
                       {...field}
                       autoFocus
+                      onChange={(e) => {
+                        field.onChange(e);
+                        setErrorMessage(null);
+                      }}
                     />
                   </FormControl>
+                  {errorMessage && (
+                    <p className="text-red-400 text-sm mt-1">{errorMessage}</p>
+                  )}
                   <FormMessage className="text-red-400" />
                 </FormItem>
               )}
