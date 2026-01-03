@@ -290,15 +290,15 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
 
   // Inline Tara Content for Mobile/Tablet
   const TaraInlineContent = () => (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <div className="text-center">
-        <h3 className="text-xl font-bold">Peso da Tara</h3>
-        <p className="text-sm text-gray-300 mt-1">
+        <h3 className="text-lg font-bold">Peso da Tara</h3>
+        <p className="text-xs text-gray-300 mt-0.5">
           Informe o peso da tara para descontar do peso total
         </p>
       </div>
       
-      <div className="w-full border border-gray-700 rounded-lg overflow-hidden h-[320px]">
+      <div className="w-full border border-gray-700 rounded-lg overflow-hidden h-[380px]">
         <NumberPad 
           onSubmit={(value) => handleTaraInput(value)} 
           onClear={() => setTempTaraValue(0)}
@@ -313,13 +313,13 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
             setActiveSection('main');
             setTempTaraValue(0);
           }} 
-          className="flex-1 h-12 text-base"
+          className="flex-1 h-11 text-base"
         >
           Cancelar
         </Button>
         <Button 
           onClick={applyTaraValue}
-          className="flex-1 h-12 text-base bg-pdv-green hover:bg-pdv-green/90"
+          className="flex-1 h-11 text-base bg-pdv-green hover:bg-pdv-green/90"
         >
           Aplicar Tara
         </Button>
