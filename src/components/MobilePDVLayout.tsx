@@ -53,6 +53,11 @@ interface MobilePDVLayoutProps {
   // Menu Actions
   setShowAddFundsModal?: (show: boolean) => void;
   setShowMaterialsPrintModal?: (show: boolean) => void;
+  
+  // Callback para quando precisar navegar para a balança
+  onNavigateToScale?: () => void;
+  // Referência para permitir navegação externa à aba
+  setActiveTabRef?: (setter: (tab: MobileTab) => void) => void;
 }
 
 const MobilePDVLayout: React.FC<MobilePDVLayoutProps> = ({
@@ -81,9 +86,18 @@ const MobilePDVLayout: React.FC<MobilePDVLayoutProps> = ({
   updateCashRegisterBalance,
   handleMenuClick,
   setShowAddFundsModal,
-  setShowMaterialsPrintModal
+  setShowMaterialsPrintModal,
+  onNavigateToScale,
+  setActiveTabRef
 }) => {
   const [activeTab, setActiveTab] = useState<MobileTab>('scale');
+
+  // Expor o setter da aba para o pai poder controlar
+  useEffect(() => {
+    if (setActiveTabRef) {
+      setActiveTabRef(setActiveTab);
+    }
+  }, [setActiveTabRef]);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
