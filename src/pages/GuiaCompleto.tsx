@@ -281,19 +281,19 @@ const GuiaCompleto: React.FC = () => {
       </section>
 
       {/* Videos Grid */}
-      <section className="py-20 px-4">
+      <section className="py-12 md:py-20 px-3 md:px-4">
         <div className="container mx-auto">
           {loading ? (
             <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
-              <p className="text-gray-400">Carregando vídeos...</p>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
+              <p className="text-slate-400">Carregando vídeos...</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
               {videos.map((video, index) => (
                 <Card 
                   key={video.id} 
-                  className="bg-gradient-to-br from-gray-800/80 to-gray-900/90 border-2 border-gray-600/50 hover:border-green-500/70 transition-all duration-500 transform hover:scale-105 shadow-2xl relative group"
+                  className="bg-slate-800/90 border border-slate-700/50 hover:border-emerald-500/50 transition-all duration-300 shadow-lg hover:shadow-emerald-500/10 relative group overflow-hidden"
                 >
                   {/* Admin Controls */}
                   {isAdmin && (
@@ -332,44 +332,44 @@ const GuiaCompleto: React.FC = () => {
                     <img
                       src={video.cover_image_url || video.thumbnail_url || "/lovable-uploads/7e573df6-43ec-4eac-a025-777ac1ecdd0f.png"}
                       alt={video.title}
-                      className="w-full h-48 object-cover rounded-t-lg"
+                      className="w-full h-36 sm:h-40 md:h-48 object-cover"
                     />
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-t-lg opacity-0 hover:opacity-100 transition-opacity duration-300">
-                      <div className="w-16 h-16 bg-green-600/90 rounded-full flex items-center justify-center">
-                        <Play className="h-8 w-8 text-white ml-1" />
+                    <div className="absolute inset-0 bg-slate-900/60 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
+                      <div className="w-14 h-14 md:w-16 md:h-16 bg-emerald-600 rounded-full flex items-center justify-center shadow-lg">
+                        <Play className="h-6 w-6 md:h-8 md:w-8 text-white ml-1" />
                       </div>
                     </div>
                     {video.duration && (
-                      <div className="absolute top-4 right-4">
-                        <Badge className="bg-black/70 text-white">
+                      <div className="absolute top-2 right-2 md:top-4 md:right-4">
+                        <Badge className="bg-slate-900/80 text-slate-100 text-xs px-2 py-1">
                           <Clock className="h-3 w-3 mr-1" />
                           {video.duration}
                         </Badge>
                       </div>
                     )}
-                    <div className="absolute top-4 left-4">
-                      <Badge className="bg-green-600/90 text-white text-xs">
+                    <div className="absolute top-2 left-2 md:top-4 md:left-4">
+                      <Badge className="bg-emerald-600 text-white text-xs font-bold px-2 py-1">
                         #{index + 1}
                       </Badge>
                     </div>
                   </div>
                   
-                  <CardHeader>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge className="bg-green-600 text-white text-xs">
+                  <CardHeader className="p-3 md:p-4 pb-2">
+                    <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                      <Badge className="bg-emerald-600/20 text-emerald-400 border border-emerald-600/30 text-xs px-2 py-0.5">
                         {video.category}
                       </Badge>
-                      <Badge className={`${getDifficultyColor(video.difficulty)} text-white text-xs`}>
+                      <Badge className={`${getDifficultyColor(video.difficulty)} text-white text-xs px-2 py-0.5`}>
                         {video.difficulty}
                       </Badge>
                     </div>
-                    <CardTitle className="text-white text-lg font-bold leading-tight">
+                    <CardTitle className="text-white text-sm md:text-base font-bold leading-tight line-clamp-2">
                       {video.title}
                     </CardTitle>
                   </CardHeader>
                   
-                  <CardContent>
-                    <p className="text-gray-300 text-sm leading-relaxed">
+                  <CardContent className="p-3 md:p-4 pt-0">
+                    <p className="text-slate-400 text-xs md:text-sm leading-relaxed line-clamp-2">
                       {video.description}
                     </p>
                   </CardContent>
@@ -380,9 +380,9 @@ const GuiaCompleto: React.FC = () => {
 
           {!loading && videos.length === 0 && (
             <div className="text-center py-12">
-              <BookOpen className="h-16 w-16 mx-auto mb-4 text-gray-500" />
-              <h3 className="text-xl font-bold mb-2 text-gray-400">Nenhum vídeo disponível</h3>
-              <p className="text-gray-500">Os vídeos do guia estão sendo preparados.</p>
+              <BookOpen className="h-16 w-16 mx-auto mb-4 text-slate-500" />
+              <h3 className="text-xl font-bold mb-2 text-slate-400">Nenhum vídeo disponível</h3>
+              <p className="text-slate-500">Os vídeos do guia estão sendo preparados.</p>
             </div>
           )}
         </div>
