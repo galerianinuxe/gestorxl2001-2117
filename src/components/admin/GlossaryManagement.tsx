@@ -7,9 +7,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BookOpen, Plus, Edit, Trash2, Search, Eye } from 'lucide-react';
+import { BookOpen, Plus, Edit, Trash2, Search, Eye, ImageIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { AIImageGenerator } from './AIImageGenerator';
 
 interface GlossaryTerm {
   id: string;
@@ -40,7 +41,8 @@ export const GlossaryManagement = () => {
     examples: '',
     status: 'draft' as 'draft' | 'published',
     seo_title: '',
-    seo_description: ''
+    seo_description: '',
+    og_image: ''
   });
 
   useEffect(() => {
@@ -84,7 +86,7 @@ export const GlossaryManagement = () => {
         short_definition: form.short_definition,
         long_definition: form.long_definition || null,
         examples: form.examples || null,
-        status: form.status,
+        status: form.status as 'draft' | 'published',
         seo_title: form.seo_title || null,
         seo_description: form.seo_description || null
       };
@@ -130,7 +132,8 @@ export const GlossaryManagement = () => {
       examples: term.examples || '',
       status: term.status,
       seo_title: term.seo_title || '',
-      seo_description: term.seo_description || ''
+      seo_description: term.seo_description || '',
+      og_image: ''
     });
     setIsDialogOpen(true);
   };
@@ -139,7 +142,7 @@ export const GlossaryManagement = () => {
     setEditingTerm(null);
     setForm({
       term: '', slug: '', short_definition: '', long_definition: '', examples: '',
-      status: 'draft', seo_title: '', seo_description: ''
+      status: 'draft', seo_title: '', seo_description: '', og_image: ''
     });
   };
 
@@ -218,10 +221,18 @@ export const GlossaryManagement = () => {
                   <Textarea value={form.examples} onChange={(e) => setForm({ ...form, examples: e.target.value })} className="bg-gray-700 border-gray-600" rows={3} placeholder="Exemplos de uso do termo..." />
                 </div>
                 <div className="border-t border-gray-700 pt-4">
-                  <h4 className="text-sm font-medium text-gray-300 mb-3">SEO</h4>
+                  <h4 className="text-sm font-medium text-gray-300 mb-3">SEO & Imagem</h4>
                   <div className="grid gap-3">
                     <div><Label>Título SEO</Label><Input value={form.seo_title} onChange={(e) => setForm({ ...form, seo_title: e.target.value })} className="bg-gray-700 border-gray-600" /></div>
                     <div><Label>Meta Descrição</Label><Textarea value={form.seo_description} onChange={(e) => setForm({ ...form, seo_description: e.target.value })} className="bg-gray-700 border-gray-600" rows={2} /></div>
+                    <div>
+                      <Label className="flex items-center gap-2 mb-2"><ImageIcon className="h-4 w-4" />Imagem Ilustrativa</Label>
+                      <div className="flex gap-2">
+                        <Input value={form.og_image} onChange={(e) => setForm({ ...form, og_image: e.target.value })} placeholder="URL da imagem (opcional)" className="bg-gray-700 border-gray-600 flex-1" />
+                        <AIImageGenerator title={form.term} content={form.short_definition} articleType="glossary" currentImage={form.og_image} onImageGenerated={(url) => setForm({ ...form, og_image: url })} />
+                      </div>
+                      {form.og_image && <img src={form.og_image} alt="Preview" className="mt-2 w-full h-24 object-cover rounded-lg" onError={(e) => (e.currentTarget.style.display = 'none')} />}
+                    </div>
                   </div>
                 </div>
               </div>

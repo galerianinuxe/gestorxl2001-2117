@@ -7,9 +7,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { HelpCircle, Plus, Edit, Trash2, Search, Eye, FolderOpen } from 'lucide-react';
+import { HelpCircle, Plus, Edit, Trash2, Search, Eye, FolderOpen, ImageIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { AIImageGenerator } from './AIImageGenerator';
 
 interface HelpArticle {
   id: string;
@@ -22,6 +23,7 @@ interface HelpArticle {
   module: string | null;
   seo_title: string | null;
   seo_description: string | null;
+  og_image: string | null;
   view_count: number | null;
   created_at: string;
 }
@@ -65,7 +67,8 @@ export const HelpArticlesManagement = () => {
     category_id: '',
     module: '' as SystemModule | '',
     seo_title: '',
-    seo_description: ''
+    seo_description: '',
+    og_image: ''
   });
 
   useEffect(() => {
@@ -115,6 +118,7 @@ export const HelpArticlesManagement = () => {
         module: (form.module || null) as SystemModule | null,
         seo_title: form.seo_title || null,
         seo_description: form.seo_description || null,
+        og_image: form.og_image || null,
         reading_time_minutes: Math.ceil((form.content_md?.split(' ').length || 0) / 200)
       };
 
@@ -160,7 +164,8 @@ export const HelpArticlesManagement = () => {
       category_id: article.category_id || '',
       module: (article.module || '') as SystemModule | '',
       seo_title: article.seo_title || '',
-      seo_description: article.seo_description || ''
+      seo_description: article.seo_description || '',
+      og_image: article.og_image || ''
     });
     setIsDialogOpen(true);
   };
@@ -169,7 +174,7 @@ export const HelpArticlesManagement = () => {
     setEditingArticle(null);
     setForm({
       title: '', slug: '', excerpt: '', content_md: '', status: 'draft',
-      category_id: '', module: '', seo_title: '', seo_description: ''
+      category_id: '', module: '', seo_title: '', seo_description: '', og_image: ''
     });
   };
 
@@ -262,10 +267,18 @@ export const HelpArticlesManagement = () => {
                   <Textarea value={form.content_md} onChange={(e) => setForm({ ...form, content_md: e.target.value })} className="bg-gray-700 border-gray-600 font-mono text-sm" rows={10} />
                 </div>
                 <div className="border-t border-gray-700 pt-4">
-                  <h4 className="text-sm font-medium text-gray-300 mb-3">SEO</h4>
+                  <h4 className="text-sm font-medium text-gray-300 mb-3">SEO & Imagem</h4>
                   <div className="grid gap-3">
                     <div><Label>Título SEO</Label><Input value={form.seo_title} onChange={(e) => setForm({ ...form, seo_title: e.target.value })} className="bg-gray-700 border-gray-600" /></div>
                     <div><Label>Meta Descrição</Label><Textarea value={form.seo_description} onChange={(e) => setForm({ ...form, seo_description: e.target.value })} className="bg-gray-700 border-gray-600" rows={2} /></div>
+                    <div>
+                      <Label className="flex items-center gap-2 mb-2"><ImageIcon className="h-4 w-4" />Imagem de Capa</Label>
+                      <div className="flex gap-2">
+                        <Input value={form.og_image} onChange={(e) => setForm({ ...form, og_image: e.target.value })} placeholder="URL da imagem" className="bg-gray-700 border-gray-600 flex-1" />
+                        <AIImageGenerator title={form.title} content={form.content_md} articleType="help" currentImage={form.og_image} onImageGenerated={(url) => setForm({ ...form, og_image: url })} />
+                      </div>
+                      {form.og_image && <img src={form.og_image} alt="Preview" className="mt-2 w-full h-24 object-cover rounded-lg" onError={(e) => (e.currentTarget.style.display = 'none')} />}
+                    </div>
                   </div>
                 </div>
               </div>
