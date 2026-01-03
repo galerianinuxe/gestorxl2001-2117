@@ -7,9 +7,10 @@ import NumberPad from "./NumberPad";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import PasswordPromptModal from "./PasswordPromptModal";
 import { useStockCalculation } from "@/hooks/useStockCalculation";
-import { Package } from "lucide-react";
+import { Package, Scale } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { getCanonicalKey } from '@/utils/materialNormalization';
+import { useIsMobile, useIsTablet } from "@/hooks/use-mobile";
 
 interface MaterialModalProps {
   open: boolean;
@@ -19,6 +20,7 @@ interface MaterialModalProps {
   onAdd: (taraValue?: number, adjustedPrice?: number, netWeight?: number) => void; // Add netWeight parameter
   onCancel: () => void;
   isSaleMode?: boolean;       // Add isSaleMode prop
+  onRequestWeight?: () => void; // Handler to redirect to weight input (mobile)
 }
 
 const MaterialModal: React.FC<MaterialModalProps> = ({
@@ -28,8 +30,12 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
   total,
   onAdd,
   onCancel,
-  isSaleMode = false
+  isSaleMode = false,
+  onRequestWeight
 }) => {
+  const isMobile = useIsMobile();
+  const isTablet = useIsTablet();
+  const isMobileOrTablet = isMobile || isTablet;
   const [showTaraPopover, setShowTaraPopover] = useState(false);
   const [showDiferencaPopover, setShowDiferencaPopover] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -479,13 +485,27 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
           
           <DialogFooter className="mt-4 flex flex-row gap-2">
             <Button variant="secondary" onClick={onCancel} type="button">Cancelar</Button>
-            <Button 
-              onClick={() => onAdd(taraValue, valorFinal, pesoLiquido)} 
-              disabled={!isPesoValido}
-              className={`${isPesoValido ? 'bg-pdv-green hover:bg-pdv-green/90' : 'bg-gray-500'}`}
-            >
-              Adicionar
-            </Button>
+            {/* Show "Inserir Peso" button on mobile/tablet when peso is zero */}
+            {isMobileOrTablet && !isPesoValido && onRequestWeight ? (
+              <Button 
+                onClick={() => {
+                  onCancel();
+                  onRequestWeight();
+                }}
+                className="bg-amber-600 hover:bg-amber-700 flex items-center gap-2"
+              >
+                <Scale className="h-4 w-4" />
+                Inserir Peso
+              </Button>
+            ) : (
+              <Button 
+                onClick={() => onAdd(taraValue, valorFinal, pesoLiquido)} 
+                disabled={!isPesoValido}
+                className={`${isPesoValido ? 'bg-pdv-green hover:bg-pdv-green/90' : 'bg-gray-500'}`}
+              >
+                Adicionar
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

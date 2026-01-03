@@ -8,18 +8,15 @@ export const cleanMaterialName = (materialName: string): string => {
   // This handles cases where the name gets corrupted with extra zeros
   let cleanedName = materialName.trim();
   
-  // Keep removing trailing "0" characters until there are none left
-  // But ensure we don't remove all characters if the name is just "0"
-  while (cleanedName.endsWith('0') && cleanedName.length > 1) {
-    cleanedName = cleanedName.slice(0, -1).trim();
-  }
-  
-  // Only log in development mode to reduce production noise
-  if (import.meta.env.DEV && materialName !== cleanedName) {
-    console.log('Material name cleaned:', {
-      original: materialName,
-      cleaned: cleanedName
-    });
+  // Remove trailing zeros that are directly attached to text (e.g., "Alum chap0" -> "Alum chap")
+  // But don't remove zeros that are part of meaningful names like "H2O" or numbers like "100"
+  // Only remove if the zero is at the very end and preceded by a letter
+  if (cleanedName.length > 1 && cleanedName.endsWith('0')) {
+    const secondToLast = cleanedName[cleanedName.length - 2];
+    // Only remove if the character before '0' is a letter (not a number)
+    if (/[a-zA-Z\s]/.test(secondToLast)) {
+      cleanedName = cleanedName.slice(0, -1).trim();
+    }
   }
   
   return cleanedName;
