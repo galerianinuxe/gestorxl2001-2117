@@ -30,10 +30,7 @@ import { useUserPresence } from '@/hooks/useUserPresence';
 import ErrorReportsModal from '@/components/admin/ErrorReportsModal';
 import { BroadcastNotificationModal } from '@/components/admin/BroadcastNotificationModal';
 import { supabase } from '@/integrations/supabase/client';
-import { SecurityPanel } from '@/components/admin/SecurityPanel';
-import { AccessLogsPanel } from '@/components/admin/AccessLogsPanel';
-import { AuditLogsPanel } from '@/components/admin/AuditLogsPanel';
-import { SecurityBlocksPanel } from '@/components/admin/SecurityBlocksPanel';
+import { SecurityDashboard } from '@/components/admin/SecurityDashboard';
 import { FeatureFlagsPanel } from '@/components/admin/FeatureFlagsPanel';
 import { FinancialDashboard } from '@/components/admin/FinancialDashboard';
 
@@ -142,13 +139,10 @@ const Covildomal = () => {
       case 'landing':
         return <LandingManagement />;
       case 'seguranca':
-        return <SecurityPanel />;
       case 'access-logs':
-        return <AccessLogsPanel />;
       case 'audit-logs':
-        return <AuditLogsPanel />;
       case 'bloqueios':
-        return <SecurityBlocksPanel />;
+        return <SecurityDashboard />;
       case 'sistema':
         return <SystemManagement />;
       case 'feature-flags':
