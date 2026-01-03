@@ -54,8 +54,9 @@ export const TableOfContents = ({ content }: TableOfContentsProps) => {
   if (items.length < 2) return null;
 
   return (
-    <nav className="sticky top-24 space-y-2">
-      <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-4">
+    <nav className="sticky top-24 p-5 bg-slate-50 rounded-xl border border-slate-100">
+      <h4 className="font-semibold text-sm text-slate-800 mb-4 flex items-center gap-2">
+        <span className="text-emerald-600">📋</span>
         Neste artigo
       </h4>
       <ul className="space-y-1">
@@ -64,11 +65,11 @@ export const TableOfContents = ({ content }: TableOfContentsProps) => {
             <a
               href={`#${item.id}`}
               className={`
-                block text-sm py-1 transition-colors border-l-2
-                ${item.level === 3 ? 'pl-6' : 'pl-3'}
+                block text-sm py-1.5 transition-all border-l-2 rounded-r-md
+                ${item.level === 3 ? 'pl-5' : 'pl-3'}
                 ${activeId === item.id
-                  ? 'text-primary border-primary font-medium'
-                  : 'text-muted-foreground hover:text-foreground border-transparent'
+                  ? 'text-emerald-700 border-emerald-500 bg-emerald-50 font-medium'
+                  : 'text-slate-600 hover:text-emerald-600 hover:bg-slate-100 border-transparent'
                 }
               `}
             >
