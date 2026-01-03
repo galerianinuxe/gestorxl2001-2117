@@ -298,7 +298,7 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
         </p>
       </div>
       
-      <div className="w-full border border-gray-700 rounded-lg overflow-hidden h-[380px]">
+      <div className="w-full border border-gray-700 rounded-lg overflow-hidden h-[420px]">
         <NumberPad 
           onSubmit={(value) => handleTaraInput(value)} 
           onClear={() => setTempTaraValue(0)}
