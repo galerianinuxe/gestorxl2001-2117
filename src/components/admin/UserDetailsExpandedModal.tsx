@@ -644,7 +644,7 @@ const UserDetailsExpandedModal: React.FC<UserDetailsExpandedModalProps> = ({
                     <LogIn className="h-4 w-4 text-emerald-400" />
                     Últimos 50 Logins
                   </CardTitle>
-                  <Button variant="outline" size="sm" onClick={fetchUserData} disabled={loading} className="border-[hsl(220,13%,26%)] text-white hover:bg-[hsl(220,13%,22%)]">
+                  <Button variant="outline" size="sm" onClick={fetchUserData} disabled={loading} className="bg-gray-700 hover:bg-gray-600 text-white border-gray-600">
                     <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                     Atualizar
                   </Button>

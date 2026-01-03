@@ -269,7 +269,7 @@ Sitemap: https://xlata.site/sitemap.xml`,
                 {seoScore()}%
               </div>
               <div className="flex gap-2">
-                <Button onClick={handleRegenerateSitemap} disabled={regeneratingSitemap} variant="outline" className="border-[hsl(220,13%,26%)] text-white hover:bg-[hsl(220,13%,22%)]">
+                <Button onClick={handleRegenerateSitemap} disabled={regeneratingSitemap} className="bg-gray-700 hover:bg-gray-600 text-white border border-gray-600">
                   {regeneratingSitemap ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <Globe className="h-4 w-4 mr-2" />}
                   Atualizar Sitemap
                 </Button>
