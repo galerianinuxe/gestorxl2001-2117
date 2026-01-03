@@ -113,7 +113,6 @@ const menuGroups: MenuGroup[] = [
     icon: DollarSign,
     items: [
       { id: 'financeiro', title: 'Dashboard', icon: DollarSign },
-      { id: 'planos', title: 'Planos', icon: CreditCard, requiredRole: 'admin_master' },
     ],
     requiredRole: 'admin_operacional'
   },
