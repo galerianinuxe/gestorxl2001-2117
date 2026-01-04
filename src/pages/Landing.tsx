@@ -366,6 +366,7 @@ const Landing: React.FC = () => {
         companyPhone={contentSettings.company_phone} 
       />
 
+      <main role="main">
       {/* Hero Section - Clean & Professional */}
       <section 
         className="pt-16 pb-10 lg:pt-24 lg:pb-16 px-4 relative min-h-[60vh] lg:min-h-[75vh] flex items-center"
@@ -577,10 +578,14 @@ const Landing: React.FC = () => {
                     </div>
                     
                     <div className="flex items-center gap-3 mb-4">
-                      {testimonial.profileImage ? (
+                    {testimonial.profileImage ? (
                         <img 
                           src={testimonial.profileImage} 
                           alt={testimonial.name}
+                          width={40}
+                          height={40}
+                          loading="lazy"
+                          decoding="async"
                           className="w-10 h-10 rounded-full object-cover border-2 border-gray-700" 
                         />
                       ) : (
@@ -766,6 +771,7 @@ const Landing: React.FC = () => {
           </div>
         </div>
       </section>
+      </main>
 
       {/* Footer */}
       <footer className="bg-gray-950 py-8 lg:py-10 px-4 border-t border-gray-900">

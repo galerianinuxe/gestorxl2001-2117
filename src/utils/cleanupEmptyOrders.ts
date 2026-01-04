@@ -1,12 +1,18 @@
 import { getCustomers, saveCustomer, removeCustomer } from './supabaseStorage';
 import { Customer } from '../types/pdv';
+import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Remove pedidos em aberto vazios (sem itens) que foram criados há mais de 5 minutos
  */
 export const cleanupEmptyOrders = async (): Promise<void> => {
   try {
-    console.log('Iniciando limpeza de pedidos vazios...');
+    // Verificar se usuário está autenticado antes de executar
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      // Usuário não autenticado - não executar limpeza silenciosamente
+      return;
+    }
     
     const customers = await getCustomers();
     const now = new Date();

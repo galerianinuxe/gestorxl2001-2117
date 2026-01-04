@@ -39,7 +39,12 @@ const SystemLogo: React.FC<SystemLogoProps> = ({
       <img 
         src={logoUrl || fallbackSrc}
         alt={companyName}
+        width={size === 'sm' ? 32 : size === 'md' ? 134 : 64}
+        height={size === 'sm' ? 32 : size === 'md' ? 48 : 64}
         className={`${sizeClasses[size]} object-contain`}
+        fetchPriority={size === 'md' ? 'high' : 'auto'}
+        loading={size === 'md' ? 'eager' : 'lazy'}
+        decoding={size === 'md' ? 'sync' : 'async'}
         onError={(e) => {
           const target = e.target as HTMLImageElement;
           if (target.src !== fallbackSrc) {
