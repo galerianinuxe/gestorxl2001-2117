@@ -359,7 +359,7 @@ const Materials = () => {
   return (
     <div className="min-h-screen bg-slate-900 text-white p-3 sm:p-4 md:p-6">
       {/* Header */}
-      <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 mb-4">
+      <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 mb-4" data-tutorial="materials-header">
         <div className="flex items-center gap-3">
           <Link to="/">
             <Button variant="outline" size="icon" className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600">
@@ -390,6 +390,7 @@ const Materials = () => {
             variant="outline"
             className="bg-slate-700 border-amber-500/50 text-amber-400 hover:bg-amber-500/20 hover:text-amber-300 flex-1 sm:flex-none" 
             disabled={loading}
+            data-tutorial="default-materials-button"
           >
             <Download className="h-4 w-4 sm:mr-2" /> 
             <span className="hidden sm:inline">Materiais Padrão</span>
@@ -398,6 +399,7 @@ const Materials = () => {
             onClick={handleAddMaterial} 
             className="bg-emerald-600 hover:bg-emerald-500 text-white flex-1 sm:flex-none" 
             disabled={loading}
+            data-tutorial="add-material-button"
           >
             <Plus className="h-4 w-4 sm:mr-2" /> 
             <span className="hidden sm:inline">Adicionar</span>
@@ -437,11 +439,12 @@ const Materials = () => {
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-2">
-                {filteredMaterials.map(material => (
+                {filteredMaterials.map((material, index) => (
                   <Card 
                     key={material.id} 
                     className="bg-slate-700 border-slate-600 relative group hover:bg-slate-600 hover:border-emerald-500/50 cursor-pointer transition-all duration-200"
                     onClick={e => handleCardClick(material, e)}
+                    data-tutorial={index === 0 ? "material-card" : undefined}
                   >
                     {/* Delete Button */}
                     <Button 

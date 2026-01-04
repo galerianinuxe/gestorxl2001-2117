@@ -314,7 +314,7 @@ const Settings: React.FC = () => {
             </CardHeader>
             <CardContent className="space-y-4 px-4">
               {/* Logo upload */}
-              <div className="space-y-2">
+              <div className="space-y-2" data-tutorial="logo-upload">
                 <Label className="block text-sm text-slate-300 font-medium" htmlFor="logo">
                   Logotipo da empresa
                 </Label>
@@ -355,7 +355,7 @@ const Settings: React.FC = () => {
               </div>
 
               {/* WhatsApp numbers */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" data-tutorial="whatsapp-input">
                 <div className="space-y-1.5">
                   <Label className="block text-sm text-slate-300 font-medium" htmlFor="whatsapp1">
                     WhatsApp 1
@@ -388,7 +388,7 @@ const Settings: React.FC = () => {
               </div>
 
               {/* Address */}
-              <div className="space-y-1.5">
+              <div className="space-y-1.5" data-tutorial="address-input">
                 <Label className="block text-sm text-slate-300 font-medium" htmlFor="address">
                   Endereço da empresa
                 </Label>
@@ -404,7 +404,7 @@ const Settings: React.FC = () => {
               </div>
 
               {/* Advanced Receipt Config Button */}
-              <div className="space-y-1.5">
+              <div className="space-y-1.5" data-tutorial="receipt-format">
                 <Label className="block text-sm text-slate-300 font-medium">
                   Configurações de Comprovante
                 </Label>
@@ -427,6 +427,7 @@ const Settings: React.FC = () => {
                 onClick={handleSave}
                 disabled={saving}
                 className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold w-full h-12 mt-4"
+                data-tutorial="save-button"
               >
                 <Save className="mr-2 h-5 w-5" /> 
                 {saving ? "Salvando..." : "Salvar Configurações"}

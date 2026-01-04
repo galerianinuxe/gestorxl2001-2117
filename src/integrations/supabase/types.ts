@@ -2075,6 +2075,8 @@ export type Database = {
           is_active: boolean | null
           last_login_at: string | null
           name: string | null
+          onboarding_completed: boolean | null
+          onboarding_progress: Json | null
           phone: string | null
           ref_key: string | null
           status: Database["public"]["Enums"]["user_status"]
@@ -2092,6 +2094,8 @@ export type Database = {
           is_active?: boolean | null
           last_login_at?: string | null
           name?: string | null
+          onboarding_completed?: boolean | null
+          onboarding_progress?: Json | null
           phone?: string | null
           ref_key?: string | null
           status?: Database["public"]["Enums"]["user_status"]
@@ -2109,6 +2113,8 @@ export type Database = {
           is_active?: boolean | null
           last_login_at?: string | null
           name?: string | null
+          onboarding_completed?: boolean | null
+          onboarding_progress?: Json | null
           phone?: string | null
           ref_key?: string | null
           status?: Database["public"]["Enums"]["user_status"]

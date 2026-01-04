@@ -1,0 +1,81 @@
+import React, { useEffect, useState } from 'react';
+import { cn } from '@/lib/utils';
+
+interface OnboardingSpotlightProps {
+  targetRef: React.RefObject<HTMLElement>;
+  isActive?: boolean;
+  padding?: number;
+  borderRadius?: number;
+  onClick?: () => void;
+}
+
+export function OnboardingSpotlight({
+  targetRef,
+  isActive = true,
+  padding = 8,
+  borderRadius = 8,
+  onClick
+}: OnboardingSpotlightProps) {
+  const [rect, setRect] = useState<DOMRect | null>(null);
+
+  useEffect(() => {
+    if (!targetRef.current || !isActive) return;
+
+    const updateRect = () => {
+      const targetRect = targetRef.current!.getBoundingClientRect();
+      setRect(targetRect);
+    };
+
+    updateRect();
+
+    // Scroll element into view
+    targetRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    window.addEventListener('resize', updateRect);
+    window.addEventListener('scroll', updateRect);
+
+    return () => {
+      window.removeEventListener('resize', updateRect);
+      window.removeEventListener('scroll', updateRect);
+    };
+  }, [targetRef, isActive]);
+
+  if (!isActive || !rect) return null;
+
+  const spotlightStyle = {
+    top: rect.top - padding,
+    left: rect.left - padding,
+    width: rect.width + padding * 2,
+    height: rect.height + padding * 2,
+    borderRadius: borderRadius
+  };
+
+  return (
+    <>
+      {/* Overlay escuro */}
+      <div 
+        className="fixed inset-0 z-[9998] pointer-events-auto"
+        onClick={onClick}
+        style={{
+          background: `radial-gradient(
+            ellipse at ${rect.left + rect.width / 2}px ${rect.top + rect.height / 2}px,
+            transparent ${Math.max(rect.width, rect.height) / 2 + padding}px,
+            rgba(0, 0, 0, 0.85) ${Math.max(rect.width, rect.height) / 2 + padding + 50}px
+          )`
+        }}
+      />
+
+      {/* Borda do spotlight */}
+      <div 
+        className="fixed z-[9998] pointer-events-none border-2 border-green-500 shadow-[0_0_0_9999px_rgba(0,0,0,0.75)]"
+        style={spotlightStyle}
+      >
+        {/* Animação de pulso */}
+        <div 
+          className="absolute inset-0 border-2 border-green-400 animate-ping opacity-75"
+          style={{ borderRadius: borderRadius }}
+        />
+      </div>
+    </>
+  );
+}
