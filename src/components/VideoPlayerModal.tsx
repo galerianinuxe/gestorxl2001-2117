@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { X } from 'lucide-react';
+import { X, Play } from 'lucide-react';
 
 interface VideoPlayerModalProps {
   isOpen: boolean;
@@ -17,17 +17,27 @@ const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
   title
 }) => {
   const getYouTubeEmbedUrl = (url: string) => {
-    // Extrair ID do vídeo do YouTube de diferentes formatos de URL
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
+    if (!url) return null;
     
-    if (match && match[2].length === 11) {
-      return `https://www.youtube.com/embed/${match[2]}?autoplay=1&rel=0`;
+    // Se já for um embed URL
+    if (url.includes('youtube.com/embed/')) {
+      return url.includes('?') ? url : `${url}?rel=0&modestbranding=1`;
     }
     
-    // Se já for um embed URL, usar diretamente
-    if (url.includes('youtube.com/embed/')) {
-      return url;
+    // Diferentes formatos de URL do YouTube
+    const patterns = [
+      /youtu\.be\/([a-zA-Z0-9_-]{11})/,
+      /youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/,
+      /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
+      /youtube\.com\/v\/([a-zA-Z0-9_-]{11})/,
+      /[?&]v=([a-zA-Z0-9_-]{11})/,
+    ];
+    
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match && match[1]) {
+        return `https://www.youtube.com/embed/${match[1]}?autoplay=1&rel=0&modestbranding=1`;
+      }
     }
     
     return null;
@@ -57,14 +67,19 @@ const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
             <iframe
               src={embedUrl}
               title={title}
-              className="w-full h-full"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              className="w-full h-full border-0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
+              referrerPolicy="strict-origin-when-cross-origin"
+              loading="lazy"
             />
           ) : (
-            <div className="flex items-center justify-center h-full text-white">
-              <p>URL de vídeo inválida</p>
+            <div className="flex flex-col items-center justify-center h-full text-white bg-gray-900">
+              <Play className="h-16 w-16 text-gray-500 mb-4" />
+              <p className="text-lg font-semibold">Vídeo não disponível</p>
+              <p className="text-gray-400 text-sm mt-2">
+                URL: {videoUrl || 'Nenhuma URL fornecida'}
+              </p>
             </div>
           )}
         </div>

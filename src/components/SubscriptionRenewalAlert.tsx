@@ -82,8 +82,8 @@ const SubscriptionRenewalAlert: React.FC = () => {
 
         setDaysRemaining(diffDays);
 
-        // Mostrar alerta se faltam 7 dias ou menos
-        if (diffDays > 0 && diffDays <= 7) {
+        // Mostrar alerta se faltam 3 dias ou menos
+        if (diffDays > 0 && diffDays <= 3) {
           checkAndShowAlert(diffDays);
         }
       }
