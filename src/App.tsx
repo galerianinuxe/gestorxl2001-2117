@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "./hooks/useAuth";
 import { SubscriptionSyncProvider } from "./components/SubscriptionSyncProvider";
+import { OnboardingProvider } from "./contexts/OnboardingContext";
 import { useSEO } from "./hooks/useSEO";
 import AuthGuard from "./components/AuthGuard";
 import WhatsAppSupportButton from "./components/WhatsAppSupportButton";
@@ -16,6 +17,7 @@ import SubscriptionRenewalAlert from "./components/SubscriptionRenewalAlert";
 import { useUserPresence } from "./hooks/useUserPresence";
 import { MainLayout } from "./components/MainLayout";
 import { DirectMessageProvider } from "./components/DirectMessageProvider";
+import { OnboardingChecklist } from "./components/onboarding/OnboardingChecklist";
 
 // Code splitting: lazy load de todas as páginas
 import { lazy, Suspense } from 'react';
@@ -323,6 +325,9 @@ const AppContent = () => {
         <Route path="*" element={<NotFound />} />
       </Routes>
       
+      {/* Checklist de onboarding flutuante */}
+      <OnboardingChecklist />
+      
       <WhatsAppSupportButton />
       
       {/* Modal de mensagem em tempo real */}
@@ -345,13 +350,15 @@ const App = () => (
       <TooltipProvider>
         <BrowserRouter>
           <AuthProvider>
-            <SubscriptionSyncProvider>
-              <DirectMessageProvider>
-                <Toaster />
-                <Sonner position="top-center" richColors closeButton duration={0} />
-                <AppContent />
-              </DirectMessageProvider>
-            </SubscriptionSyncProvider>
+            <OnboardingProvider>
+              <SubscriptionSyncProvider>
+                <DirectMessageProvider>
+                  <Toaster />
+                  <Sonner position="top-center" richColors closeButton duration={0} />
+                  <AppContent />
+                </DirectMessageProvider>
+              </SubscriptionSyncProvider>
+            </OnboardingProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

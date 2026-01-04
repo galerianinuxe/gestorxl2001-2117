@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useNavigate } from 'react-router-dom';
 import { BookOpen, Loader2, CheckCircle, Sparkles } from 'lucide-react';
 import { useTrialActivation } from '@/utils/trialActivation';
 import { toast } from '@/hooks/use-toast';
@@ -11,14 +10,15 @@ interface FirstLoginModalProps {
   open: boolean;
   onClose: () => void;
   userName: string;
+  onTrialActivated?: () => void;
 }
 
 export const FirstLoginModal: React.FC<FirstLoginModalProps> = ({
   open,
   onClose,
-  userName
+  userName,
+  onTrialActivated
 }) => {
-  const navigate = useNavigate();
   const [isActivating, setIsActivating] = useState(false);
   const [trialActivated, setTrialActivated] = useState(false);
   const { activateUserTrial } = useTrialActivation();
@@ -36,10 +36,10 @@ export const FirstLoginModal: React.FC<FirstLoginModalProps> = ({
           description: result.message,
         });
         
-        // Aguardar 1.5s para usuário ver o sucesso, então redirecionar
+        // Aguardar 1.5s para usuário ver o sucesso, então abrir onboarding
         setTimeout(() => {
-          navigate('/guia-completo');
           onClose();
+          onTrialActivated?.();
         }, 1500);
       } else {
         toast({
