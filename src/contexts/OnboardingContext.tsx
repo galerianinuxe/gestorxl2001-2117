@@ -9,6 +9,8 @@ export interface OnboardingProgress {
   featureUnlocks: string[];
   startedAt: string | null;
   completedAt: string | null;
+  subStepsCompleted: Record<number, string[]>; // stepId -> [subStepIds]
+  currentSubStep: string | null;
 }
 
 interface OnboardingContextType {
@@ -24,12 +26,16 @@ interface OnboardingContextType {
   resetOnboarding: () => Promise<void>;
   markPageVisited: (page: string) => Promise<void>;
   unlockFeature: (feature: string) => Promise<void>;
+  completeSubStep: (stepId: number, subStepId: string) => Promise<void>;
+  setCurrentSubStep: (subStepId: string | null) => void;
   
   // Helpers
   isStepCompleted: (step: number) => boolean;
   isFeatureUnlocked: (feature: string) => boolean;
   hasVisitedPage: (page: string) => boolean;
   getUnlockedFeatures: () => string[];
+  isSubStepCompleted: (stepId: number, subStepId: string) => boolean;
+  getSubStepProgress: (stepId: number) => { completed: number; total: number };
 }
 
 const defaultProgress: OnboardingProgress = {
@@ -38,7 +44,29 @@ const defaultProgress: OnboardingProgress = {
   pageVisits: {},
   featureUnlocks: [],
   startedAt: null,
-  completedAt: null
+  completedAt: null,
+  subStepsCompleted: {},
+  currentSubStep: null
+};
+
+// Definição de sub-passos para cada etapa
+export const STEP_SUB_STEPS: Record<number, { id: string; label: string; hint: string; selector: string }[]> = {
+  1: [
+    { id: 'logo', label: 'Adicionar logo', hint: 'Clique para adicionar o logo', selector: '[data-tutorial="logo-upload"]' },
+    { id: 'whatsapp1', label: 'Preencher WhatsApp', hint: 'Informe seu WhatsApp', selector: '[data-tutorial="whatsapp-input"]' },
+    { id: 'address', label: 'Preencher endereço', hint: 'Informe o endereço', selector: '[data-tutorial="address-input"]' },
+    { id: 'receipt', label: 'Escolher formato', hint: 'Escolha o formato do comprovante', selector: '[data-tutorial="receipt-format"]' },
+    { id: 'save', label: 'Salvar configurações', hint: 'Clique em Salvar', selector: '[data-tutorial="save-button"]' },
+  ],
+  2: [
+    { id: 'add', label: 'Adicionar material', hint: 'Adicione um material', selector: '[data-tutorial="add-material"]' },
+    { id: 'price-buy', label: 'Configurar preço de compra', hint: 'Defina o preço de compra', selector: '[data-tutorial="price-buy"]' },
+    { id: 'price-sell', label: 'Configurar preço de venda', hint: 'Defina o preço de venda', selector: '[data-tutorial="price-sell"]' },
+  ],
+  3: [
+    { id: 'open', label: 'Abrir caixa', hint: 'Clique para abrir o caixa', selector: '[data-tutorial="open-cash"]' },
+    { id: 'confirm', label: 'Confirmar abertura', hint: 'Confirme o valor inicial', selector: '[data-tutorial="confirm-cash"]' },
+  ]
 };
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
@@ -233,6 +261,44 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     return progress.featureUnlocks;
   }, [progress.featureUnlocks, onboardingCompleted]);
 
+  const completeSubStep = useCallback(async (stepId: number, subStepId: string) => {
+    const currentSubSteps = progress.subStepsCompleted[stepId] || [];
+    if (currentSubSteps.includes(subStepId)) return;
+
+    const newSubStepsCompleted = {
+      ...progress.subStepsCompleted,
+      [stepId]: [...currentSubSteps, subStepId]
+    };
+
+    const newProgress: OnboardingProgress = {
+      ...progress,
+      subStepsCompleted: newSubStepsCompleted
+    };
+
+    await saveProgress(newProgress);
+  }, [progress, user]);
+
+  const setCurrentSubStep = useCallback((subStepId: string | null) => {
+    setProgress(prev => ({
+      ...prev,
+      currentSubStep: subStepId
+    }));
+  }, []);
+
+  const isSubStepCompleted = useCallback((stepId: number, subStepId: string) => {
+    const subSteps = progress.subStepsCompleted[stepId] || [];
+    return subSteps.includes(subStepId);
+  }, [progress.subStepsCompleted]);
+
+  const getSubStepProgress = useCallback((stepId: number) => {
+    const stepSubSteps = STEP_SUB_STEPS[stepId] || [];
+    const completedSubSteps = progress.subStepsCompleted[stepId] || [];
+    return {
+      completed: completedSubSteps.length,
+      total: stepSubSteps.length
+    };
+  }, [progress.subStepsCompleted]);
+
   const isOnboardingActive = useMemo(() => {
     return !onboardingCompleted && progress.currentStep > 0;
   }, [onboardingCompleted, progress.currentStep]);
@@ -247,10 +313,14 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     resetOnboarding,
     markPageVisited,
     unlockFeature,
+    completeSubStep,
+    setCurrentSubStep,
     isStepCompleted,
     isFeatureUnlocked,
     hasVisitedPage,
-    getUnlockedFeatures
+    getUnlockedFeatures,
+    isSubStepCompleted,
+    getSubStepProgress
   }), [
     progress,
     isOnboardingActive,
@@ -261,10 +331,14 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     resetOnboarding,
     markPageVisited,
     unlockFeature,
+    completeSubStep,
+    setCurrentSubStep,
     isStepCompleted,
     isFeatureUnlocked,
     hasVisitedPage,
-    getUnlockedFeatures
+    getUnlockedFeatures,
+    isSubStepCompleted,
+    getSubStepProgress
   ]);
 
   return (
