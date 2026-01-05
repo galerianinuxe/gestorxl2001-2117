@@ -1,7 +1,8 @@
 
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { X, Play } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { X, Play, ExternalLink } from 'lucide-react';
 
 interface VideoPlayerModalProps {
   isOpen: boolean;
@@ -16,6 +17,15 @@ const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
   videoUrl,
   title
 }) => {
+  const [loadError, setLoadError] = useState(false);
+
+  // Reset error state when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setLoadError(false);
+    }
+  }, [isOpen]);
+
   const getYouTubeEmbedUrl = (url: string) => {
     if (!url) return null;
     
@@ -31,12 +41,16 @@ const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
     for (const pattern of patterns) {
       const match = url.match(pattern);
       if (match && match[1]) {
-        // Usar youtube-nocookie.com para evitar bloqueios e melhor privacidade
+        // Usar youtube-nocookie.com para melhor privacidade
         return `https://www.youtube-nocookie.com/embed/${match[1]}?autoplay=1&rel=0&modestbranding=1&playsinline=1`;
       }
     }
     
     return null;
+  };
+
+  const openInYouTube = () => {
+    window.open(videoUrl, '_blank', 'noopener,noreferrer');
   };
 
   const embedUrl = getYouTubeEmbedUrl(videoUrl);
@@ -56,29 +70,57 @@ const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
               <X className="h-6 w-6" />
             </button>
           </div>
+          <DialogDescription className="sr-only">
+            Player de vídeo para {title}
+          </DialogDescription>
         </DialogHeader>
         
         <div className="aspect-video w-full">
-          {embedUrl ? (
+          {embedUrl && !loadError ? (
             <iframe
               src={embedUrl}
               title={title}
               className="w-full h-full border-0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
-              referrerPolicy="strict-origin-when-cross-origin"
+              referrerPolicy="no-referrer-when-downgrade"
               loading="lazy"
+              onError={() => setLoadError(true)}
             />
           ) : (
-            <div className="flex flex-col items-center justify-center h-full text-white bg-gray-900">
-              <Play className="h-16 w-16 text-gray-500 mb-4" />
-              <p className="text-lg font-semibold">Vídeo não disponível</p>
-              <p className="text-gray-400 text-sm mt-2">
-                URL: {videoUrl || 'Nenhuma URL fornecida'}
+            <div className="flex flex-col items-center justify-center h-full text-white bg-gray-900 gap-4">
+              <Play className="h-16 w-16 text-gray-500" />
+              <p className="text-lg font-semibold">
+                {loadError ? 'Não foi possível carregar o vídeo' : 'Vídeo não disponível'}
               </p>
+              {videoUrl && (
+                <Button 
+                  onClick={openInYouTube}
+                  variant="outline"
+                  className="gap-2 bg-red-600 hover:bg-red-700 text-white border-red-600 hover:border-red-700"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Assistir no YouTube
+                </Button>
+              )}
             </div>
           )}
         </div>
+
+        {/* Botão alternativo sempre visível */}
+        {embedUrl && !loadError && (
+          <div className="p-4 pt-2 flex justify-center">
+            <Button 
+              onClick={openInYouTube}
+              variant="ghost"
+              size="sm"
+              className="gap-2 text-gray-400 hover:text-white"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Abrir no YouTube
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
