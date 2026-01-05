@@ -10,6 +10,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import AdvancedReceiptConfig from "@/components/AdvancedReceiptConfig";
+import { SettingsGuide, useSettingsGuide } from "@/components/onboarding/SettingsGuide";
 
 interface SystemSettings {
   logo: string | null;
@@ -38,6 +39,7 @@ const Settings: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { handleSaveWithOnboarding, isOnboardingActive, currentStep } = useSettingsGuide();
 
   const [settings, setSettings] = useState<SystemSettings>(defaultValues);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -208,8 +210,12 @@ const Settings: React.FC = () => {
     }
   };
 
-  const handleSave = () => {
-    saveSettingsToSupabase();
+  const handleSave = async () => {
+    if (isOnboardingActive && currentStep === 1) {
+      await handleSaveWithOnboarding(saveSettingsToSupabase);
+    } else {
+      await saveSettingsToSupabase();
+    }
   };
 
   const handleUploadLogoClick = () => {
@@ -286,6 +292,12 @@ const Settings: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-900 text-white">
+      {/* Onboarding Guide */}
+      <SettingsGuide 
+        settings={{ logo: settings.logo, whatsapp1: settings.whatsapp1, address: settings.address }}
+        onStepComplete={() => navigate('/materiais')}
+      />
+      
       {/* Header */}
       <div className="bg-slate-800 border-b border-slate-700 p-4">
         <div className="flex items-center gap-3 max-w-7xl mx-auto">
