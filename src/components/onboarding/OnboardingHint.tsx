@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface OnboardingHintProps {
   targetSelector: string;
@@ -15,6 +16,7 @@ export function OnboardingHint({
   position = 'top'
 }: OnboardingHintProps) {
   const [rect, setRect] = useState<DOMRect | null>(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!isActive) {
@@ -43,8 +45,9 @@ export function OnboardingHint({
 
   if (!isActive || !rect) return null;
 
+  const offset = isMobile ? 12 : 8;
+
   const getPositionStyles = () => {
-    const offset = 8;
     switch (position) {
       case 'top':
         return {
@@ -87,11 +90,21 @@ export function OnboardingHint({
       className="fixed z-50 pointer-events-none"
       style={getPositionStyles()}
     >
-      <div className="relative bg-green-600 text-white text-xs px-3 py-1.5 rounded-md shadow-lg max-w-[200px] animate-fade-in">
-        <span>{message}</span>
+      <div className={cn(
+        "relative bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-xl animate-fade-in",
+        isMobile 
+          ? "text-sm px-4 py-3 rounded-xl max-w-[280px]" 
+          : "text-xs px-3 py-1.5 rounded-lg max-w-[200px]"
+      )}>
+        <span className={cn(
+          isMobile && "font-medium"
+        )}>
+          {message}
+        </span>
         <div 
           className={cn(
-            "absolute w-0 h-0 border-4",
+            "absolute w-0 h-0",
+            isMobile ? "border-[6px]" : "border-4",
             arrowClasses[position]
           )}
         />
