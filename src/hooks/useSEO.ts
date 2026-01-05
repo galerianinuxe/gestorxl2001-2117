@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -14,12 +14,14 @@ interface SEOConfig {
   twitterCard: string;
   robots: string;
   canonical: string;
+  favicon?: string;
+  jsonLd?: string;
 }
 
 export const useSEO = () => {
   const { user } = useAuth();
 
-  const updateMetaTags = (config: SEOConfig) => {
+  const updateMetaTags = useCallback((config: SEOConfig) => {
     // Atualizar título
     document.title = config.title;
     
@@ -29,13 +31,14 @@ export const useSEO = () => {
       { name: 'author', content: config.author },
       { name: 'keywords', content: config.keywords },
       { name: 'robots', content: config.robots },
-      { property: 'og:title', content: config.ogTitle },
-      { property: 'og:description', content: config.ogDescription },
+      { property: 'og:title', content: config.ogTitle || config.title },
+      { property: 'og:description', content: config.ogDescription || config.description },
       { property: 'og:image', content: config.ogImage },
       { property: 'og:type', content: 'website' },
+      { property: 'og:url', content: config.canonical },
       { name: 'twitter:card', content: config.twitterCard },
-      { name: 'twitter:title', content: config.ogTitle },
-      { name: 'twitter:description', content: config.ogDescription },
+      { name: 'twitter:title', content: config.ogTitle || config.title },
+      { name: 'twitter:description', content: config.ogDescription || config.description },
       { name: 'twitter:image', content: config.ogImage }
     ];
 
@@ -64,7 +67,41 @@ export const useSEO = () => {
       canonicalTag.href = config.canonical;
       document.head.appendChild(canonicalTag);
     }
-  };
+
+    // Atualizar favicon dinamicamente
+    if (config.favicon) {
+      let faviconTag = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
+      if (faviconTag) {
+        faviconTag.href = config.favicon;
+      } else {
+        faviconTag = document.createElement('link');
+        faviconTag.rel = 'icon';
+        faviconTag.href = config.favicon;
+        document.head.appendChild(faviconTag);
+      }
+    }
+
+    // Atualizar JSON-LD
+    if (config.jsonLd) {
+      try {
+        // Validar se é JSON válido
+        JSON.parse(config.jsonLd);
+        
+        let jsonLdScript = document.querySelector('script[type="application/ld+json"][data-dynamic="true"]') as HTMLScriptElement;
+        if (jsonLdScript) {
+          jsonLdScript.textContent = config.jsonLd;
+        } else {
+          jsonLdScript = document.createElement('script');
+          jsonLdScript.type = 'application/ld+json';
+          jsonLdScript.setAttribute('data-dynamic', 'true');
+          jsonLdScript.textContent = config.jsonLd;
+          document.head.appendChild(jsonLdScript);
+        }
+      } catch (e) {
+        console.warn('JSON-LD inválido:', e);
+      }
+    }
+  }, []);
 
   const loadSEOConfig = async () => {
     if (!user?.id) return;

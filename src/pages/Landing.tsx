@@ -45,6 +45,16 @@ interface LandingContentSettings {
   seo_description: string;
   seo_keywords: string;
   testimonials?: string | TestimonialData[];
+  // Advanced SEO fields
+  og_image?: string;
+  og_title?: string;
+  og_description?: string;
+  twitter_card?: string;
+  canonical_url?: string;
+  robots_directive?: string;
+  favicon_url?: string;
+  author?: string;
+  json_ld_data?: string;
 }
 
 const Landing: React.FC = () => {
@@ -201,13 +211,15 @@ const Landing: React.FC = () => {
         title: contentSettings.seo_title,
         description: contentSettings.seo_description,
         keywords: contentSettings.seo_keywords,
-        author: 'Rick Costa',
-        ogTitle: contentSettings.seo_title,
-        ogDescription: contentSettings.seo_description,
-        ogImage: contentSettings.logo_url,
-        twitterCard: 'summary_large_image',
-        robots: 'index, follow',
-        canonical: 'https://xlata.site'
+        author: contentSettings.author || 'XLata.site',
+        ogTitle: contentSettings.og_title || contentSettings.seo_title,
+        ogDescription: contentSettings.og_description || contentSettings.seo_description,
+        ogImage: contentSettings.og_image || contentSettings.logo_url,
+        twitterCard: contentSettings.twitter_card || 'summary_large_image',
+        robots: contentSettings.robots_directive || 'index, follow',
+        canonical: contentSettings.canonical_url || 'https://xlata.site',
+        favicon: contentSettings.favicon_url,
+        jsonLd: contentSettings.json_ld_data
       });
       document.title = contentSettings.seo_title;
     }
@@ -392,15 +404,21 @@ const Landing: React.FC = () => {
         <div className="container mx-auto text-center relative z-10 max-w-3xl">
           {/* Main Headline */}
           <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold mb-4 lg:mb-5 leading-tight tracking-tight">
-            <span className="text-white">Seu depósito está </span>
-            <span className="text-red-400">perdendo dinheiro.</span>
-            <br className="hidden sm:block" />
-            <span className="text-green-400"> O XLata resolve.</span>
+            {contentSettings.hero_main_title ? (
+              <span className="text-white">{contentSettings.hero_main_title}</span>
+            ) : (
+              <>
+                <span className="text-white">Seu depósito está </span>
+                <span className="text-red-400">perdendo dinheiro.</span>
+                <br className="hidden sm:block" />
+                <span className="text-green-400"> O XLata resolve.</span>
+              </>
+            )}
           </h1>
           
           {/* Subtitle */}
           <p className="text-gray-400 text-base sm:text-lg lg:text-xl mb-8 lg:mb-10 max-w-xl mx-auto leading-relaxed">
-            Sistema de pesagem e controle que organiza seu pátio em minutos.
+            {contentSettings.hero_subtitle || 'Sistema de pesagem e controle que organiza seu pátio em minutos.'}
           </p>
           
           {/* CTA Button */}
@@ -410,7 +428,7 @@ const Landing: React.FC = () => {
             className="bg-green-600 hover:bg-green-700 text-white text-base sm:text-lg px-8 sm:px-10 py-5 sm:py-6 font-semibold shadow-lg shadow-green-600/20 rounded-xl mb-8"
           >
             <Zap className="mr-2 h-5 w-5" />
-            TESTAR GRÁTIS 7 DIAS
+            {contentSettings.hero_button_text || 'TESTAR GRÁTIS 7 DIAS'}
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
 
@@ -878,7 +896,7 @@ const Landing: React.FC = () => {
           
           <div className="text-center">
             <p className="text-gray-600 text-xs sm:text-sm">
-              © {new Date().getFullYear()} XLata.site • Sistema para Depósitos de Reciclagem
+              {contentSettings.footer_text || `© ${new Date().getFullYear()} XLata.site • Sistema para Depósitos de Reciclagem`}
             </p>
           </div>
         </div>

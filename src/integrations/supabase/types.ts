@@ -1476,10 +1476,13 @@ export type Database = {
       }
       landing_page_settings: {
         Row: {
+          author: string | null
           background_image_url: string | null
+          canonical_url: string | null
           company_name: string
           company_phone: string | null
           created_at: string
+          favicon_url: string | null
           footer_text: string
           hero_badge_text: string
           hero_button_text: string
@@ -1487,11 +1490,17 @@ export type Database = {
           hero_main_title: string
           hero_subtitle: string
           id: string
+          json_ld_data: string | null
           logo_url: string | null
+          og_description: string | null
+          og_image: string | null
+          og_title: string | null
+          robots_directive: string | null
           seo_description: string | null
           seo_keywords: string | null
           seo_title: string | null
           testimonials: string | null
+          twitter_card: string | null
           updated_at: string
           user_id: string
           video_bullets: string | null
@@ -1502,10 +1511,13 @@ export type Database = {
           video_url: string | null
         }
         Insert: {
+          author?: string | null
           background_image_url?: string | null
+          canonical_url?: string | null
           company_name?: string
           company_phone?: string | null
           created_at?: string
+          favicon_url?: string | null
           footer_text?: string
           hero_badge_text?: string
           hero_button_text?: string
@@ -1513,11 +1525,17 @@ export type Database = {
           hero_main_title?: string
           hero_subtitle?: string
           id?: string
+          json_ld_data?: string | null
           logo_url?: string | null
+          og_description?: string | null
+          og_image?: string | null
+          og_title?: string | null
+          robots_directive?: string | null
           seo_description?: string | null
           seo_keywords?: string | null
           seo_title?: string | null
           testimonials?: string | null
+          twitter_card?: string | null
           updated_at?: string
           user_id: string
           video_bullets?: string | null
@@ -1528,10 +1546,13 @@ export type Database = {
           video_url?: string | null
         }
         Update: {
+          author?: string | null
           background_image_url?: string | null
+          canonical_url?: string | null
           company_name?: string
           company_phone?: string | null
           created_at?: string
+          favicon_url?: string | null
           footer_text?: string
           hero_badge_text?: string
           hero_button_text?: string
@@ -1539,11 +1560,17 @@ export type Database = {
           hero_main_title?: string
           hero_subtitle?: string
           id?: string
+          json_ld_data?: string | null
           logo_url?: string | null
+          og_description?: string | null
+          og_image?: string | null
+          og_title?: string | null
+          robots_directive?: string | null
           seo_description?: string | null
           seo_keywords?: string | null
           seo_title?: string | null
           testimonials?: string | null
+          twitter_card?: string | null
           updated_at?: string
           user_id?: string
           video_bullets?: string | null
