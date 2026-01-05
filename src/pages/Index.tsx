@@ -1028,12 +1028,12 @@ const Index: React.FC = () => {
       
       <div className="flex-1 flex overflow-hidden bg-slate-900">
         <div className="w-1/4 flex flex-col border-r border-slate-700">
-          <div className="h-3/5">
+          <div className="shrink-0">
             <React.Suspense fallback={<div className="bg-slate-900 text-slate-300 p-4">Carregando...</div>}>
               <MemoizedNumberPad onSubmit={handleNumberPadSubmit} onClear={() => setPesoInput("")} value={pesoInput} />
             </React.Suspense>
           </div>
-          <div className="h-2/5 border-t border-slate-700">
+          <div className="flex-1 border-t border-slate-700 min-h-0">
             <ScrollArea className="h-full touch-auto">
               <React.Suspense fallback={<div className="bg-slate-900 text-slate-300 p-4">Carregando...</div>}>
                 <MemoizedOrderList customers={customers} activeCustomer={currentCustomer} setCurrentCustomer={handleSelectCustomer} setCurrentOrder={setCurrentOrder} onCustomerDeleted={handleCustomerDeleted} onOrderDeleted={handleOrderDeleted} />
