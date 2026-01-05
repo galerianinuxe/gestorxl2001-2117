@@ -450,30 +450,30 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
   const renderMobileOrderCard = (order: HistoryOrder) => (
     <div 
       key={order.id}
-      className="bg-slate-800 rounded-lg border border-slate-700 p-4 mb-3"
+      className="bg-slate-800/60 rounded-lg border border-slate-700/50 p-3 mb-2"
     >
-      {/* Header: Cliente e Status */}
-      <div className="flex items-start justify-between mb-3">
+      {/* Header: Cliente, Data e Status */}
+      <div className="flex items-center justify-between mb-2">
         <div className="flex-1 min-w-0">
-          <h3 className="text-white font-semibold text-sm truncate">
+          <p className="text-white font-medium text-sm truncate">
             # {order.customerName}
-          </h3>
-          <p className="text-slate-400 text-xs mt-0.5">
+          </p>
+          <p className="text-slate-500 text-[10px]">
             {order.formattedDate} • {order.formattedTime}
           </p>
         </div>
-        <div className="flex flex-col items-end gap-1 ml-2">
+        <div className="flex items-center gap-1.5 ml-2">
           <Badge 
-            className={`text-xs px-2 py-0.5 ${
+            className={`text-[10px] px-1.5 py-0.5 font-medium ${
               order.status === 'completed' 
-                ? 'bg-emerald-600 text-white' 
-                : 'bg-amber-600 text-white'
+                ? 'bg-emerald-600/80 text-white' 
+                : 'bg-amber-600/80 text-white'
             }`}
           >
             {order.status === 'completed' ? 'Finalizado' : 'Em Aberto'}
           </Badge>
           <Badge 
-            className={`text-xs px-2 py-0.5 ${
+            className={`text-[10px] px-1.5 py-0.5 font-medium ${
               order.type === 'venda' 
                 ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' 
                 : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
@@ -484,196 +484,185 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
         </div>
       </div>
 
-      {/* Info: Itens e Total */}
-      <div className="flex items-center justify-between bg-slate-900/50 rounded-lg p-3 mb-3">
+      {/* Info: Itens e Total + Ver Detalhes */}
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center">
-            <Package className="w-4 h-4 text-slate-400" />
+          <div className="w-7 h-7 rounded-full bg-slate-700/50 flex items-center justify-center">
+            <Package className="w-3.5 h-3.5 text-slate-400" />
           </div>
           <div>
-            <p className="text-white text-sm font-medium">{order.items.length} {order.items.length === 1 ? 'item' : 'itens'}</p>
-            <p className="text-slate-400 text-xs truncate max-w-[140px]">
+            <p className="text-white text-xs font-medium">{order.items.length} {order.items.length === 1 ? 'item' : 'itens'}</p>
+            <p className="text-slate-500 text-[10px] truncate max-w-[100px]">
               {order.items.slice(0, 2).map(item => item.materialName).join(', ')}
               {order.items.length > 2 && '...'}
             </p>
           </div>
         </div>
-        <div className="text-right">
-          <p className="text-emerald-400 font-bold text-lg">
+        <div className="flex items-center gap-3">
+          <p className="text-emerald-400 font-bold text-base">
             R$ {order.total.toFixed(2)}
           </p>
+          <button
+            onClick={() => handleViewOrder(order.id)}
+            className="p-2 rounded-lg bg-slate-700/50 hover:bg-slate-600/50 text-slate-400 hover:text-white transition-colors"
+            title="Ver Detalhes"
+          >
+            <Eye className="w-4 h-4" />
+          </button>
         </div>
       </div>
-
-      {/* Botão Ver Pedido */}
-      <button
-        onClick={() => handleViewOrder(order.id)}
-        className="w-full bg-slate-700 hover:bg-slate-600 text-white py-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors text-sm font-medium"
-      >
-        <Eye className="w-4 h-4" />
-        Ver Detalhes
-      </button>
     </div>
   );
 
   return (
     <Dialog open={isOpen} onOpenChange={() => onClose()}>
-      <DialogContent className={`${isMobileOrTablet ? 'w-screen h-screen max-w-none max-h-none m-0 rounded-none' : 'w-screen h-screen max-w-none max-h-none m-0 rounded-none'} p-0 bg-slate-900 border-slate-700 flex flex-col`}>
+      <DialogContent 
+        hideCloseButton={isMobileOrTablet}
+        className={`${isMobileOrTablet ? 'w-screen h-screen max-w-none max-h-none m-0 rounded-none' : 'w-screen h-screen max-w-none max-h-none m-0 rounded-none'} p-0 bg-slate-900 border-slate-700 flex flex-col`}
+      >
         {/* Header */}
-        <DialogHeader className={`${isMobileOrTablet ? 'px-4 py-3' : 'p-6'} border-b border-slate-700 bg-slate-800`}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Clock className={`${isMobileOrTablet ? 'h-5 w-5' : 'h-6 w-6'} text-emerald-400`} />
-              <DialogTitle className={`${isMobileOrTablet ? 'text-lg' : 'text-2xl'} text-white`}>
-                Histórico de Pedidos
-              </DialogTitle>
-            </div>
-            <button 
-              onClick={onClose}
-              className="p-2 rounded-lg bg-red-600/20 hover:bg-red-600/40 text-red-400 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+        <DialogHeader className={`${isMobileOrTablet ? 'px-4 py-2' : 'p-6'} border-b border-slate-700 bg-slate-800`}>
+          <div className="flex items-center gap-2">
+            <Clock className={`${isMobileOrTablet ? 'h-4 w-4' : 'h-6 w-6'} text-emerald-400`} />
+            <DialogTitle className={`${isMobileOrTablet ? 'text-base' : 'text-2xl'} text-white`}>
+              Histórico de Pedidos
+            </DialogTitle>
           </div>
-          <DialogDescription className={`text-slate-400 ${isMobileOrTablet ? 'text-xs' : 'text-sm'} mt-1`}>
+          <DialogDescription className={`text-slate-400 ${isMobileOrTablet ? 'text-[10px]' : 'text-sm'}`}>
             Consulte e gerencie seus pedidos anteriores
           </DialogDescription>
         </DialogHeader>
 
-        {/* Filtros Mobile/Tablet */}
+        {/* Filtros Mobile/Tablet - Compact Pills */}
         {isMobileOrTablet ? (
-          <div className="bg-slate-800 border-b border-slate-700">
-            {/* Quick Filter Pills */}
-            <div className="px-4 py-3">
-              <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2">
-                <button
-                  onClick={() => setFilterStatus('all')}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
-                    filterStatus === 'all' 
-                      ? 'bg-emerald-600 text-white' 
-                      : 'bg-slate-700 text-slate-300'
-                  }`}
-                >
-                  Todos
-                </button>
-                <button
-                  onClick={() => setFilterStatus('open')}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
-                    filterStatus === 'open' 
-                      ? 'bg-amber-600 text-white' 
-                      : 'bg-slate-700 text-slate-300'
-                  }`}
-                >
-                  Em Aberto
-                </button>
-                <button
-                  onClick={() => setFilterStatus('completed')}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
-                    filterStatus === 'completed' 
-                      ? 'bg-emerald-600 text-white' 
-                      : 'bg-slate-700 text-slate-300'
-                  }`}
-                >
-                  Finalizados
-                </button>
-                <div className="w-px bg-slate-600 mx-1" />
-                <button
-                  onClick={() => setFilterType('all')}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
-                    filterType === 'all' 
-                      ? 'bg-emerald-600 text-white' 
-                      : 'bg-slate-700 text-slate-300'
-                  }`}
-                >
-                  Todos Tipos
-                </button>
-                <button
-                  onClick={() => setFilterType('venda')}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
-                    filterType === 'venda' 
-                      ? 'bg-amber-500 text-white' 
-                      : 'bg-slate-700 text-slate-300'
-                  }`}
-                >
-                  Vendas
-                </button>
-                <button
-                  onClick={() => setFilterType('compra')}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
-                    filterType === 'compra' 
-                      ? 'bg-emerald-500 text-white' 
-                      : 'bg-slate-700 text-slate-300'
-                  }`}
-                >
-                  Compras
-                </button>
-              </div>
-            </div>
-
-            {/* Expandable Filters */}
-            <div className="px-4 pb-3">
+          <div className="bg-slate-800/50 border-b border-slate-700/50 px-3 py-2">
+            <div className="flex gap-1.5 overflow-x-auto hide-scrollbar">
+              <button
+                onClick={() => setFilterStatus('all')}
+                className={`px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-colors ${
+                  filterStatus === 'all' 
+                    ? 'bg-emerald-600 text-white' 
+                    : 'bg-slate-700/50 text-slate-400'
+                }`}
+              >
+                Todos
+              </button>
+              <button
+                onClick={() => setFilterStatus('open')}
+                className={`px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-colors ${
+                  filterStatus === 'open' 
+                    ? 'bg-amber-600 text-white' 
+                    : 'bg-slate-700/50 text-slate-400'
+                }`}
+              >
+                Em Aberto
+              </button>
+              <button
+                onClick={() => setFilterStatus('completed')}
+                className={`px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-colors ${
+                  filterStatus === 'completed' 
+                    ? 'bg-emerald-600 text-white' 
+                    : 'bg-slate-700/50 text-slate-400'
+                }`}
+              >
+                Finalizados
+              </button>
+              <div className="w-px bg-slate-600/50 mx-0.5" />
+              <button
+                onClick={() => setFilterType('all')}
+                className={`px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-colors ${
+                  filterType === 'all' 
+                    ? 'bg-slate-600 text-white' 
+                    : 'bg-slate-700/50 text-slate-400'
+                }`}
+              >
+                Tipos
+              </button>
+              <button
+                onClick={() => setFilterType('venda')}
+                className={`px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-colors ${
+                  filterType === 'venda' 
+                    ? 'bg-amber-500 text-white' 
+                    : 'bg-slate-700/50 text-slate-400'
+                }`}
+              >
+                Vendas
+              </button>
+              <button
+                onClick={() => setFilterType('compra')}
+                className={`px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-colors ${
+                  filterType === 'compra' 
+                    ? 'bg-emerald-500 text-white' 
+                    : 'bg-slate-700/50 text-slate-400'
+                }`}
+              >
+                Compras
+              </button>
+              <div className="w-px bg-slate-600/50 mx-0.5" />
               <button 
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-2 text-slate-400 text-xs"
+                className={`px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-colors flex items-center gap-1 ${
+                  showFilters ? 'bg-slate-600 text-white' : 'bg-slate-700/50 text-slate-400'
+                }`}
               >
-                <Filter className="w-3 h-3" />
-                <span>Mais filtros</span>
-                <ChevronDown className={`w-3 h-3 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+                <Filter className="w-2.5 h-2.5" />
+                Filtros
               </button>
-              
-              {showFilters && (
-                <div className="mt-3 space-y-3">
-                  {/* Date Filters */}
-                  <div className="flex gap-2">
-                    <div className="flex-1">
-                      <Label className="text-slate-400 text-xs mb-1 block">De:</Label>
-                      <Input
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        className="bg-slate-700 border-slate-600 text-white text-xs h-9"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <Label className="text-slate-400 text-xs mb-1 block">Até:</Label>
-                      <Input
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        className="bg-slate-700 border-slate-600 text-white text-xs h-9"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  {openOrdersStats.totalOpen > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      <span className="text-slate-400 text-xs w-full">
-                        Em aberto: {openOrdersStats.totalOpen} {openOrdersStats.emptyOpen > 0 && `(${openOrdersStats.emptyOpen} vazios)`}
-                      </span>
-                      {openOrdersStats.emptyOpen > 0 && (
-                        <button
-                          onClick={() => setShowDeleteEmptyConfirm(true)}
-                          disabled={deleting}
-                          className="flex items-center gap-1 bg-amber-600/20 border border-amber-500/30 text-amber-400 px-3 py-1.5 rounded-lg text-xs font-medium"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                          Excluir Vazios ({openOrdersStats.emptyOpen})
-                        </button>
-                      )}
-                      <button
-                        onClick={() => setShowDeleteAllOpenConfirm(true)}
-                        disabled={deleting}
-                        className="flex items-center gap-1 bg-red-600/20 border border-red-500/30 text-red-400 px-3 py-1.5 rounded-lg text-xs font-medium"
-                      >
-                        <AlertTriangle className="w-3 h-3" />
-                        Excluir Todos ({openOrdersStats.totalOpen})
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
+            
+            {/* Expandable Filters Panel */}
+            {showFilters && (
+              <div className="px-3 pb-2 space-y-2">
+                {/* Date Filters */}
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <Label className="text-slate-500 text-[10px] mb-0.5 block">De:</Label>
+                    <Input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="bg-slate-700/50 border-slate-600/50 text-white text-[10px] h-7"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <Label className="text-slate-500 text-[10px] mb-0.5 block">Até:</Label>
+                    <Input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="bg-slate-700/50 border-slate-600/50 text-white text-[10px] h-7"
+                    />
+                  </div>
+                </div>
+
+                {/* Actions */}
+                {openOrdersStats.totalOpen > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    <span className="text-slate-500 text-[10px] w-full">
+                      Em aberto: {openOrdersStats.totalOpen} {openOrdersStats.emptyOpen > 0 && `(${openOrdersStats.emptyOpen} vazios)`}
+                    </span>
+                    {openOrdersStats.emptyOpen > 0 && (
+                      <button
+                        onClick={() => setShowDeleteEmptyConfirm(true)}
+                        disabled={deleting}
+                        className="flex items-center gap-1 bg-amber-600/20 border border-amber-500/30 text-amber-400 px-2 py-1 rounded text-[10px] font-medium"
+                      >
+                        <Trash2 className="w-2.5 h-2.5" />
+                        Excluir Vazios ({openOrdersStats.emptyOpen})
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setShowDeleteAllOpenConfirm(true)}
+                      disabled={deleting}
+                      className="flex items-center gap-1 bg-red-600/20 border border-red-500/30 text-red-400 px-2 py-1 rounded text-[10px] font-medium"
+                    >
+                      <AlertTriangle className="w-2.5 h-2.5" />
+                      Excluir Todos ({openOrdersStats.totalOpen})
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         ) : (
           /* Desktop Filters */
