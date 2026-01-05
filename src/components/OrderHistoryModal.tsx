@@ -32,7 +32,7 @@ interface HistoryOrder extends Order {
   formattedTime: string;
 }
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 20;
 
 const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }) => {
   const [orders, setOrders] = useState<HistoryOrder[]>([]);
@@ -544,7 +544,7 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
     <Dialog open={isOpen} onOpenChange={() => onClose()}>
       <DialogContent 
         hideCloseButton={isMobileOrTablet}
-        className={`${isMobileOrTablet ? 'w-screen h-screen max-w-none max-h-none m-0 rounded-none' : '!w-[95vw] !max-w-[1200px] !max-h-[90vh]'} p-0 bg-slate-900 border-slate-700 flex flex-col`}
+        className={`${isMobileOrTablet ? 'w-screen h-screen max-w-none max-h-none m-0 rounded-none' : '!w-[95vw] !max-w-[1200px] !h-[90vh] !max-h-[90vh]'} p-0 bg-slate-900 border-slate-700 flex flex-col`}
       >
         {/* Header */}
         <DialogHeader className={`${isMobileOrTablet ? 'px-4 py-2' : 'p-6'} border-b border-slate-700 bg-slate-800`}>
