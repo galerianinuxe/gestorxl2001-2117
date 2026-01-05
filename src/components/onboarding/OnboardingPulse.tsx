@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface OnboardingPulseProps {
   targetSelector: string;
@@ -13,6 +14,7 @@ export function OnboardingPulse({
   intensity = 'subtle' 
 }: OnboardingPulseProps) {
   const [rect, setRect] = useState<DOMRect | null>(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!isActive) {
@@ -53,17 +55,24 @@ export function OnboardingPulse({
     strong: 'animate-pulse-strong'
   };
 
+  // Ajustes responsivos para mobile
+  const borderWidth = isMobile ? 3 : 2;
+  const offset = isMobile ? 6 : 4;
+
   return (
     <div
       className={cn(
-        "fixed pointer-events-none z-40 rounded-lg border-2 border-green-500",
+        "fixed pointer-events-none z-40 border-green-500",
+        isMobile ? "rounded-xl" : "rounded-lg",
         intensityClasses[intensity]
       )}
       style={{
-        top: rect.top - 4,
-        left: rect.left - 4,
-        width: rect.width + 8,
-        height: rect.height + 8,
+        top: rect.top - offset,
+        left: rect.left - offset,
+        width: rect.width + (offset * 2),
+        height: rect.height + (offset * 2),
+        borderWidth: `${borderWidth}px`,
+        borderStyle: 'solid',
       }}
     />
   );

@@ -13,12 +13,14 @@ interface OnboardingStepProgressProps {
   stepName: string;
   subSteps: SubStep[];
   className?: string;
+  isMobile?: boolean;
 }
 
 export function OnboardingStepProgress({ 
   stepName, 
   subSteps,
-  className 
+  className,
+  isMobile = false
 }: OnboardingStepProgressProps) {
   if (!subSteps || subSteps.length === 0) return null;
   
@@ -27,33 +29,61 @@ export function OnboardingStepProgress({
   const progressPercent = totalSteps > 0 ? (completedCount / totalSteps) * 100 : 0;
 
   return (
-    <div className={cn("bg-gray-800/50 rounded-lg p-3 border border-gray-700", className)}>
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-gray-400">{stepName}</span>
-        <span className="text-xs font-medium text-green-400">
+    <div className={cn(
+      "rounded-xl border transition-all",
+      isMobile 
+        ? "bg-gray-800/60 p-4 border-gray-700" 
+        : "bg-gray-800/50 p-3 border-gray-700",
+      className
+    )}>
+      <div className={cn(
+        "flex items-center justify-between",
+        isMobile ? "mb-3" : "mb-2"
+      )}>
+        <span className={cn(
+          "text-gray-400 font-medium",
+          isMobile ? "text-sm" : "text-xs"
+        )}>
+          {stepName}
+        </span>
+        <span className={cn(
+          "font-bold text-green-400",
+          isMobile ? "text-sm" : "text-xs"
+        )}>
           {completedCount}/{totalSteps}
         </span>
       </div>
       
-      <Progress value={progressPercent} className="h-1.5 mb-3" />
+      <Progress 
+        value={progressPercent} 
+        className={cn(
+          isMobile ? "h-2 mb-4" : "h-1.5 mb-3"
+        )} 
+      />
       
-      <div className="space-y-1.5">
+      <div className={cn(
+        "space-y-2",
+        isMobile && "space-y-3"
+      )}>
         {subSteps.map((subStep) => (
           <div 
             key={subStep.id}
             className={cn(
-              "flex items-center gap-2 text-xs transition-colors",
+              "flex items-center gap-3 transition-colors",
+              isMobile ? "py-1" : "",
               subStep.completed ? "text-green-400" : "text-gray-500"
             )}
           >
             <CheckCircle2 
               className={cn(
-                "w-3.5 h-3.5 flex-shrink-0",
+                "flex-shrink-0",
+                isMobile ? "w-5 h-5" : "w-3.5 h-3.5",
                 subStep.completed ? "text-green-500" : "text-gray-600"
               )} 
             />
             <span className={cn(
-              subStep.completed && "line-through"
+              isMobile ? "text-sm" : "text-xs",
+              subStep.completed && "line-through opacity-70"
             )}>
               {subStep.label}
             </span>

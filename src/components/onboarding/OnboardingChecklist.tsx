@@ -7,6 +7,7 @@ import { useOnboarding, ONBOARDING_STEPS, STEP_SUB_STEPS } from '@/contexts/Onbo
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { OnboardingStepProgress } from './OnboardingStepProgress';
+import { useIsMobile, useIsTablet } from '@/hooks/use-mobile';
 
 const stepIcons = {
   1: Settings,
@@ -32,11 +33,13 @@ export function OnboardingChecklist() {
   const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(true);
   const [isMinimized, setIsMinimized] = useState(false);
+  const isMobile = useIsMobile();
+  const isTablet = useIsTablet();
 
   if (!isOnboardingActive) return null;
 
   const completedCount = progress.completedSteps.length;
-  const totalSteps = ONBOARDING_STEPS.length - 1; // Excluir step 0
+  const totalSteps = ONBOARDING_STEPS.length - 1;
   const progressPercent = (completedCount / totalSteps) * 100;
 
   const handleStepClick = (stepId: number) => {
@@ -50,20 +53,282 @@ export function OnboardingChecklist() {
     await skipOnboarding();
   };
 
+  // Minimized state - FAB style for mobile
   if (isMinimized) {
     return (
-      <div className="fixed bottom-4 right-4 z-50">
+      <div className={cn(
+        "fixed z-50",
+        isMobile ? "bottom-20 right-4" : "bottom-4 right-4"
+      )}>
         <Button
           onClick={() => setIsMinimized(false)}
-          className="bg-green-600 hover:bg-green-700 text-white rounded-full px-4 py-2 shadow-lg flex items-center gap-2"
+          className={cn(
+            "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-xl flex items-center gap-2 transition-all duration-300",
+            isMobile 
+              ? "rounded-full w-14 h-14 p-0 justify-center" 
+              : "rounded-full px-4 py-2"
+          )}
         >
-          <span className="font-semibold">{Math.round(progressPercent)}%</span>
-          <ChevronUp className="w-4 h-4" />
+          <span className={cn(
+            "font-bold",
+            isMobile ? "text-sm" : "text-base"
+          )}>
+            {Math.round(progressPercent)}%
+          </span>
+          {!isMobile && <ChevronUp className="w-4 h-4" />}
         </Button>
       </div>
     );
   }
 
+  // Mobile: Full-width bottom sheet style
+  if (isMobile) {
+    return (
+      <div className="fixed inset-x-0 bottom-16 z-50 animate-slide-in-bottom safe-area-bottom">
+        <Card className="mx-2 bg-gray-900/98 border-gray-700 shadow-2xl rounded-2xl overflow-hidden backdrop-blur-sm">
+          {/* Handle bar */}
+          <div className="flex justify-center pt-2 pb-1">
+            <div className="w-10 h-1 bg-gray-600 rounded-full" />
+          </div>
+
+          {/* Header */}
+          <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                <Settings className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <span className="text-white font-bold text-base">Configuração Inicial</span>
+                <p className="text-white/70 text-xs">{completedCount}/{totalSteps} etapas completas</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-10 w-10 p-0 text-white/80 hover:text-white hover:bg-white/20 rounded-xl"
+                onClick={() => setIsExpanded(!isExpanded)}
+              >
+                {isExpanded ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-10 w-10 p-0 text-white/80 hover:text-white hover:bg-white/20 rounded-xl"
+                onClick={() => setIsMinimized(true)}
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          <div className="px-4 py-3 border-b border-gray-800">
+            <Progress value={progressPercent} className="h-2.5" />
+          </div>
+
+          {/* Steps - Scrollable on mobile */}
+          {isExpanded && (
+            <div className="px-4 py-3 space-y-3 max-h-[40vh] overflow-y-auto hide-scrollbar">
+              {ONBOARDING_STEPS.slice(1).map((step) => {
+                const Icon = stepIcons[step.id as keyof typeof stepIcons];
+                const completed = isStepCompleted(step.id);
+                const isCurrent = progress.currentStep === step.id;
+                const subStepProgress = getSubStepProgress(step.id);
+                const subSteps = STEP_SUB_STEPS[step.id] || [];
+
+                return (
+                  <div key={step.id}>
+                    <button
+                      onClick={() => handleStepClick(step.id)}
+                      className={cn(
+                        "w-full flex items-center gap-4 p-4 rounded-xl transition-all text-left active:scale-[0.98]",
+                        completed 
+                          ? "bg-green-500/15 border border-green-500/30" 
+                          : isCurrent 
+                            ? "bg-gray-800 ring-2 ring-green-500/50" 
+                            : "bg-gray-800/50 hover:bg-gray-800"
+                      )}
+                    >
+                      <div className={cn(
+                        "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0",
+                        completed ? "bg-green-500" : isCurrent ? "bg-green-600" : "bg-gray-700"
+                      )}>
+                        {completed ? (
+                          <CheckCircle2 className="w-6 h-6 text-white" />
+                        ) : Icon ? (
+                          <Icon className="w-6 h-6 text-white" />
+                        ) : (
+                          <Circle className="w-6 h-6 text-gray-400" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={cn(
+                          "text-base font-semibold",
+                          completed ? "text-green-400" : "text-white"
+                        )}>
+                          {step.name}
+                        </p>
+                        <p className="text-sm text-gray-400 line-clamp-1">{step.description}</p>
+                      </div>
+                      {isCurrent && !completed && (
+                        <span className="text-sm bg-green-500/20 text-green-400 px-3 py-1 rounded-lg font-medium">
+                          {subStepProgress.completed}/{subStepProgress.total}
+                        </span>
+                      )}
+                    </button>
+
+                    {/* Sub-step progress for current step */}
+                    {isCurrent && !completed && subSteps && subSteps.length > 0 && (
+                      <OnboardingStepProgress
+                        stepName={step.name}
+                        subSteps={subSteps.map(s => ({
+                          id: s.id,
+                          label: s.label,
+                          completed: isSubStepCompleted(step.id, s.id)
+                        }))}
+                        className="mt-3 ml-16"
+                        isMobile={true}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Skip button */}
+              <Button
+                variant="ghost"
+                size="lg"
+                onClick={handleSkip}
+                className="w-full text-gray-400 hover:text-gray-200 text-sm mt-3 h-12"
+              >
+                Pular configuração
+              </Button>
+            </div>
+          )}
+        </Card>
+      </div>
+    );
+  }
+
+  // Tablet: Larger card on corner
+  if (isTablet) {
+    return (
+      <Card className="fixed bottom-[4.5rem] right-4 z-50 w-80 bg-gray-900/98 border-gray-700 shadow-2xl overflow-hidden rounded-2xl backdrop-blur-sm">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center">
+              <Settings className="w-4 h-4 text-white" />
+            </div>
+            <span className="text-white font-bold text-base">Configuração Inicial</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9 w-9 p-0 text-white/80 hover:text-white hover:bg-white/20 rounded-lg"
+              onClick={() => setIsExpanded(!isExpanded)}
+            >
+              {isExpanded ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9 w-9 p-0 text-white/80 hover:text-white hover:bg-white/20 rounded-lg"
+              onClick={() => setIsMinimized(true)}
+            >
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Progress */}
+        <div className="px-4 py-3 border-b border-gray-800">
+          <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
+            <span>Progresso</span>
+            <span className="font-medium">{completedCount}/{totalSteps} completos</span>
+          </div>
+          <Progress value={progressPercent} className="h-2" />
+        </div>
+
+        {/* Steps */}
+        {isExpanded && (
+          <div className="p-4 space-y-3">
+            {ONBOARDING_STEPS.slice(1).map((step) => {
+              const Icon = stepIcons[step.id as keyof typeof stepIcons];
+              const completed = isStepCompleted(step.id);
+              const isCurrent = progress.currentStep === step.id;
+              const subStepProgress = getSubStepProgress(step.id);
+              const subSteps = STEP_SUB_STEPS[step.id] || [];
+
+              return (
+                <div key={step.id}>
+                  <button
+                    onClick={() => handleStepClick(step.id)}
+                    className={cn(
+                      "w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left",
+                      completed ? "bg-green-500/10" : isCurrent ? "bg-gray-800 ring-1 ring-green-500/50" : "bg-gray-800/50 hover:bg-gray-800"
+                    )}
+                  >
+                    <div className={cn(
+                      "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0",
+                      completed ? "bg-green-500" : isCurrent ? "bg-green-600" : "bg-gray-700"
+                    )}>
+                      {completed ? (
+                        <CheckCircle2 className="w-5 h-5 text-white" />
+                      ) : Icon ? (
+                        <Icon className="w-5 h-5 text-white" />
+                      ) : (
+                        <Circle className="w-5 h-5 text-gray-400" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={cn(
+                        "text-sm font-semibold truncate",
+                        completed ? "text-green-400" : "text-white"
+                      )}>
+                        {step.name}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">{step.description}</p>
+                    </div>
+                    {isCurrent && !completed && (
+                      <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded-lg">
+                        {subStepProgress.completed}/{subStepProgress.total}
+                      </span>
+                    )}
+                  </button>
+
+                  {isCurrent && !completed && subSteps && subSteps.length > 0 && (
+                    <OnboardingStepProgress
+                      stepName={step.name}
+                      subSteps={subSteps.map(s => ({
+                        id: s.id,
+                        label: s.label,
+                        completed: isSubStepCompleted(step.id, s.id)
+                      }))}
+                      className="mt-2 ml-13"
+                    />
+                  )}
+                </div>
+              );
+            })}
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSkip}
+              className="w-full text-gray-500 hover:text-gray-300 text-sm mt-2"
+            >
+              Pular configuração
+            </Button>
+          </div>
+        )}
+      </Card>
+    );
+  }
+
+  // Desktop: Original layout with minor improvements
   return (
     <Card className="fixed bottom-[4.5rem] right-4 z-50 w-72 bg-gray-900 border-gray-700 shadow-2xl overflow-hidden">
       {/* Header */}
@@ -147,7 +412,6 @@ export function OnboardingChecklist() {
                   )}
                 </button>
 
-                {/* Sub-step progress for current step */}
                 {isCurrent && !completed && subSteps && subSteps.length > 0 && (
                   <OnboardingStepProgress
                     stepName={step.name}
@@ -163,7 +427,6 @@ export function OnboardingChecklist() {
             );
           })}
 
-          {/* Skip button */}
           <Button
             variant="ghost"
             size="sm"
