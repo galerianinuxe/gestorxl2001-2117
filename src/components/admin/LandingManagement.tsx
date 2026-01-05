@@ -63,6 +63,16 @@ interface LandingSettings {
   seo_description: string;
   seo_keywords: string;
   testimonials?: string | Testimonial[];
+  // Advanced SEO fields
+  og_image?: string;
+  og_title?: string;
+  og_description?: string;
+  twitter_card?: string;
+  canonical_url?: string;
+  robots_directive?: string;
+  favicon_url?: string;
+  author?: string;
+  json_ld_data?: string;
 }
 
 const LandingManagement: React.FC = () => {
@@ -82,6 +92,16 @@ const LandingManagement: React.FC = () => {
     seo_title: 'Sistema PDV para Ferro Velho - AIRK Soluções',
     seo_description: 'Sistema completo de gestão para ferro velho e depósitos de reciclagem',
     seo_keywords: 'sistema pdv, ferro velho, reciclagem, gestão',
+    // Advanced SEO defaults
+    og_image: '',
+    og_title: '',
+    og_description: '',
+    twitter_card: 'summary_large_image',
+    canonical_url: 'https://xlata.site',
+    robots_directive: 'index, follow',
+    favicon_url: '',
+    author: 'XLata.site',
+    json_ld_data: '',
     testimonials: [
       {
         id: '1',
@@ -1013,27 +1033,30 @@ const LandingManagement: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="seo" className="space-y-6">
+          {/* Basic SEO */}
           <Card className="bg-gray-800 border-gray-700">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
                 <Search className="h-5 w-5" />
-                Configurações SEO
+                SEO Básico
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="seo_title" className="text-gray-300">Título SEO</Label>
+                <Label htmlFor="seo_title" className="text-gray-300">Título SEO (máx. 60 caracteres)</Label>
                 <Input
                   id="seo_title"
                   value={settings.seo_title}
                   onChange={(e) => handleInputChange('seo_title', e.target.value)}
                   className="bg-gray-900 border-gray-600 text-white"
-                  placeholder="Sistema PDV para Ferro Velho - AIRK Soluções"
+                  placeholder="Sistema para Depósito de Reciclagem | XLata.site"
+                  maxLength={60}
                 />
+                <p className="text-xs text-gray-500">{settings.seo_title?.length || 0}/60 caracteres</p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="seo_description" className="text-gray-300">Descrição SEO</Label>
+                <Label htmlFor="seo_description" className="text-gray-300">Descrição SEO (máx. 160 caracteres)</Label>
                 <Textarea
                   id="seo_description"
                   value={settings.seo_description}
@@ -1041,7 +1064,9 @@ const LandingManagement: React.FC = () => {
                   className="bg-gray-900 border-gray-600 text-white"
                   rows={3}
                   placeholder="Sistema completo de gestão para ferro velho e depósitos de reciclagem"
+                  maxLength={160}
                 />
+                <p className="text-xs text-gray-500">{settings.seo_description?.length || 0}/160 caracteres</p>
               </div>
 
               <div className="space-y-2">
@@ -1053,6 +1078,161 @@ const LandingManagement: React.FC = () => {
                   className="bg-gray-900 border-gray-600 text-white"
                   placeholder="sistema pdv, ferro velho, reciclagem, gestão"
                 />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="author" className="text-gray-300">Autor do Site</Label>
+                  <Input
+                    id="author"
+                    value={settings.author || ''}
+                    onChange={(e) => handleInputChange('author', e.target.value)}
+                    className="bg-gray-900 border-gray-600 text-white"
+                    placeholder="XLata.site"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="canonical_url" className="text-gray-300">URL Canônica</Label>
+                  <Input
+                    id="canonical_url"
+                    value={settings.canonical_url || ''}
+                    onChange={(e) => handleInputChange('canonical_url', e.target.value)}
+                    className="bg-gray-900 border-gray-600 text-white"
+                    placeholder="https://xlata.site"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Open Graph */}
+          <Card className="bg-gray-800 border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Globe className="h-5 w-5" />
+                Open Graph (Redes Sociais)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-3 mb-4">
+                <p className="text-blue-300 text-sm">
+                  Configurações para como seu site aparece quando compartilhado em redes sociais (Facebook, LinkedIn, WhatsApp).
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="og_title" className="text-gray-300">Título OG (deixe vazio para usar título SEO)</Label>
+                <Input
+                  id="og_title"
+                  value={settings.og_title || ''}
+                  onChange={(e) => handleInputChange('og_title', e.target.value)}
+                  className="bg-gray-900 border-gray-600 text-white"
+                  placeholder="Sistema XLata - Organize seu Depósito"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="og_description" className="text-gray-300">Descrição OG (deixe vazio para usar descrição SEO)</Label>
+                <Textarea
+                  id="og_description"
+                  value={settings.og_description || ''}
+                  onChange={(e) => handleInputChange('og_description', e.target.value)}
+                  className="bg-gray-900 border-gray-600 text-white"
+                  rows={2}
+                  placeholder="Descrição para redes sociais..."
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="og_image" className="text-gray-300">Imagem OG (1200x630px recomendado)</Label>
+                <Input
+                  id="og_image"
+                  value={settings.og_image || ''}
+                  onChange={(e) => handleInputChange('og_image', e.target.value)}
+                  className="bg-gray-900 border-gray-600 text-white"
+                  placeholder="https://xlata.site/og-image.jpg"
+                />
+                {settings.og_image && (
+                  <img 
+                    src={settings.og_image} 
+                    alt="OG Preview" 
+                    className="max-h-32 rounded border border-gray-600 mt-2"
+                    onError={(e) => e.currentTarget.style.display = 'none'}
+                  />
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="twitter_card" className="text-gray-300">Tipo de Twitter Card</Label>
+                <select
+                  id="twitter_card"
+                  value={settings.twitter_card || 'summary_large_image'}
+                  onChange={(e) => handleInputChange('twitter_card', e.target.value)}
+                  className="w-full bg-gray-900 border border-gray-600 text-white rounded-md px-3 py-2"
+                >
+                  <option value="summary">Summary (quadrado pequeno)</option>
+                  <option value="summary_large_image">Summary Large Image (imagem grande)</option>
+                </select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Advanced SEO */}
+          <Card className="bg-gray-800 border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                SEO Avançado
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="robots_directive" className="text-gray-300">Diretiva Robots</Label>
+                <select
+                  id="robots_directive"
+                  value={settings.robots_directive || 'index, follow'}
+                  onChange={(e) => handleInputChange('robots_directive', e.target.value)}
+                  className="w-full bg-gray-900 border border-gray-600 text-white rounded-md px-3 py-2"
+                >
+                  <option value="index, follow">index, follow (Indexar tudo)</option>
+                  <option value="index, nofollow">index, nofollow (Indexar, não seguir links)</option>
+                  <option value="noindex, follow">noindex, follow (Não indexar, seguir links)</option>
+                  <option value="noindex, nofollow">noindex, nofollow (Não indexar nada)</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="favicon_url" className="text-gray-300">URL do Favicon</Label>
+                <Input
+                  id="favicon_url"
+                  value={settings.favicon_url || ''}
+                  onChange={(e) => handleInputChange('favicon_url', e.target.value)}
+                  className="bg-gray-900 border-gray-600 text-white"
+                  placeholder="https://xlata.site/favicon.ico"
+                />
+                {settings.favicon_url && (
+                  <img 
+                    src={settings.favicon_url} 
+                    alt="Favicon Preview" 
+                    className="w-8 h-8 rounded mt-2"
+                    onError={(e) => e.currentTarget.style.display = 'none'}
+                  />
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="json_ld_data" className="text-gray-300">JSON-LD Personalizado (opcional)</Label>
+                <Textarea
+                  id="json_ld_data"
+                  value={settings.json_ld_data || ''}
+                  onChange={(e) => handleInputChange('json_ld_data', e.target.value)}
+                  className="bg-gray-900 border-gray-600 text-white font-mono text-sm"
+                  rows={6}
+                  placeholder='{"@context": "https://schema.org", "@type": "Organization", ...}'
+                />
+                <p className="text-xs text-gray-500">
+                  Dados estruturados em formato JSON-LD para rich snippets no Google. Deixe vazio para usar o padrão.
+                </p>
               </div>
             </CardContent>
           </Card>
