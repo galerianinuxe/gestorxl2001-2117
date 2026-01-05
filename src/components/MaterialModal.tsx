@@ -7,7 +7,7 @@ import NumberPad from "./NumberPad";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import PasswordPromptModal from "./PasswordPromptModal";
 import { useStockCalculation } from "@/hooks/useStockCalculation";
-import { Package, Scale } from "lucide-react";
+import { Package, Calculator } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { getCanonicalKey } from '@/utils/materialNormalization';
 import { useIsMobile, useIsTablet } from "@/hooks/use-mobile";
@@ -485,127 +485,146 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
                   <span className="text-pdv-green font-semibold text-xl ml-2">R$ {currentPrice.toFixed(2)}</span>
                 </DialogDescription>
               </DialogHeader>
-              <div className="flex flex-col gap-2 my-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-medium">
-                    {hasStockApplied ? "Peso do estoque:" : "Peso bruto:"}
-                  </span>
-                  <span className={`font-bold text-xl ${hasStockApplied ? 'text-orange-400' : 'text-white'}`}>
-                    {formatPeso(currentPeso)}
-                  </span>
-                </div>
-                {taraValue > 0 && (
-                  <div className="flex justify-between items-center text-yellow-400">
-                    <span className="text-lg font-medium">Tara:</span>
-                    <span className="font-bold text-xl">-{formatPeso(taraValue)}</span>
-                  </div>
-                )}
-                {taraValue > 0 && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-lg font-medium">Peso líquido:</span>
-                    <span className="font-bold text-xl text-white">{formatPeso(pesoLiquido)}</span>
-                  </div>
-                )}
-                {appliedDiferencaValue > 0 && (
-                  <div className={`flex justify-between items-center ${appliedDiferencaTipo === 'acrescimo' ? 'text-pdv-green' : 'text-red-400'}`}>
-                    <span className="text-lg font-medium">{appliedDiferencaTipo === 'acrescimo' ? 'Acréscimo:' : 'Desconto:'}</span>
-                    <span className="font-bold text-xl">
-                      {appliedDiferencaTipo === 'acrescimo' ? '+' : '-'}R$ {appliedDiferencaValue.toFixed(2)}/kg
-                    </span>
-                  </div>
-                )}
-                {appliedDiferencaValue > 0 && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-lg font-medium">Valor ajustado:</span>
-                    <span className="font-bold text-xl text-white">R$ {valorFinal.toFixed(2)}/kg</span>
-                  </div>
-                )}
-              </div>
-              <div className="flex items-center justify-between bg-pdv-green bg-opacity-80 rounded p-4 my-3">
-                <span className="text-lg font-medium">
-                  {isSaleMode ? "TOTAL A RECEBER" : "TOTAL A PAGAR"}
-                </span>
-                <span className="text-3xl font-bold text-white drop-shadow">R$ {calculatedTotal.toFixed(2)}</span>
-              </div>
               
-              {/* Botões de ação para Tara, Diferença e Estoque */}
-              <div className={`${isSaleMode ? 'grid grid-cols-3' : 'grid grid-cols-2'} gap-2 my-3`}>
-                {/* Tara Button - Mobile uses inline, Desktop uses Popover */}
-                {isMobileOrTablet ? (
-                  <Button 
-                    className="bg-transparent border border-[#ffda21] text-white hover:bg-[#ffda21]/10"
-                    onClick={() => setActiveSection('tara')}
-                  >
-                    Add Tara
-                  </Button>
-                ) : (
-                  <Popover open={showTaraPopover} onOpenChange={handleTaraPopoverClose}>
-                    <PopoverTrigger asChild>
-                      <Button 
-                        className="bg-transparent border border-[#ffda21] text-white hover:bg-[#ffda21]/10"
-                      >
-                        Add Tara
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="p-0 w-auto border-gray-700 bg-transparent shadow-xl" align="center">
-                      <TaraPopoverContent />
-                    </PopoverContent>
-                  </Popover>
-                )}
-                
-                {/* Diferença Button - Mobile uses inline, Desktop uses Popover */}
-                {hasAppliedDiferenca ? (
-                  <Button 
-                    className="bg-transparent border border-red-500 text-red-500 hover:bg-red-500/10"
-                    onClick={cancelDiferenca}
-                  >
-                    Cancelar Diferença
-                  </Button>
-                ) : isMobileOrTablet ? (
-                  <Button 
-                    className="bg-transparent border border-[#ffffff] text-white hover:bg-white/10"
-                    onClick={() => setActiveSection('diferenca')}
-                  >
-                    Add Diferença
-                  </Button>
-                ) : (
-                  <Popover open={showDiferencaPopover} onOpenChange={handleDiferencaPopoverClose}>
-                    <PopoverTrigger asChild>
-                      <Button 
-                        className="bg-transparent border border-[#ffffff] text-white hover:bg-white/10"
-                      >
-                        Add Diferença
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="p-0 w-auto border-gray-700 bg-transparent shadow-xl" align="center">
-                      <DiferencaPopoverContent />
-                    </PopoverContent>
-                  </Popover>
-                )}
-
-                {/* Botão Add Estoque só aparece em modo venda */}
-                {isSaleMode && (
-                  <>
-                    {hasStockApplied ? (
-                      <Button 
-                        className="bg-transparent border border-red-500 text-red-500 hover:bg-red-500/10"
-                        onClick={cancelStock}
-                      >
-                        Cancelar Estoque
-                      </Button>
-                    ) : (
-                      <Button 
-                        className="bg-transparent border border-orange-500 text-orange-500 hover:bg-orange-500/10 flex items-center gap-2"
-                        onClick={handleStockClick}
-                        disabled={isLoadingStock}
-                      >
-                        <Package className="h-4 w-4" />
-                        {isLoadingStock ? "Carregando..." : "Add Estoque"}
-                      </Button>
+              {/* Show weight info and totals only when peso is valid */}
+              {isPesoValido ? (
+                <>
+                  <div className="flex flex-col gap-2 my-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-lg font-medium">
+                        {hasStockApplied ? "Peso do estoque:" : "Peso bruto:"}
+                      </span>
+                      <span className={`font-bold text-xl ${hasStockApplied ? 'text-orange-400' : 'text-white'}`}>
+                        {formatPeso(currentPeso)}
+                      </span>
+                    </div>
+                    {taraValue > 0 && (
+                      <div className="flex justify-between items-center text-yellow-400">
+                        <span className="text-lg font-medium">Tara:</span>
+                        <span className="font-bold text-xl">-{formatPeso(taraValue)}</span>
+                      </div>
                     )}
-                  </>
-                )}
-              </div>
+                    {taraValue > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-lg font-medium">Peso líquido:</span>
+                        <span className="font-bold text-xl text-white">{formatPeso(pesoLiquido)}</span>
+                      </div>
+                    )}
+                    {appliedDiferencaValue > 0 && (
+                      <div className={`flex justify-between items-center ${appliedDiferencaTipo === 'acrescimo' ? 'text-pdv-green' : 'text-red-400'}`}>
+                        <span className="text-lg font-medium">{appliedDiferencaTipo === 'acrescimo' ? 'Acréscimo:' : 'Desconto:'}</span>
+                        <span className="font-bold text-xl">
+                          {appliedDiferencaTipo === 'acrescimo' ? '+' : '-'}R$ {appliedDiferencaValue.toFixed(2)}/kg
+                        </span>
+                      </div>
+                    )}
+                    {appliedDiferencaValue > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-lg font-medium">Valor ajustado:</span>
+                        <span className="font-bold text-xl text-white">R$ {valorFinal.toFixed(2)}/kg</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between bg-pdv-green bg-opacity-80 rounded p-4 my-3">
+                    <span className="text-lg font-medium">
+                      {isSaleMode ? "TOTAL A RECEBER" : "TOTAL A PAGAR"}
+                    </span>
+                    <span className="text-3xl font-bold text-white drop-shadow">R$ {calculatedTotal.toFixed(2)}</span>
+                  </div>
+                </>
+              ) : (
+                /* Message when no weight is entered */
+                <div className="flex flex-col items-center justify-center py-6 my-3 text-center">
+                  <Calculator className="h-12 w-12 text-gray-400 mb-3" />
+                  <p className="text-gray-300 text-lg font-medium mb-1">
+                    Nenhum peso inserido
+                  </p>
+                  <p className="text-gray-400 text-sm">
+                    Para adicionar este material, insira o peso na balança
+                  </p>
+                </div>
+              )}
+              
+              {/* Botões de ação para Tara, Diferença e Estoque - only show when peso is valid */}
+              {isPesoValido && (
+                <div className={`${isSaleMode ? 'grid grid-cols-3' : 'grid grid-cols-2'} gap-2 my-3`}>
+                  {/* Tara Button - Mobile uses inline, Desktop uses Popover */}
+                  {isMobileOrTablet ? (
+                    <Button 
+                      className="bg-transparent border border-[#ffda21] text-white hover:bg-[#ffda21]/10"
+                      onClick={() => setActiveSection('tara')}
+                    >
+                      Add Tara
+                    </Button>
+                  ) : (
+                    <Popover open={showTaraPopover} onOpenChange={handleTaraPopoverClose}>
+                      <PopoverTrigger asChild>
+                        <Button 
+                          className="bg-transparent border border-[#ffda21] text-white hover:bg-[#ffda21]/10"
+                        >
+                          Add Tara
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="p-0 w-auto border-gray-700 bg-transparent shadow-xl" align="center">
+                        <TaraPopoverContent />
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                  
+                  {/* Diferença Button - Mobile uses inline, Desktop uses Popover */}
+                  {hasAppliedDiferenca ? (
+                    <Button 
+                      className="bg-transparent border border-red-500 text-red-500 hover:bg-red-500/10"
+                      onClick={cancelDiferenca}
+                    >
+                      Cancelar Diferença
+                    </Button>
+                  ) : isMobileOrTablet ? (
+                    <Button 
+                      className="bg-transparent border border-[#ffffff] text-white hover:bg-white/10"
+                      onClick={() => setActiveSection('diferenca')}
+                    >
+                      Add Diferença
+                    </Button>
+                  ) : (
+                    <Popover open={showDiferencaPopover} onOpenChange={handleDiferencaPopoverClose}>
+                      <PopoverTrigger asChild>
+                        <Button 
+                          className="bg-transparent border border-[#ffffff] text-white hover:bg-white/10"
+                        >
+                          Add Diferença
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="p-0 w-auto border-gray-700 bg-transparent shadow-xl" align="center">
+                        <DiferencaPopoverContent />
+                      </PopoverContent>
+                    </Popover>
+                  )}
+
+                  {/* Botão Add Estoque só aparece em modo venda */}
+                  {isSaleMode && (
+                    <>
+                      {hasStockApplied ? (
+                        <Button 
+                          className="bg-transparent border border-red-500 text-red-500 hover:bg-red-500/10"
+                          onClick={cancelStock}
+                        >
+                          Cancelar Estoque
+                        </Button>
+                      ) : (
+                        <Button 
+                          className="bg-transparent border border-orange-500 text-orange-500 hover:bg-orange-500/10 flex items-center gap-2"
+                          onClick={handleStockClick}
+                          disabled={isLoadingStock}
+                        >
+                          <Package className="h-4 w-4" />
+                          {isLoadingStock ? "Carregando..." : "Add Estoque"}
+                        </Button>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
               
               <DialogFooter className="mt-4 flex flex-col-reverse gap-3 sm:flex-row sm:gap-2">
                 <Button variant="secondary" onClick={onCancel} type="button" className="w-full sm:w-auto h-12 rounded-xl">
@@ -622,7 +641,7 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
                     }}
                     className="w-full sm:w-auto h-12 rounded-xl bg-amber-600 hover:bg-amber-700 flex items-center justify-center gap-2"
                   >
-                    <Scale className="h-4 w-4" />
+                    <Calculator className="h-4 w-4" />
                     Inserir Peso
                   </Button>
                 ) : (
