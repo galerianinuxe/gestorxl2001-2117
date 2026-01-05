@@ -25,19 +25,37 @@ export const NotificationModal = ({
   const { toast } = useToast();
 
   const handleMarkAsRead = async (notificationId: string, type?: 'global' | 'direct') => {
-    await markAsRead(notificationId, type);
-    toast({
-      title: "Sucesso",
-      description: "Notificação marcada como lida."
-    });
+    try {
+      await markAsRead(notificationId, type);
+      toast({
+        title: "Sucesso",
+        description: "Notificação marcada como lida."
+      });
+    } catch (error) {
+      console.error('Erro ao marcar como lida:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível marcar a notificação como lida.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleMarkAllAsRead = async () => {
-    await markAllAsRead();
-    toast({
-      title: "Sucesso",
-      description: "Todas as notificações foram marcadas como lidas."
-    });
+    try {
+      await markAllAsRead();
+      toast({
+        title: "Sucesso",
+        description: "Todas as notificações foram marcadas como lidas."
+      });
+    } catch (error) {
+      console.error('Erro ao marcar todas como lidas:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível marcar as notificações como lidas.",
+        variant: "destructive"
+      });
+    }
   };
 
   const formatDate = (dateString: string) => {
