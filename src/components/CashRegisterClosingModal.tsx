@@ -678,22 +678,22 @@ const CashRegisterClosingModal: React.FC<CashRegisterClosingModalProps> = ({
         <DialogContent className={`${
           isMobileOrTablet 
             ? "w-[100vw] h-[100vh] max-w-none" 
-            : "w-[100vw] h-[100vh] max-w-none"
+            : "w-auto max-w-4xl h-auto max-h-[90vh]"
         } bg-gray-900 text-white border-gray-800 overflow-hidden`}>
-          <DialogHeader>
-            <DialogTitle className="text-center text-white flex items-center justify-center gap-2 text-lg">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="text-center text-white flex items-center justify-center gap-2 text-base">
               <Clock className="h-4 w-4" /> Fechamento de Caixa
             </DialogTitle>
-            <DialogDescription className="text-center text-gray-400 text-sm">
+            <DialogDescription className="text-center text-gray-400 text-xs">
               Resumo do dia {new Date(activeCashRegister.openingTimestamp).toLocaleDateString('pt-BR')}
             </DialogDescription>
           </DialogHeader>
           
           <div className={`${
             isMobileOrTablet 
-              ? "flex flex-col space-y-1.5 overflow-y-auto px-2 pb-4" 
-              : "grid grid-cols-3 gap-3 p-4 overflow-y-auto"
-          } h-full`}>
+              ? "flex flex-col space-y-1.5 overflow-y-auto px-2 pb-4 h-full" 
+              : "grid grid-cols-3 gap-2 px-2 pb-2 overflow-y-auto"
+          }`}>
             {isMobileOrTablet ? (
               // Mobile/Tablet Layout - Vertical stacked cards
               <>
@@ -911,39 +911,31 @@ const CashRegisterClosingModal: React.FC<CashRegisterClosingModalProps> = ({
                           />
                           
                           {/* Column 2: Status do Caixa */}
-                          <div className="bg-gray-800 p-4 rounded-sm text-center flex flex-col justify-center">
-                            <div className={`text-gray-300 mb-2 ${
-                              isMobileOrTablet ? 'text-xs' : 'text-sm'
-                            }`}>Status do Caixa</div>
-                            <div className={`font-bold ${
+                          <div className="bg-gray-800 p-3 rounded-sm text-center flex flex-col justify-center">
+                            <div className="text-gray-300 mb-1 text-xs">Status do Caixa</div>
+                            <div className={`font-bold text-2xl ${
                               realTimeDifference === 0 
                                 ? "text-pdv-green" 
                                 : realTimeDifference > 0 
                                   ? "text-blue-400" 
                                   : "text-pdv-red"
-                            } ${
-                              isMobileOrTablet ? 'text-2xl' : 'text-4xl'
                             }`}>
                               {realTimeDifference === 0 ? 'CONFERE' : realTimeDifference > 0 ? 'SOBRA' : 'FALTA'}
                             </div>
-                            <div className={`font-semibold mt-1 ${
+                            <div className={`font-semibold text-sm ${
                               realTimeDifference === 0 
                                 ? "text-pdv-green" 
                                 : realTimeDifference > 0 
                                   ? "text-blue-400" 
                                   : "text-pdv-red"
-                            } ${
-                              isMobileOrTablet ? 'text-sm' : 'text-lg'
                             }`}>
                               R$ {Math.abs(realTimeDifference).toFixed(2)}
                             </div>
                           </div>
                           
                           {/* Column 3: Saldo Final */}
-                          <div className="bg-gray-800 rounded-sm p-4">
-                            <div className={`text-gray-300 mb-2 text-center ${
-                              isMobileOrTablet ? 'text-xs' : 'text-sm'
-                            }`}>Saldo Final (R$)</div>
+                          <div className="bg-gray-800 rounded-sm p-3">
+                            <div className="text-gray-300 mb-1 text-center text-xs">Saldo Final (R$)</div>
                             <CashRegisterFinalAmount
                               inputValue={inputValue}
                               onInputChange={handleInputChange}
@@ -956,20 +948,18 @@ const CashRegisterClosingModal: React.FC<CashRegisterClosingModalProps> = ({
                       )}
                     />
                     
-                    <DialogFooter className="col-span-3 pt-2 flex gap-4">
+                    <DialogFooter className="col-span-3 pt-2 flex gap-3">
                       <Button 
                         type="button" 
                         variant="outline"
                         onClick={handleCancel}
-                        className="bg-transparent hover:bg-gray-700 text-white border-gray-600 text-lg w-full"
-                        style={{ height: 'calc(3rem * 1.2)' }}
+                        className="bg-transparent hover:bg-gray-700 text-white border-gray-600 text-sm w-full h-10"
                       >
                         Cancelar
                       </Button>
                       <Button 
                         type="submit" 
-                        className="bg-pdv-red hover:bg-red-700 text-lg w-full"
-                        style={{ height: 'calc(3rem * 1.2)' }}
+                        className="bg-pdv-red hover:bg-red-700 text-sm w-full h-10"
                       >
                         Fechar Caixa
                       </Button>
