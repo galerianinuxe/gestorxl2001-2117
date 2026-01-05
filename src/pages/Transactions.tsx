@@ -123,9 +123,10 @@ const Transactions = () => {
   }, [user]);
 
   useEffect(() => {
+    // Atualizar a cada 60 segundos (otimizado de 30s para 60s)
     const interval = setInterval(() => {
       loadData(true);
-    }, 30000);
+    }, 60000);
     return () => clearInterval(interval);
   }, [user]);
 

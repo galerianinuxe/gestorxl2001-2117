@@ -325,15 +325,15 @@ export const useSystemConfig = () => {
   useEffect(() => {
     fetchSystemConfig();
     
-    // Atualizar estatísticas a cada 30 segundos
+    // Atualizar estatísticas a cada 120 segundos (otimizado de 30s para 120s)
     const interval = setInterval(() => {
       fetchRealSystemStats();
-    }, 30000);
+    }, 120000);
 
-    // Atualizar versão a cada 5 minutos para refletir mudanças no sistema
+    // Atualizar versão a cada 10 minutos (otimizado de 5 para 10 minutos)
     const versionInterval = setInterval(() => {
       updateSystemVersion(false);
-    }, 300000);
+    }, 600000);
 
     return () => {
       clearInterval(interval);

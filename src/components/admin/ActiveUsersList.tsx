@@ -183,8 +183,8 @@ export const ActiveUsersList = () => {
   useEffect(() => {
     fetchActiveUsers();
     
-    // Auto-atualizar a cada 10 segundos
-    const interval = setInterval(fetchActiveUsers, 10000);
+    // Auto-atualizar a cada 60 segundos (otimizado de 10s para 60s)
+    const interval = setInterval(fetchActiveUsers, 60000);
     
     return () => clearInterval(interval);
   }, []);
@@ -316,7 +316,7 @@ export const ActiveUsersList = () => {
             </div>
           </div>
           <p className="text-sm text-gray-400">
-            Última atualização: {lastUpdate.toLocaleTimeString('pt-BR')} • Atualização automática a cada 10 segundos
+            Última atualização: {lastUpdate.toLocaleTimeString('pt-BR')} • Atualização automática a cada 60 segundos
           </p>
         </CardHeader>
         <CardContent>
@@ -413,7 +413,7 @@ export const ActiveUsersList = () => {
             <div className="text-sm text-gray-400 space-y-1">
               <p>• Usuários online em tempo real: <span className="text-green-400 font-medium">{onlineCount}</span></p>
               <p>• Usuários offline recentes (2h): <span className="text-red-400 font-medium">{offlineCount}</span></p>
-              <p>• Lista atualizada automaticamente a cada 10 segundos</p>
+              <p>• Lista atualizada automaticamente a cada 60 segundos</p>
               <p>• Indicador verde 🟢 para online, vermelho 🔴 para offline</p>
               <p>• Total de usuários exibidos: <span className="text-blue-400 font-medium">{activeUsers.length}</span></p>
               <p>• Clique no ícone de mensagem para enviar alertas individuais</p>

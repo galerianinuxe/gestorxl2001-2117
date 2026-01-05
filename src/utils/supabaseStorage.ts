@@ -49,8 +49,29 @@ export const getCustomers = async (): Promise<Customer[]> => {
   })) || [];
 };
 
+// Cache para evitar saves desnecessários
+const customerCache = new Map<string, { name: string; timestamp: number }>();
+const CACHE_TTL = 5000; // 5 segundos
+
 export const saveCustomer = async (customer: Omit<Customer, 'orders'>): Promise<void> => {
   const user = await ensureAuthenticated();
+
+  // Verificar cache para evitar saves duplicados
+  const cached = customerCache.get(customer.id);
+  const now = Date.now();
+  
+  if (cached && cached.name === customer.name && (now - cached.timestamp) < CACHE_TTL) {
+    // Dados idênticos e recentes - skip save
+    return;
+  }
+
+  // Verificar se o customer já existe com os mesmos dados
+  const existing = await getCustomerById(customer.id);
+  if (existing && existing.name === customer.name) {
+    // Atualizar cache e skip save
+    customerCache.set(customer.id, { name: customer.name, timestamp: now });
+    return;
+  }
 
   const customerData = {
     id: customer.id,
@@ -66,6 +87,9 @@ export const saveCustomer = async (customer: Omit<Customer, 'orders'>): Promise<
     console.error('Error saving customer:', error);
     throw error;
   }
+
+  // Atualizar cache após save bem-sucedido
+  customerCache.set(customer.id, { name: customer.name, timestamp: now });
 };
 
 export const removeCustomer = async (customerId: string): Promise<void> => {
@@ -160,11 +184,26 @@ export const getOrders = async (): Promise<Order[]> => {
   }) || [];
 };
 
+// Cache para evitar saves de orders desnecessários
+const orderCache = new Map<string, { hash: string; timestamp: number }>();
+const ORDER_CACHE_TTL = 3000; // 3 segundos
+
+const hashOrder = (order: Order): string => {
+  return `${order.status}-${order.total}-${order.items.length}-${order.type}`;
+};
+
 export const saveOrder = async (order: Order): Promise<void> => {
   const user = await ensureAuthenticated();
 
   try {
-    console.log('SAVING ORDER - Full order object:', order);
+    const orderHash = hashOrder(order);
+    const cached = orderCache.get(order.id);
+    const now = Date.now();
+    
+    // Skip se ordem idêntica foi salva recentemente
+    if (cached && cached.hash === orderHash && (now - cached.timestamp) < ORDER_CACHE_TTL) {
+      return;
+    }
     
     // Save order with user_id to ensure isolation
     const orderData = {
@@ -175,8 +214,6 @@ export const saveOrder = async (order: Order): Promise<void> => {
       total: order.total,
       user_id: user.id // CRITICAL: Always set user_id
     };
-
-    console.log('Order data being saved:', orderData);
 
     const { error: orderError } = await supabase
       .from('orders')
@@ -275,6 +312,9 @@ export const saveOrder = async (order: Order): Promise<void> => {
           .eq('user_id', user.id);
       }
     }
+
+    // Atualizar cache após save bem-sucedido
+    orderCache.set(order.id, { hash: orderHash, timestamp: Date.now() });
   } catch (error) {
     console.error('Error saving order:', error);
     throw error;

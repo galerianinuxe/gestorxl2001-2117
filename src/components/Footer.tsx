@@ -53,12 +53,12 @@ const Footer: React.FC<FooterProps> = ({
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // For mobile/tablet, check connection status more frequently
+    // Otimizado: verificar a cada 5s ao invés de 1s
     let intervalId: NodeJS.Timeout | null = null;
     if (isMobileOrTablet) {
       intervalId = setInterval(() => {
         setIsInternetOnline(navigator.onLine);
-      }, 1000); // Check every second for mobile/tablet
+      }, 5000);
     }
     return () => {
       window.removeEventListener('online', handleOnline);
@@ -82,9 +82,8 @@ const Footer: React.FC<FooterProps> = ({
     // Check server connection on mount
     checkServerConnection();
 
-    // For mobile/tablet, check server connection more frequently
-    const serverCheckInterval = setInterval(checkServerConnection, isMobileOrTablet ? 5000 : 30000 // Every 5 seconds for mobile/tablet, 30 seconds for desktop
-    );
+    // Otimizado: 30s para mobile/tablet, 60s para desktop (era 5s e 30s)
+    const serverCheckInterval = setInterval(checkServerConnection, isMobileOrTablet ? 30000 : 60000);
     return () => clearInterval(serverCheckInterval);
   }, [isMobileOrTablet]);
   const handleExpenseClick = () => {
