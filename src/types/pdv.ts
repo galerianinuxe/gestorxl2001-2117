@@ -40,7 +40,9 @@ export interface CashRegister {
   openingTimestamp: number;
   closingTimestamp?: number;
   status: 'open' | 'closed';
-  finalAmount?: number; // Add this property
+  finalAmount?: number;
+  userName?: string;
+  userEmail?: string;
 }
 
 export interface CashTransaction {

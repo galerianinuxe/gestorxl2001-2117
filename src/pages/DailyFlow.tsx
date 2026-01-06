@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Calendar, DollarSign, Printer, Trash2, ShoppingCart, TrendingDown, FileText, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Calendar, DollarSign, Printer, Trash2, ShoppingCart, TrendingDown, FileText, TrendingUp, User } from 'lucide-react';
 import { getCashRegisters, calculateCashSummary } from '@/utils/localStorage';
 import { useReceiptFormatSettings } from '@/hooks/useReceiptFormatSettings';
 import { useAuth } from '@/hooks/useAuth';
@@ -32,6 +32,7 @@ const DailyFlow = () => {
     totalExpenses: number;
     expectedAmount: number;
     difference: number;
+    userName: string;
   }>>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -83,7 +84,8 @@ const DailyFlow = () => {
               totalPurchases: summary.totalPurchases || 0,
               totalExpenses: summary.expenses.reduce((sum, expense) => sum + expense.amount, 0),
               expectedAmount: summary.expectedAmount,
-              difference: (summary.finalAmount || 0) - summary.expectedAmount
+              difference: (summary.finalAmount || 0) - summary.expectedAmount,
+              userName: register.userName || 'Usuário'
             };
           })
         );
@@ -333,10 +335,18 @@ const DailyFlow = () => {
                   {paginatedData.map((item) => (
                     <Card key={item.id} className="bg-slate-800 border-slate-600">
                       <CardContent className="p-3">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <div className="text-white font-semibold text-sm">{formatDate(item.openingDate)}</div>
-                            <div className="text-xs text-slate-400">{formatTime(item.openingDate)}</div>
+                        {/* Header com nome do usuário */}
+                        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-700">
+                          <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center flex-shrink-0">
+                            <span className="text-white font-bold text-xs">
+                              {item.userName.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white font-medium text-sm truncate">{item.userName}</p>
+                            <p className="text-slate-400 text-xs">
+                              {formatDate(item.openingDate)} às {formatTime(item.openingDate)}
+                            </p>
                           </div>
                           <div className={`text-sm font-bold ${item.difference >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                             {formatCurrency(item.difference)}
@@ -385,6 +395,7 @@ const DailyFlow = () => {
                   <Table>
                     <TableHeader>
                       <TableRow className="border-slate-600">
+                        <TableHead className="text-slate-300 text-sm p-2">Operador</TableHead>
                         <TableHead className="text-slate-300 text-sm p-2">Abertura</TableHead>
                         <TableHead className="text-slate-300 text-sm p-2">Fechamento</TableHead>
                         <TableHead className="text-slate-300 text-sm p-2">Compras</TableHead>
@@ -397,6 +408,16 @@ const DailyFlow = () => {
                     <TableBody>
                       {paginatedData.map((item) => (
                         <TableRow key={item.id} className="border-slate-600">
+                          <TableCell className="text-slate-300 text-sm p-2">
+                            <div className="flex items-center gap-2">
+                              <div className="w-7 h-7 rounded-full bg-emerald-600 flex items-center justify-center flex-shrink-0">
+                                <span className="text-white font-bold text-xs">
+                                  {item.userName.charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                              <span className="truncate max-w-[100px]">{item.userName}</span>
+                            </div>
+                          </TableCell>
                           <TableCell className="text-slate-300 text-sm p-2">
                             <div>{formatDate(item.openingDate)}</div>
                             <div className="text-xs text-slate-500">{formatTime(item.openingDate)}</div>

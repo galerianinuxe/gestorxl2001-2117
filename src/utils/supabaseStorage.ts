@@ -480,6 +480,7 @@ export const getMaterialById = async (id: string): Promise<Material | undefined>
 export const getCashRegisters = async (): Promise<CashRegister[]> => {
   const user = await ensureAuthenticated();
   
+  // Fetch cash registers
   const { data, error } = await supabase
     .from('cash_registers')
     .select(`
@@ -493,24 +494,35 @@ export const getCashRegisters = async (): Promise<CashRegister[]> => {
     console.error('Error fetching cash registers:', error);
     return [];
   }
+
+  // Fetch user profile for the name
+  const { data: profileData } = await supabase
+    .from('profiles')
+    .select('name, email')
+    .eq('id', user.id)
+    .single();
   
-  return data?.map(register => ({
-    id: register.id,
-    initialAmount: Number(register.initial_amount),
-    currentAmount: Number(register.current_amount),
-    transactions: register.cash_transactions?.map((transaction: any) => ({
-      id: transaction.id,
-      type: transaction.type as any,
-      amount: Number(transaction.amount),
-      timestamp: new Date(transaction.created_at).getTime(),
-      orderId: transaction.order_id,
-      description: transaction.description
-    })) || [],
-    openingTimestamp: new Date(register.opening_timestamp || register.created_at).getTime(),
-    closingTimestamp: register.closing_timestamp ? new Date(register.closing_timestamp).getTime() : undefined,
-    status: register.status as 'open' | 'closed',
-    finalAmount: register.final_amount ? Number(register.final_amount) : undefined
-  })) || [];
+  return data?.map(register => {
+    return {
+      id: register.id,
+      initialAmount: Number(register.initial_amount),
+      currentAmount: Number(register.current_amount),
+      transactions: register.cash_transactions?.map((transaction: any) => ({
+        id: transaction.id,
+        type: transaction.type as any,
+        amount: Number(transaction.amount),
+        timestamp: new Date(transaction.created_at).getTime(),
+        orderId: transaction.order_id,
+        description: transaction.description
+      })) || [],
+      openingTimestamp: new Date(register.opening_timestamp || register.created_at).getTime(),
+      closingTimestamp: register.closing_timestamp ? new Date(register.closing_timestamp).getTime() : undefined,
+      status: register.status as 'open' | 'closed',
+      finalAmount: register.final_amount ? Number(register.final_amount) : undefined,
+      userName: profileData?.name || undefined,
+      userEmail: profileData?.email || undefined
+    };
+  }) || [];
 };
 
 export const getActiveCashRegister = async (): Promise<CashRegister | null> => {
