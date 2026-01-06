@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/hooks/useAuth';
-import { getActiveCashRegister } from '@/utils/supabaseStorage';
+
 import SystemLogo from './SystemLogo';
 import { useEmployee } from '@/contexts/EmployeeContext';
 
@@ -56,23 +56,9 @@ export function AppSidebar({
 
   // Funcionários usam assinatura do dono
   const effectiveSubscription = isEmployee ? ownerSubscription : subscription;
-  const handleCashRegisterAction = async () => {
-    try {
-      const activeCashRegister = await getActiveCashRegister();
-      
-      if (activeCashRegister && activeCashRegister.status === 'open') {
-        console.log('✅ Caixa aberto, redirecionando para PDV');
-        navigate('/');
-      } else {
-        console.log('❌ Caixa fechado, redirecionando para PDV para abrir caixa');
-        // Sempre navegar para o PDV - lá o modal de abertura será exibido automaticamente
-        navigate('/');
-      }
-    } catch (error) {
-      console.error('Erro ao verificar status do caixa:', error);
-      // Em caso de erro, navegar para o PDV
-      navigate('/');
-    }
+  const handleCashRegisterAction = () => {
+    // Navegar diretamente para o PDV - o modal de abertura de caixa será tratado lá
+    navigate('/');
   };
 
   // Seção Principal - Acesso rápido
