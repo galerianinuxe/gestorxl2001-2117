@@ -507,13 +507,15 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
           <p className="text-emerald-400 font-bold text-base">
             R$ {order.total.toFixed(2)}
           </p>
-          <button
-            onClick={() => handleViewOrder(order.id)}
-            className="p-2 rounded-lg bg-slate-700/50 hover:bg-slate-600/50 text-slate-400 hover:text-white transition-colors"
-            title="Ver Detalhes"
-          >
-            <Eye className="w-4 h-4" />
-          </button>
+          {order.status === 'completed' && (
+            <button
+              onClick={() => handleViewOrder(order.id)}
+              className="p-2 rounded-lg bg-slate-700/50 hover:bg-slate-600/50 text-slate-400 hover:text-white transition-colors"
+              title="Ver Detalhes"
+            >
+              <Eye className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -928,14 +930,18 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Button
-                          onClick={() => handleViewOrder(order.id)}
-                          size="sm"
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                        >
-                          <Eye className="h-4 w-4 mr-1" />
-                          Ver Pedido
-                        </Button>
+                        {order.status === 'completed' ? (
+                          <Button
+                            onClick={() => handleViewOrder(order.id)}
+                            size="sm"
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            Ver Pedido
+                          </Button>
+                        ) : (
+                          <span className="text-slate-500 text-sm">Em andamento</span>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
