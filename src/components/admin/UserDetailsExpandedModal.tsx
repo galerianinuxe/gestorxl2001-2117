@@ -529,13 +529,7 @@ const UserDetailsExpandedModal: React.FC<UserDetailsExpandedModalProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
         hideCloseButton 
-        className={`
-          ${isMobileOrTablet 
-            ? "w-screen h-screen max-w-none max-h-none rounded-none" 
-            : "w-[100vw] max-w-[100vw] h-[100vh] max-h-[100vh] rounded-none"
-          } 
-          bg-card border-0 overflow-hidden flex flex-col p-0
-        `}
+        className="!fixed !inset-0 !left-0 !top-0 !right-0 !bottom-0 !w-screen !h-screen !max-w-none !max-h-none !translate-x-0 !translate-y-0 !rounded-none bg-card border-0 overflow-hidden flex flex-col p-0"
       >
         <DialogHeader className={`flex flex-row items-center justify-between border-b border-border ${isMobileOrTablet ? 'p-3' : 'p-4'}`}>
           <div className="flex items-center gap-3">
