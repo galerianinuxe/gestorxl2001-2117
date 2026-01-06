@@ -45,6 +45,8 @@ const Covildomal = lazy(() => import('./pages/Covildomal'));
 const TermsOfService = lazy(() => import('./pages/TermsOfService'));
 const ErrorReport = lazy(() => import('./pages/ErrorReport'));
 const ReferralSystemPage = lazy(() => import('./pages/ReferralSystem'));
+const DepotClients = lazy(() => import('./pages/DepotClients'));
+const Employees = lazy(() => import('./pages/Employees'));
 
 // Portal de Conteúdo (páginas públicas SEO)
 const Blog = lazy(() => import('./pages/portal/Blog'));
@@ -318,6 +320,20 @@ const AppContent = () => {
         <Route path="/promocao-xlata01" element={
           <AuthGuard>
             <PromoXlata01 />
+          </AuthGuard>
+        } />
+        <Route path="/clientes" element={
+          <AuthGuard>
+            <Suspense fallback={<PageLoader />}>
+              <DepotClients />
+            </Suspense>
+          </AuthGuard>
+        } />
+        <Route path="/funcionarios" element={
+          <AuthGuard>
+            <Suspense fallback={<PageLoader />}>
+              <Employees />
+            </Suspense>
           </AuthGuard>
         } />
         

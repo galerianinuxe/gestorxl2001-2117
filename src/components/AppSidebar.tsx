@@ -18,7 +18,8 @@ import {
   Users,
   AlertCircle,
   Crown,
-  ChevronRight
+  ChevronRight,
+  UserCog
 } from 'lucide-react';
 import {
   Sidebar,
@@ -103,6 +104,8 @@ export function AppSidebar({
   // Seção Configurações - Sistema
   const configuracoesItems = [
     { title: "Materiais", icon: ClipboardList, href: "/materiais" },
+    { title: "Clientes", icon: Users, href: "/clientes" },
+    { title: "Funcionários", icon: UserCog, href: "/funcionarios" },
     { title: "Configurações", icon: Settings, href: "/configuracoes" },
     { title: "Ajuda & Guia", icon: BookOpen, href: "/guia-completo" },
     { title: "Planos", icon: Crown, href: "/planos" },

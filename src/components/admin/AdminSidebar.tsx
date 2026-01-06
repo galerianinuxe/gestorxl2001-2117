@@ -37,7 +37,8 @@ import {
   AlertTriangle,
   Database,
   Server,
-  ChevronDown
+  ChevronDown,
+  UserCog
 } from 'lucide-react';
 import { useAdminRoles, AdminRole } from '@/hooks/useAdminRoles';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -58,7 +59,9 @@ export type ActiveTab =
   | 'feature-flags'
   | 'manutencao'
   | 'analytics'
-  | 'online';
+  | 'online'
+  | 'depot-clients'
+  | 'depot-employees';
 
 interface MenuGroup {
   id: string;
@@ -104,6 +107,8 @@ const menuGroups: MenuGroup[] = [
     icon: Users,
     items: [
       { id: 'usuarios', title: 'Gerenciar', icon: Users },
+      { id: 'depot-clients', title: 'Clientes Depósito', icon: Users },
+      { id: 'depot-employees', title: 'Funcionários', icon: UserCog },
     ],
     requiredRole: 'suporte'
   },

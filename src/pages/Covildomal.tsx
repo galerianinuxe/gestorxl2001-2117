@@ -34,6 +34,8 @@ import { ContentManagementPanel } from '@/components/admin/ContentManagementPane
 import DashboardSummary from '@/components/admin/DashboardSummary';
 import { useIsMobile, useIsTablet } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
+import { DepotClientsManagement } from '@/components/admin/DepotClientsManagement';
+import { EmployeesManagement } from '@/components/admin/EmployeesManagement';
 
 const Covildomal = () => {
   const navigate = useNavigate();
@@ -144,6 +146,10 @@ const Covildomal = () => {
         return <AnalyticsDashboard />;
       case 'online':
         return <ActiveUsersList />;
+      case 'depot-clients':
+        return <DepotClientsManagement />;
+      case 'depot-employees':
+        return <EmployeesManagement />;
       default:
         return null;
     }
