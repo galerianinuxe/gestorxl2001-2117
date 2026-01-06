@@ -978,6 +978,156 @@ export type Database = {
           },
         ]
       }
+      depot_clients: {
+        Row: {
+          address_city: string | null
+          address_neighborhood: string | null
+          address_number: string | null
+          cpf: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          notes: string | null
+          total_orders: number | null
+          total_spent: number | null
+          unidade_id: string | null
+          updated_at: string | null
+          user_id: string
+          whatsapp: string
+        }
+        Insert: {
+          address_city?: string | null
+          address_neighborhood?: string | null
+          address_number?: string | null
+          cpf?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          notes?: string | null
+          total_orders?: number | null
+          total_spent?: number | null
+          unidade_id?: string | null
+          updated_at?: string | null
+          user_id: string
+          whatsapp: string
+        }
+        Update: {
+          address_city?: string | null
+          address_neighborhood?: string | null
+          address_number?: string | null
+          cpf?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          notes?: string | null
+          total_orders?: number | null
+          total_spent?: number | null
+          unidade_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+          whatsapp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "depot_clients_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      depot_employees: {
+        Row: {
+          created_at: string | null
+          email: string
+          employee_user_id: string | null
+          id: string
+          is_active: boolean | null
+          last_login_at: string | null
+          name: string
+          owner_user_id: string
+          phone: string | null
+          role: string | null
+          unidade_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          employee_user_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_login_at?: string | null
+          name: string
+          owner_user_id: string
+          phone?: string | null
+          role?: string | null
+          unidade_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          employee_user_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_login_at?: string | null
+          name?: string
+          owner_user_id?: string
+          phone?: string | null
+          role?: string | null
+          unidade_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "depot_employees_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_permissions: {
+        Row: {
+          employee_id: string
+          granted_at: string | null
+          granted_by: string | null
+          id: string
+          permission: string
+        }
+        Insert: {
+          employee_id: string
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          permission: string
+        }
+        Update: {
+          employee_id?: string
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          permission?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_permissions_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "depot_employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       error_reports: {
         Row: {
           created_at: string
@@ -1906,11 +2056,15 @@ export type Database = {
           cancelled_by: string | null
           created_at: string | null
           customer_id: string
+          depot_client_id: string | null
           id: string
           payment_method: string | null
           payment_method_type: string | null
+          payment_status: string | null
           pix_key_type: string | null
           pix_key_value: string | null
+          receipt_saved: boolean | null
+          receipt_saved_at: string | null
           status: string | null
           total: number
           type: string
@@ -1925,11 +2079,15 @@ export type Database = {
           cancelled_by?: string | null
           created_at?: string | null
           customer_id: string
+          depot_client_id?: string | null
           id?: string
           payment_method?: string | null
           payment_method_type?: string | null
+          payment_status?: string | null
           pix_key_type?: string | null
           pix_key_value?: string | null
+          receipt_saved?: boolean | null
+          receipt_saved_at?: string | null
           status?: string | null
           total?: number
           type: string
@@ -1944,11 +2102,15 @@ export type Database = {
           cancelled_by?: string | null
           created_at?: string | null
           customer_id?: string
+          depot_client_id?: string | null
           id?: string
           payment_method?: string | null
           payment_method_type?: string | null
+          payment_status?: string | null
           pix_key_type?: string | null
           pix_key_value?: string | null
+          receipt_saved?: boolean | null
+          receipt_saved_at?: string | null
           status?: string | null
           total?: number
           type?: string
@@ -1962,6 +2124,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_depot_client_id_fkey"
+            columns: ["depot_client_id"]
+            isOneToOne: false
+            referencedRelation: "depot_clients"
             referencedColumns: ["id"]
           },
           {
@@ -3244,11 +3413,15 @@ export type Database = {
           cancelled_by: string | null
           created_at: string | null
           customer_id: string
+          depot_client_id: string | null
           id: string
           payment_method: string | null
           payment_method_type: string | null
+          payment_status: string | null
           pix_key_type: string | null
           pix_key_value: string | null
+          receipt_saved: boolean | null
+          receipt_saved_at: string | null
           status: string | null
           total: number
           type: string
