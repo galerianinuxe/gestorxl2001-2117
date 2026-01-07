@@ -880,6 +880,12 @@ const Index: React.FC = () => {
       setActiveCustomer(null);
       setActiveOrder(null);
       setShowOrderCompletionModal(false);
+      
+      // Navegar para a aba da balança em mobile/tablet após finalizar pedido
+      if (mobileTabSetterRef.current) {
+        mobileTabSetterRef.current('scale');
+      }
+      
       toast({
         title: "Pedido concluído",
         description: `Total: R$ ${validatedOrder.total.toFixed(2)} - Salvo no banco de dados`,
