@@ -735,23 +735,28 @@ const OrderCompletionModal: React.FC<OrderCompletionModalProps> = ({
             </>
           )}
 
-          {/* Mobile/Tablet layout - visual moderno com botões elegantes */}
+          {/* Mobile/Tablet layout - botões reorganizados */}
           {(isMobile || isTablet) && (
             <div className="space-y-2 pt-1">
-              <Button 
-                className="w-full h-12 text-base font-semibold gap-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white border-0 rounded-xl shadow-lg shadow-emerald-900/30 transition-all duration-200 active:scale-[0.98]"
-                onClick={handleDirectPrint}
-              >
-                <Printer size={18} />
-                Imprimir
-              </Button>
-              <Button 
-                className="w-full h-12 text-base font-semibold gap-2 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white border-0 rounded-xl shadow-lg shadow-amber-900/30 transition-all duration-200 active:scale-[0.98]"
-                onClick={handleSaveOnly}
-              >
-                <Save size={18} />
-                Só Salvar
-              </Button>
+              {/* Linha 1: Imprimir e Só Salvar lado a lado */}
+              <div className="flex gap-2">
+                <Button 
+                  className="flex-1 h-12 text-base font-semibold gap-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white border-0 rounded-xl shadow-lg shadow-emerald-900/30 transition-all duration-200 active:scale-[0.98]"
+                  onClick={handleDirectPrint}
+                >
+                  <Printer size={18} />
+                  Imprimir
+                </Button>
+                <Button 
+                  className="flex-1 h-12 text-base font-semibold gap-2 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white border-0 rounded-xl shadow-lg shadow-amber-900/30 transition-all duration-200 active:scale-[0.98]"
+                  onClick={handleSaveOnly}
+                >
+                  <Save size={18} />
+                  Só Salvar
+                </Button>
+              </div>
+              
+              {/* Linha 2: Cancelar ocupando toda largura */}
               <Button 
                 variant="outline" 
                 className="w-full h-10 text-sm font-medium gap-2 bg-transparent text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-700 rounded-xl transition-all duration-200"
