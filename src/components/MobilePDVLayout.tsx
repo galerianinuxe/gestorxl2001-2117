@@ -2,7 +2,7 @@ import React, { useState, useEffect, memo, startTransition } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Bell, Printer, MessageSquare, DollarSign, Receipt, X, Clock, Wifi, Server, ChevronRight, Settings, WifiOff, ServerOff } from 'lucide-react';
+import { Bell, Printer, MessageSquare, DollarSign, Receipt, X, Clock, Wifi, Server, ChevronRight, Settings, WifiOff, ServerOff, Eye, EyeOff } from 'lucide-react';
 import MobileBottomNav, { MobileTab } from './MobileBottomNav';
 import { Customer, Order, Material } from '@/types/pdv';
 import { useNavigate } from 'react-router-dom';
@@ -151,6 +151,7 @@ const MobilePDVLayout: React.FC<MobilePDVLayoutProps> = ({
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [isBalanceVisible, setIsBalanceVisible] = useState(false);
   const navigate = useNavigate();
 
   // Update time every second
@@ -267,28 +268,30 @@ const MobilePDVLayout: React.FC<MobilePDVLayoutProps> = ({
 
             {/* Preview do pedido atual - Melhorado para mobile */}
             {activeOrder && activeOrder.items.length > 0 && (
-              <button 
-                onClick={() => setActiveTab('orders')}
-                className="bg-gradient-to-r from-slate-800 to-slate-700 border-t border-emerald-500/30 px-4 py-3 flex items-center justify-between active:bg-slate-600 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-emerald-600/20 flex items-center justify-center">
-                    <span className="text-emerald-400 font-bold text-sm">{activeOrder.items.length}</span>
+              <div className="mb-[20%]">
+                <button 
+                  onClick={() => setActiveTab('orders')}
+                  className="w-full bg-gradient-to-r from-slate-800 to-slate-700 border-t border-emerald-500/30 px-4 py-3 flex items-center justify-between active:bg-slate-600 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-emerald-600/20 flex items-center justify-center">
+                      <span className="text-emerald-400 font-bold text-sm">{activeOrder.items.length}</span>
+                    </div>
+                    <div className="text-left">
+                      <p className="text-white font-semibold text-sm">
+                        R$ {activeOrder.total.toFixed(2)}
+                      </p>
+                      <p className="text-slate-400 text-[10px]">
+                        {activeOrder.items.length === 1 ? '1 item' : `${activeOrder.items.length} itens`} no pedido
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-left">
-                    <p className="text-white font-semibold text-sm">
-                      R$ {activeOrder.total.toFixed(2)}
-                    </p>
-                    <p className="text-slate-400 text-[10px]">
-                      {activeOrder.items.length === 1 ? '1 item' : `${activeOrder.items.length} itens`} no pedido
-                    </p>
+                  <div className="flex items-center gap-2 bg-emerald-600 px-3 py-1.5 rounded-lg">
+                    <span className="text-white text-xs font-medium">Ver Pedido</span>
+                    <ChevronRight className="w-4 h-4 text-white" />
                   </div>
-                </div>
-                <div className="flex items-center gap-2 bg-emerald-600 px-3 py-1.5 rounded-lg">
-                  <span className="text-white text-xs font-medium">Ver Pedido</span>
-                  <ChevronRight className="w-4 h-4 text-white" />
-                </div>
-              </button>
+                </button>
+              </div>
             )}
           </div>
         );
@@ -331,7 +334,7 @@ const MobilePDVLayout: React.FC<MobilePDVLayoutProps> = ({
 
             {/* Info do peso atual */}
             {pesoInput && parseFloat(pesoInput) > 0 && (
-              <div className="bg-emerald-900/30 border-t border-emerald-500/30 px-3 py-2">
+              <div className="bg-emerald-900/30 border-t border-emerald-500/30 px-3 py-2 pb-[20%]">
                 <div className="flex items-center justify-between">
                   <span className="text-slate-300 text-xs">Peso na balança:</span>
                   <span className="text-emerald-400 font-bold">
@@ -397,10 +400,11 @@ const MobilePDVLayout: React.FC<MobilePDVLayoutProps> = ({
                 
                 {/* Botão Finalizar Pedido */}
                 {activeOrder.items.length > 0 && (
-                  <div className="bg-slate-800 border-t border-slate-700 p-3">
+                  <div className="bg-slate-800 border-t border-slate-700 p-3 pb-[15%]">
                     <button
                       onClick={handleInitiateCompleteOrder}
                       className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 text-base"
+                      style={{ height: 'calc(48px * 1.1)' }}
                     >
                       Finalizar Pedido
                     </button>
@@ -422,7 +426,7 @@ const MobilePDVLayout: React.FC<MobilePDVLayoutProps> = ({
             {/* Menu Items */}
             <ScrollArea className="flex-1">
               <div className="p-3 space-y-2">
-                {/* Saldo */}
+                {/* Saldo com proteção */}
                 <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -432,10 +436,20 @@ const MobilePDVLayout: React.FC<MobilePDVLayoutProps> = ({
                       <div>
                         <p className="text-slate-400 text-xs">Saldo atual</p>
                         <p className="text-emerald-400 font-bold text-lg">
-                          R$ {currentBalance.toFixed(2)}
+                          {isBalanceVisible ? `R$ ${currentBalance.toFixed(2)}` : '••••••'}
                         </p>
                       </div>
                     </div>
+                    <button 
+                      onClick={() => setIsBalanceVisible(!isBalanceVisible)}
+                      className="p-2 rounded-full hover:bg-slate-700 transition-colors"
+                    >
+                      {isBalanceVisible ? (
+                        <EyeOff className="w-5 h-5 text-slate-400" />
+                      ) : (
+                        <Eye className="w-5 h-5 text-slate-400" />
+                      )}
+                    </button>
                   </div>
                 </div>
 
@@ -460,6 +474,11 @@ const MobilePDVLayout: React.FC<MobilePDVLayoutProps> = ({
                   icon={<Settings className="w-5 h-5" />}
                   label="Configurações"
                   onClick={() => handleMenuAction('settings')}
+                />
+                <MenuItem 
+                  icon={<MessageSquare className="w-5 h-5" />}
+                  label="Enviar Sugestão/Suporte"
+                  onClick={() => setShowErrorReportModal(true)}
                 />
                 </div>
 

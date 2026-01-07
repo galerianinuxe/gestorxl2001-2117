@@ -721,7 +721,7 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
                   <Button 
                     onClick={handleAddClick} 
                     disabled={!isPesoValido}
-                    className={`w-full sm:w-auto h-12 rounded-xl ${isPesoValido ? 'bg-pdv-green hover:bg-pdv-green/90' : 'bg-gray-500'}`}
+                    className={`w-full sm:w-auto rounded-xl ${isPesoValido ? 'bg-pdv-green hover:bg-pdv-green/90' : 'bg-gray-500'} ${isMobileOrTablet ? 'h-14' : 'h-12'}`}
                   >
                     Adicionar
                   </Button>
