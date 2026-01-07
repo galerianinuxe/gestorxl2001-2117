@@ -37,12 +37,12 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        // Mobile-first: bottom sheet style (native app feel)
+        // Mobile-first: top sheet style (easier to read and interact)
         "fixed z-50 grid w-full gap-4 border bg-background p-6 shadow-lg duration-300",
-        // Mobile: bottom sheet with slide-up animation and rounded top corners
-        "inset-x-0 bottom-0 max-h-[90vh] overflow-y-auto rounded-t-2xl",
+        // Mobile: top sheet with slide-down animation and rounded bottom corners
+        "inset-x-0 top-0 max-h-[90vh] overflow-y-auto rounded-b-2xl",
         "data-[state=open]:animate-in data-[state=closed]:animate-out",
-        "data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
+        "data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",
         // Desktop (md+): centered modal with traditional positioning
         "md:inset-auto md:left-[50%] md:top-[50%] md:max-w-lg md:translate-x-[-50%] md:translate-y-[-50%] md:rounded-lg md:max-h-[85vh]",
         "md:data-[state=closed]:fade-out-0 md:data-[state=open]:fade-in-0",
@@ -53,9 +53,9 @@ const DialogContent = React.forwardRef<
       )}
       {...props}
     >
-      {/* Mobile drag handle indicator */}
-      <div className="mx-auto w-12 h-1.5 rounded-full bg-muted-foreground/30 mb-2 md:hidden" />
       {children}
+      {/* Mobile drag handle indicator - now at bottom since modal slides from top */}
+      <div className="mx-auto w-12 h-1.5 rounded-full bg-muted-foreground/30 mt-2 md:hidden" />
       {!hideCloseButton && (
         <DialogPrimitive.Close className="absolute right-4 top-4 rounded-full opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
           <X className="h-8 w-8 p-1 bg-destructive text-destructive-foreground rounded-full" />

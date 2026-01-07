@@ -555,11 +555,19 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
       >
         {/* Header */}
         <DialogHeader className={`${isMobileOrTablet ? 'px-4 py-2' : 'p-6'} border-b border-slate-700 bg-slate-800`}>
-          <div className="flex items-center gap-2">
-            <Clock className={`${isMobileOrTablet ? 'h-4 w-4' : 'h-6 w-6'} text-emerald-400`} />
-            <DialogTitle className={`${isMobileOrTablet ? 'text-base' : 'text-2xl'} text-white`}>
-              Histórico de Pedidos
-            </DialogTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Clock className={`${isMobileOrTablet ? 'h-4 w-4' : 'h-6 w-6'} text-emerald-400`} />
+              <DialogTitle className={`${isMobileOrTablet ? 'text-base' : 'text-2xl'} text-white`}>
+                Histórico de Pedidos
+              </DialogTitle>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-full hover:bg-slate-700 transition-colors"
+            >
+              <X className="w-5 h-5 text-slate-400" />
+            </button>
           </div>
           <DialogDescription className={`text-slate-400 ${isMobileOrTablet ? 'text-[10px]' : 'text-sm'}`}>
             Consulte e gerencie seus pedidos anteriores
