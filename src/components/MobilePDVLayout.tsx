@@ -220,11 +220,11 @@ const MobilePDVLayout: React.FC<MobilePDVLayoutProps> = ({
                   checked={isSaleMode} 
                   onCheckedChange={handleSaleModeToggle} 
                   id="modo-venda-switch" 
-                  className="data-[state=checked]:bg-amber-500 scale-90" 
+                  className="data-[state=checked]:bg-amber-500 data-[state=unchecked]:bg-slate-500 scale-90" 
                 />
                 <Label 
                   htmlFor="modo-venda-switch" 
-                  className={`text-xs font-semibold select-none ${isSaleMode ? 'text-amber-400' : 'text-slate-400'}`}
+                  className={`text-xs font-semibold select-none ${isSaleMode ? 'text-amber-400' : 'text-slate-300'}`}
                 >
                   {isSaleMode ? "Modo Venda Ativado" : "Modo Compra Ativado"}
                 </Label>
@@ -306,11 +306,11 @@ const MobilePDVLayout: React.FC<MobilePDVLayoutProps> = ({
                   checked={isSaleMode} 
                   onCheckedChange={handleSaleModeToggle} 
                   id="modo-venda-switch-materials" 
-                  className="data-[state=checked]:bg-amber-500 scale-90" 
+                  className="data-[state=checked]:bg-amber-500 data-[state=unchecked]:bg-slate-500 scale-90" 
                 />
                 <Label 
                   htmlFor="modo-venda-switch-materials" 
-                  className={`text-xs font-semibold select-none ${isSaleMode ? 'text-amber-400' : 'text-slate-400'}`}
+                  className={`text-xs font-semibold select-none ${isSaleMode ? 'text-amber-400' : 'text-slate-300'}`}
                 >
                   {isSaleMode ? "Modo Venda Ativado" : "Modo Compra Ativado"}
                 </Label>
@@ -356,11 +356,11 @@ const MobilePDVLayout: React.FC<MobilePDVLayoutProps> = ({
                   checked={isSaleMode} 
                   onCheckedChange={handleSaleModeToggle} 
                   id="modo-venda-switch-orders" 
-                  className="data-[state=checked]:bg-amber-500 scale-90" 
+                  className="data-[state=checked]:bg-amber-500 data-[state=unchecked]:bg-slate-500 scale-90" 
                 />
                 <Label 
                   htmlFor="modo-venda-switch-orders" 
-                  className={`text-xs font-semibold select-none ${isSaleMode ? 'text-amber-400' : 'text-slate-400'}`}
+                  className={`text-xs font-semibold select-none ${isSaleMode ? 'text-amber-400' : 'text-slate-300'}`}
                 >
                   {isSaleMode ? "Modo Venda Ativado" : "Modo Compra Ativado"}
                 </Label>
