@@ -99,7 +99,7 @@ export function OnboardingChecklist() {
     );
   }
 
-  // Mobile: Minimal FAB that opens a modal - NOT blocking content
+  // Mobile: Modal que abre do TOPO
   if (isMobile) {
     return (
       <div className="fixed inset-0 z-50 pointer-events-none">
@@ -109,14 +109,9 @@ export function OnboardingChecklist() {
           onClick={() => setIsMinimized(true)}
         />
         
-        {/* Sheet */}
-        <div className="absolute bottom-0 left-0 right-0 animate-slide-in-bottom pointer-events-auto">
-          <Card className="bg-slate-900 border-slate-700 rounded-t-3xl overflow-hidden shadow-2xl max-h-[70vh] flex flex-col safe-area-bottom">
-            {/* Handle bar */}
-            <div className="flex justify-center pt-3 pb-2">
-              <div className="w-12 h-1.5 bg-slate-600 rounded-full" />
-            </div>
-
+        {/* Sheet - Abre do TOPO */}
+        <div className="absolute top-0 left-0 right-0 animate-in slide-in-from-top duration-300 pointer-events-auto safe-area-top">
+          <Card className="bg-slate-900 border-slate-700 rounded-b-3xl overflow-hidden shadow-2xl max-h-[70vh] flex flex-col">
             {/* Header */}
             <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-5 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -138,68 +133,68 @@ export function OnboardingChecklist() {
               </Button>
             </div>
 
-                {/* Progress bar */}
-                <div className="px-5 py-3 border-b border-slate-800">
-                  <div className="flex items-center justify-between text-sm text-slate-400 mb-2">
-                    <span>Progresso</span>
-                    <span className="font-medium text-emerald-400">{Math.round(progressPercent)}%</span>
-                  </div>
-                  <Progress value={progressPercent} className="h-2.5" />
-                </div>
+            {/* Progress bar */}
+            <div className="px-5 py-3 border-b border-slate-800">
+              <div className="flex items-center justify-between text-sm text-slate-400 mb-2">
+                <span>Progresso</span>
+                <span className="font-medium text-emerald-400">{Math.round(progressPercent)}%</span>
+              </div>
+              <Progress value={progressPercent} className="h-2.5" />
+            </div>
 
-                {/* Steps - Scrollable */}
-                <div className="px-5 py-4 space-y-3 overflow-y-auto flex-1 hide-scrollbar">
-                  {ONBOARDING_STEPS.slice(1).map((step) => {
-                    const Icon = stepIcons[step.id as keyof typeof stepIcons];
-                    const completed = isStepCompleted(step.id);
-                    const isCurrent = progress.currentStep === step.id;
-                    const subStepProgress = getSubStepProgress(step.id);
+            {/* Steps - Scrollable */}
+            <div className="px-5 py-4 space-y-3 overflow-y-auto flex-1 hide-scrollbar">
+              {ONBOARDING_STEPS.slice(1).map((step) => {
+                const Icon = stepIcons[step.id as keyof typeof stepIcons];
+                const completed = isStepCompleted(step.id);
+                const isCurrent = progress.currentStep === step.id;
+                const subStepProgress = getSubStepProgress(step.id);
 
-                    return (
-                      <button
-                        key={step.id}
-                        onClick={() => handleStepClick(step.id)}
-                        disabled={isNavigating}
-                        className={cn(
-                          "w-full flex items-center gap-4 p-4 rounded-2xl transition-all text-left active:scale-[0.98]",
-                          completed 
-                            ? "bg-emerald-500/15 border border-emerald-500/30" 
-                            : isCurrent 
-                              ? "bg-slate-800 ring-2 ring-emerald-500/50" 
-                              : "bg-slate-800/50",
-                          isNavigating && "opacity-50 cursor-not-allowed"
-                        )}
-                      >
-                        <div className={cn(
-                          "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0",
-                          completed ? "bg-emerald-500" : isCurrent ? "bg-emerald-600" : "bg-slate-700"
-                        )}>
-                          {completed ? (
-                            <CheckCircle2 className="w-6 h-6 text-white" />
-                          ) : Icon ? (
-                            <Icon className="w-6 h-6 text-white" />
-                          ) : (
-                            <Circle className="w-6 h-6 text-slate-400" />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className={cn(
-                            "text-base font-semibold",
-                            completed ? "text-emerald-400" : "text-white"
-                          )}>
-                            {step.name}
-                          </p>
-                          <p className="text-sm text-slate-400 line-clamp-1">{step.description}</p>
-                        </div>
-                        {isCurrent && !completed && (
-                          <span className="text-sm bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-xl font-semibold">
-                            {subStepProgress.completed}/{subStepProgress.total}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
+                return (
+                  <button
+                    key={step.id}
+                    onClick={() => handleStepClick(step.id)}
+                    disabled={isNavigating}
+                    className={cn(
+                      "w-full flex items-center gap-4 p-4 rounded-2xl transition-all text-left active:scale-[0.98]",
+                      completed 
+                        ? "bg-emerald-500/15 border border-emerald-500/30" 
+                        : isCurrent 
+                          ? "bg-slate-800 ring-2 ring-emerald-500/50" 
+                          : "bg-slate-800/50",
+                      isNavigating && "opacity-50 cursor-not-allowed"
+                    )}
+                  >
+                    <div className={cn(
+                      "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0",
+                      completed ? "bg-emerald-500" : isCurrent ? "bg-emerald-600" : "bg-slate-700"
+                    )}>
+                      {completed ? (
+                        <CheckCircle2 className="w-6 h-6 text-white" />
+                      ) : Icon ? (
+                        <Icon className="w-6 h-6 text-white" />
+                      ) : (
+                        <Circle className="w-6 h-6 text-slate-400" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={cn(
+                        "text-base font-semibold",
+                        completed ? "text-emerald-400" : "text-white"
+                      )}>
+                        {step.name}
+                      </p>
+                      <p className="text-sm text-slate-400 line-clamp-1">{step.description}</p>
+                    </div>
+                    {isCurrent && !completed && (
+                      <span className="text-sm bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-xl font-semibold">
+                        {subStepProgress.completed}/{subStepProgress.total}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
 
             {/* Skip button */}
             <div className="px-5 py-4 border-t border-slate-800">
@@ -212,16 +207,21 @@ export function OnboardingChecklist() {
                 Pular configuração
               </Button>
             </div>
+
+            {/* Handle bar no final */}
+            <div className="flex justify-center pt-2 pb-3">
+              <div className="w-12 h-1.5 bg-slate-600 rounded-full" />
+            </div>
           </Card>
         </div>
       </div>
     );
   }
 
-  // Tablet: Larger card on corner
+  // Tablet: Card no topo direito
   if (isTablet) {
     return (
-      <Card className="fixed bottom-[4.5rem] right-4 z-50 w-80 bg-gray-900/98 border-gray-700 shadow-2xl overflow-hidden rounded-2xl backdrop-blur-sm">
+      <Card className="fixed top-4 right-4 z-50 w-80 bg-gray-900/98 border-gray-700 shadow-2xl overflow-hidden rounded-2xl backdrop-blur-sm">
         {/* Header */}
         <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
