@@ -125,11 +125,19 @@ export function PDVTutorial({ isActive, isCashRegisterOpen, onComplete, onSkip }
   // Quando o caixa abrir, mudar para os steps seguintes
   useEffect(() => {
     if (isCashRegisterOpen && !showAfterOpenSteps) {
-      setShowAfterOpenSteps(true);
-      setCurrentStep(0);
-      toast.success('Caixa aberto com sucesso!', {
-        description: 'Agora vamos aprender a registrar operações.'
-      });
+      // Limpar ref atual para forçar recálculo
+      setTargetRef({ current: null });
+      
+      // Pequeno delay para permitir que a UI atualize
+      const timer = setTimeout(() => {
+        setShowAfterOpenSteps(true);
+        setCurrentStep(0);
+        toast.success('Caixa aberto com sucesso!', {
+          description: 'Agora vamos aprender a registrar operações.'
+        });
+      }, 800);
+      
+      return () => clearTimeout(timer);
     }
   }, [isCashRegisterOpen, showAfterOpenSteps]);
 

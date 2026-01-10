@@ -3,6 +3,7 @@ import { OnboardingTooltip } from '../OnboardingTooltip';
 import { OnboardingSpotlight } from '../OnboardingSpotlight';
 import { toast } from 'sonner';
 import { useTutorialMobile } from '@/hooks/useTutorialMobile';
+import { useNavigate } from 'react-router-dom';
 
 interface TutorialStep {
   id: string;
@@ -78,15 +79,17 @@ const EDIT_MODAL_STEPS: TutorialStep[] = [
 
 interface MaterialsTutorialProps {
   isActive: boolean;
+  materialsCount?: number;
   onComplete: () => void;
   onSkip: () => void;
 }
 
-export function MaterialsTutorial({ isActive, onComplete, onSkip }: MaterialsTutorialProps) {
+export function MaterialsTutorial({ isActive, materialsCount = 0, onComplete, onSkip }: MaterialsTutorialProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [targetRef, setTargetRef] = useState<React.RefObject<HTMLElement>>({ current: null });
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const { getResponsivePosition, getResponsivePadding } = useTutorialMobile();
+  const navigate = useNavigate();
 
   // Detectar se o modal de edição está aberto
   useEffect(() => {
@@ -167,7 +170,20 @@ export function MaterialsTutorial({ isActive, onComplete, onSkip }: MaterialsTut
   };
 
   const handleComplete = () => {
+    // Verificar se há materiais cadastrados
+    if (materialsCount === 0) {
+      toast.warning('Cadastre ao menos um material!', {
+        description: 'É necessário ter materiais cadastrados para abrir o caixa.'
+      });
+      return;
+    }
+    
+    toast.success('Materiais configurados!', {
+      description: 'Agora vamos abrir o caixa para começar a operar.'
+    });
     onComplete();
+    // Redirecionar automaticamente para o PDV
+    navigate('/');
   };
 
   if (!isActive) return null;
