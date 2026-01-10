@@ -116,6 +116,17 @@ const Index: React.FC = () => {
   } | null>(null);
   const { user } = useAuth();
   
+  // Hook do onboarding
+  const { 
+    isOnboardingActive, 
+    progress, 
+    completeStep, 
+    skipOnboarding, 
+    shouldOpenCashRegister, 
+    clearOpenCashRegisterRequest 
+  } = useOnboarding();
+  const isPDVTutorialActive = isOnboardingActive && progress.currentStep === 3;
+  
   // Ref para controlar a aba do mobile layout
   const mobileTabSetterRef = useRef<((tab: 'scale' | 'materials' | 'orders' | 'menu') => void) | null>(null);
   
@@ -1157,9 +1168,6 @@ const Index: React.FC = () => {
         <MemoizedFooter onMenuClick={handleMenuClick} currentBalance={currentBalance} onBalanceUpdate={updateCashRegisterBalance} />
       </React.Suspense>
     </>;
-  // Hook do onboarding
-  const { isOnboardingActive, progress, completeStep, skipOnboarding, shouldOpenCashRegister, clearOpenCashRegisterRequest } = useOnboarding();
-  const isPDVTutorialActive = isOnboardingActive && progress.currentStep === 3;
 
   // Efeito para abrir o modal de caixa quando solicitado pelo onboarding checklist
   useEffect(() => {
