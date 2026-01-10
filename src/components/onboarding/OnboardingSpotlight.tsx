@@ -67,10 +67,9 @@ export function OnboardingSpotlight({
 
   return (
     <>
-      {/* Overlay escuro */}
+      {/* Overlay escuro - pointer-events-none para não bloquear cliques */}
       <div 
-        className="fixed inset-0 z-[9998] pointer-events-auto"
-        onClick={onClick}
+        className="fixed inset-0 z-[9997] pointer-events-none"
         style={{
           background: `radial-gradient(
             ellipse at ${rect.left + rect.width / 2}px ${rect.top + rect.height / 2}px,
@@ -80,9 +79,9 @@ export function OnboardingSpotlight({
         }}
       />
 
-      {/* Borda do spotlight */}
+      {/* Borda do spotlight - pointer-events-none para permitir cliques */}
       <div 
-        className="fixed z-[9998] pointer-events-none border-2 border-green-500 shadow-[0_0_0_9999px_rgba(0,0,0,0.75)]"
+        className="fixed z-[9997] pointer-events-none border-2 border-green-500"
         style={spotlightStyle}
       >
         {/* Animação de pulso */}

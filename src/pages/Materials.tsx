@@ -630,13 +630,9 @@ const Materials = () => {
       {isMaterialsTutorialActive && (
         <MaterialsTutorial 
           isActive={true}
+          materialsCount={materials.length}
           onComplete={() => {
             completeStep(2);
-            toast({
-              title: "Materiais configurados!",
-              description: "Agora vamos abrir o caixa para começar a operar.",
-            });
-            navigate('/');
           }}
           onSkip={skipOnboarding}
         />

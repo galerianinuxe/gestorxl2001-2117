@@ -164,6 +164,7 @@ const CashRegisterOpeningModal: React.FC<CashRegisterOpeningModalProps> = ({
               <div className="flex flex-col gap-2 pt-1">
                 <Button 
                   type="submit" 
+                  data-tutorial="confirm-open-register"
                   className="w-full h-14 bg-pdv-green hover:bg-pdv-green/90 text-white font-semibold rounded-xl flex items-center justify-center gap-2 text-lg"
                 >
                   <CheckCircle2 className="w-6 h-6" />

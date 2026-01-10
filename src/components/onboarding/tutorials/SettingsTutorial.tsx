@@ -96,10 +96,12 @@ export function SettingsTutorial({ isActive, onComplete, onSkip }: SettingsTutor
   };
 
   const handleComplete = () => {
-    toast.success('Configurações salvas! Vamos cadastrar seus materiais.', {
-      description: 'Você desbloqueou a página de Materiais!'
+    toast.success('Configurações salvas!', {
+      description: 'Agora vamos cadastrar seus materiais.'
     });
     onComplete();
+    // Redirecionar automaticamente para a página de materiais
+    navigate('/materiais');
   };
 
   const handleSkip = () => {
