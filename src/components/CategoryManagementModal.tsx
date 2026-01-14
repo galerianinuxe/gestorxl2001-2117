@@ -215,15 +215,7 @@ const CategoryManagementModal: React.FC<CategoryManagementModalProps> = ({
   };
 
   const handleToggleActive = async (category: MaterialCategory) => {
-    // Block toggling required system categories
-    if (category.is_system && category.is_required) {
-      toast({
-        title: "Bloqueado",
-        description: "Categorias obrigatórias do sistema não podem ser desativadas",
-        variant: "destructive"
-      });
-      return;
-    }
+    // All categories can be toggled - no restrictions
 
     setIsLoading(true);
     try {
@@ -296,7 +288,7 @@ const CategoryManagementModal: React.FC<CategoryManagementModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-lg max-h-[85vh]">
+      <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-lg md:max-w-[70%] max-h-[85vh] md:max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Gerenciar Categorias</DialogTitle>
           <DialogDescription className="text-slate-400">
@@ -398,7 +390,6 @@ const CategoryManagementModal: React.FC<CategoryManagementModalProps> = ({
                       </div>
                       {systemCategories.map((category) => {
                         const colorDisplay = getCategoryColorDisplay(category);
-                        const isRequired = category.is_required;
 
                         return (
                           <div
@@ -423,12 +414,12 @@ const CategoryManagementModal: React.FC<CategoryManagementModalProps> = ({
                                   {category.name}
                                 </span>
                                 <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-500/50 text-amber-400 bg-amber-500/10">
-                                  {isRequired ? 'Obrigatória' : 'Opcional'}
+                                  Sistema
                                 </Badge>
                               </div>
                             </div>
 
-                            {/* Active toggle for optional system categories */}
+                            {/* Active toggle - all categories can be toggled */}
                             <div className="flex items-center gap-2">
                               <span className="text-xs text-slate-400">
                                 {category.is_active ? 'Ativa' : 'Inativa'}
@@ -436,8 +427,7 @@ const CategoryManagementModal: React.FC<CategoryManagementModalProps> = ({
                               <Switch
                                 checked={category.is_active !== false}
                                 onCheckedChange={() => handleToggleActive(category)}
-                                disabled={isLoading || isRequired}
-                                className={cn(isRequired && 'opacity-50 cursor-not-allowed')}
+                                disabled={isLoading}
                               />
                             </div>
                           </div>

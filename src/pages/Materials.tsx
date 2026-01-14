@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ArrowLeft, Plus, Save, Trash, Download, Search, Settings, AlertTriangle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { getMaterials, saveMaterial, removeMaterial, getMaterialCategories, getUserMaterialSettings } from "../utils/supabaseStorage";
+import { getMaterials, saveMaterial, removeMaterial, getMaterialCategories, getUserMaterialSettings, seedDefaultCategoriesAndMaterials } from "../utils/supabaseStorage";
 import { Material, MaterialCategory } from "../types/pdv";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -95,43 +95,38 @@ const Materials = () => {
     }
     try {
       setLoading(true);
-      const existingMaterials = await getMaterials();
-      let successCount = 0;
-      let duplicateCount = 0;
-      for (let index = 0; index < defaultMaterialsList.length; index++) {
-        const materialName = defaultMaterialsList[index];
-        const exists = existingMaterials.some(material => material.name.toLowerCase() === materialName.toLowerCase());
-        if (!exists) {
-          try {
-            const newMaterial: Material = {
-              id: crypto.randomUUID(),
-              name: materialName,
-              price: 0,
-              salePrice: 0,
-              unit: 'kg',
-              user_id: user.id
-            };
-            console.log('Inserindo material padrão:', newMaterial);
-            await saveMaterial(newMaterial);
-            successCount++;
-          } catch (error) {
-            console.error(`Erro ao inserir material ${materialName}:`, error);
-            duplicateCount++;
-          }
-        } else {
-          duplicateCount++;
-        }
-      }
-      if (successCount > 0) {
-        await loadMaterials();
+      
+      // Use the function that links materials to their categories
+      await seedDefaultCategoriesAndMaterials();
+      
+      // Reload materials and categories
+      await loadMaterials();
+      
+      // Check active/inactive categories
+      const updatedCategories = await getMaterialCategories();
+      const activeCategories = updatedCategories.filter(c => c.is_active !== false);
+      const inactiveCategories = updatedCategories.filter(c => c.is_active === false);
+      
+      // Show informative toast
+      if (inactiveCategories.length > 0) {
         toast({
-          title: "Sucesso",
-          description: `${successCount} materiais adicionados automaticamente`
+          title: "Materiais criados com sucesso!",
+          description: `${activeCategories.length} categorias ativas e ${inactiveCategories.length} inativas. Acesse "Configurações" para ativar mais categorias.`,
+          action: (
+            <Button 
+              size="sm" 
+              variant="outline"
+              className="border-white/20 text-white hover:bg-white/10"
+              onClick={() => setConfigModal(true)}
+            >
+              Configurar
+            </Button>
+          )
         });
       } else {
         toast({
-          title: "Informação",
-          description: "Todos os materiais padrão já existem"
+          title: "Sucesso",
+          description: `Materiais e ${activeCategories.length} categorias criados com sucesso!`
         });
       }
     } catch (error) {
