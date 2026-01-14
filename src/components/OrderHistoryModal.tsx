@@ -20,23 +20,21 @@ import TransactionDetailsModal from '@/components/TransactionDetailsModal';
 import { cleanMaterialName } from '@/utils/materialNameCleaner';
 import { useReceiptFormatSettings } from '@/hooks/useReceiptFormatSettings';
 import { getCustomerById } from '@/utils/supabaseStorage';
-
 const logger = createLogger('[OrderHistory]');
-
 interface OrderHistoryModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
 interface HistoryOrder extends Order {
   customerName: string;
   formattedDate: string;
   formattedTime: string;
 }
-
 const ITEMS_PER_PAGE = 20;
-
-const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }) => {
+const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({
+  isOpen,
+  onClose
+}) => {
   const [orders, setOrders] = useState<HistoryOrder[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -60,23 +58,35 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
     whatsapp2: string;
     address: string;
     company: string;
-  }>({ logo: null, whatsapp1: "", whatsapp2: "", address: "", company: "" });
-  const { user } = useAuth();
-  const { toast } = useToast();
+  }>({
+    logo: null,
+    whatsapp1: "",
+    whatsapp2: "",
+    address: "",
+    company: ""
+  });
+  const {
+    user
+  } = useAuth();
+  const {
+    toast
+  } = useToast();
   const isMobile = useIsMobile();
   const isTablet = useIsTablet();
-  const { getCurrentFormatSettings } = useReceiptFormatSettings();
+  const {
+    getCurrentFormatSettings
+  } = useReceiptFormatSettings();
 
   // Carregar histórico de pedidos
   const loadOrderHistory = async () => {
     if (!user?.id) return;
-    
     setLoading(true);
     try {
       // Buscar pedidos do Supabase
-      const { data: ordersData, error: ordersError } = await supabase
-        .from('orders')
-        .select(`
+      const {
+        data: ordersData,
+        error: ordersError
+      } = await supabase.from('orders').select(`
           id,
           customer_id,
           total,
@@ -96,10 +106,9 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
             total,
             tara
           )
-        `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
+        `).eq('user_id', user.id).order('created_at', {
+        ascending: false
+      });
       if (ordersError) {
         logger.error('Error loading orders:', ordersError);
         return;
@@ -123,9 +132,9 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
           total: order.total,
           timestamp: orderDate.getTime(),
           formattedDate: orderDate.toLocaleDateString('pt-BR'),
-          formattedTime: orderDate.toLocaleTimeString('pt-BR', { 
-            hour: '2-digit', 
-            minute: '2-digit' 
+          formattedTime: orderDate.toLocaleTimeString('pt-BR', {
+            hour: '2-digit',
+            minute: '2-digit'
           }),
           status: order.status as 'open' | 'completed',
           type: order.type as 'compra' | 'venda'
@@ -134,7 +143,7 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
 
       // Buscar pedidos salvos localmente que podem não estar no Supabase
       const localOrders = getLocalOrderHistory();
-      
+
       // Combinar e remover duplicatas
       const allOrders = [...formattedOrders];
       localOrders.forEach(localOrder => {
@@ -146,7 +155,6 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
 
       // Ordenar por timestamp
       allOrders.sort((a, b) => b.timestamp - a.timestamp);
-      
       setOrders(allOrders);
     } catch (error) {
       logger.error('Error loading history:', error);
@@ -160,14 +168,13 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
     try {
       const localHistory = localStorage.getItem(`order_history_${user?.id}`);
       if (!localHistory) return [];
-      
       const parsedHistory = JSON.parse(localHistory);
       return parsedHistory.map((order: any) => ({
         ...order,
         formattedDate: new Date(order.timestamp).toLocaleDateString('pt-BR'),
-        formattedTime: new Date(order.timestamp).toLocaleTimeString('pt-BR', { 
-          hour: '2-digit', 
-          minute: '2-digit' 
+        formattedTime: new Date(order.timestamp).toLocaleTimeString('pt-BR', {
+          hour: '2-digit',
+          minute: '2-digit'
         })
       }));
     } catch (error) {
@@ -181,13 +188,13 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
     return orders.filter(order => {
       const statusMatch = filterStatus === 'all' || order.status === filterStatus;
       const typeMatch = filterType === 'all' || order.type === filterType;
-      
+
       // Filtro de período - comparação apenas de datas (ignorando horário)
       let dateMatch = true;
       if (startDate || endDate) {
         const orderDate = new Date(order.timestamp);
         const orderDateString = orderDate.toISOString().split('T')[0]; // YYYY-MM-DD
-        
+
         if (startDate) {
           const startDateString = new Date(startDate).toISOString().split('T')[0];
           dateMatch = dateMatch && orderDateString >= startDateString;
@@ -197,7 +204,6 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
           dateMatch = dateMatch && orderDateString <= endDateString;
         }
       }
-      
       return statusMatch && typeMatch && dateMatch;
     });
   }, [orders, filterStatus, filterType, startDate, endDate]);
@@ -211,11 +217,9 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
   const loadSystemSettings = async () => {
     if (!user?.id) return;
     try {
-      const { data } = await supabase
-        .from('system_settings')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      const {
+        data
+      } = await supabase.from('system_settings').select('*').eq('user_id', user.id).maybeSingle();
       if (data) {
         setSettings({
           logo: data.logo,
@@ -274,10 +278,10 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
         });
         return;
       }
-      
       const formatSettings = getCurrentFormatSettings();
-      const { logo } = settings;
-
+      const {
+        logo
+      } = settings;
       const printContent = `<div style="width: ${formatSettings.container_width}; padding: ${formatSettings.padding}; font-family: Arial; font-size: 12px; color: #000; background: #fff;">
         ${logo ? `<div style="text-align: center; margin-bottom: 10px;"><img src="${logo}" style="max-width: ${formatSettings.logo_max_width}; max-height: ${formatSettings.logo_max_height};" /></div>` : ''}
         <div style="text-align: center; font-weight: bold; font-size: ${formatSettings.title_font_size}; margin-bottom: 5px;">${order.type === 'venda' ? "COMPROVANTE DE VENDA" : "COMPROVANTE DE COMPRA"}</div>
@@ -291,17 +295,15 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
         <div style="text-align: right; font-weight: bold; font-size: ${formatSettings.final_total_font_size};">Total: R$ ${order.total.toFixed(2)}</div>
         <div style="text-align: center; font-size: ${formatSettings.datetime_font_size}; margin: 10px 0;">${new Date(order.timestamp).toLocaleString('pt-BR')}</div>
       </div>`;
-
       const printWindow = window.open('', '_blank');
       if (printWindow) {
         printWindow.document.write(`<!DOCTYPE html><html><head><title>Reimpressão</title></head><body onload="window.print(); setTimeout(() => window.close(), 1000);">${printContent}</body></html>`);
         printWindow.document.close();
       }
-      
+
       // Fechar o modal de detalhes após reimprimir
       setShowDetailsModal(false);
       setSelectedOrderForDetails(null);
-      
       toast({
         title: "Reimpressão",
         description: "Comprovante enviado para impressão."
@@ -325,50 +327,33 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
   // Função para excluir pedido individual
   const handleDeleteSingleOrder = async () => {
     if (!orderToDelete || !user?.id) return;
-    
     setDeleting(true);
     try {
       // Excluir itens do pedido
-      await supabase
-        .from('order_items')
-        .delete()
-        .eq('order_id', orderToDelete.id);
-      
+      await supabase.from('order_items').delete().eq('order_id', orderToDelete.id);
+
       // Excluir pagamentos relacionados
-      await supabase
-        .from('order_payments')
-        .delete()
-        .eq('order_id', orderToDelete.id)
-        .eq('user_id', user.id);
-      
+      await supabase.from('order_payments').delete().eq('order_id', orderToDelete.id).eq('user_id', user.id);
+
       // Excluir transações de caixa relacionadas
-      await supabase
-        .from('cash_transactions')
-        .delete()
-        .eq('order_id', orderToDelete.id)
-        .eq('user_id', user.id);
-      
+      await supabase.from('cash_transactions').delete().eq('order_id', orderToDelete.id).eq('user_id', user.id);
+
       // Excluir o pedido
-      const { error } = await supabase
-        .from('orders')
-        .delete()
-        .eq('id', orderToDelete.id)
-        .eq('user_id', user.id);
-      
+      const {
+        error
+      } = await supabase.from('orders').delete().eq('id', orderToDelete.id).eq('user_id', user.id);
       if (error) throw error;
-      
       toast({
         title: "Pedido excluído",
         description: `Pedido ${orderToDelete.id.substring(0, 8)} foi excluído.`
       });
-      
+
       // Fechar modais e recarregar dados
       setShowDetailsModal(false);
       setSelectedOrderForDetails(null);
       setShowDeleteSingleConfirm(false);
       setOrderToDelete(null);
       await loadOrderHistory();
-      
     } catch (error) {
       logger.error('Erro ao excluir pedido:', error);
       toast({
@@ -384,101 +369,79 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
   // Função para excluir pedidos em aberto sem itens
   const handleDeleteEmptyOpenOrders = async () => {
     if (!user?.id || deleting) return;
-    
     logger.debug('Starting empty orders cleanup...');
     setDeleting(true);
-    
     try {
       // Buscar todos os pedidos em aberto do usuário atual
-      const { data: openOrders, error: findError } = await supabase
-        .from('orders')
-        .select('id, customer_id')
-        .eq('user_id', user.id)
-        .eq('status', 'open');
-
+      const {
+        data: openOrders,
+        error: findError
+      } = await supabase.from('orders').select('id, customer_id').eq('user_id', user.id).eq('status', 'open');
       if (findError) {
         logger.error('Error fetching open orders:', findError);
         toast({
           title: "Erro",
           description: "Erro ao buscar pedidos em aberto. Tente novamente.",
-          variant: "destructive",
+          variant: "destructive"
         });
         return;
       }
-
       logger.debug(`Found ${openOrders?.length || 0} open orders`);
 
       // Filtrar pedidos realmente vazios (sem itens)
       const emptyOrderIds: string[] = [];
       const customerIdsToCheck: string[] = [];
-
       if (openOrders && openOrders.length > 0) {
         for (const order of openOrders) {
           // Checking order (removed verbose logging)
-          
-          const { data: items, error: itemsError } = await supabase
-            .from('order_items')
-            .select('id')
-            .eq('order_id', order.id)
-            .eq('user_id', user.id); // Adicionar filtro por usuário para segurança
+
+          const {
+            data: items,
+            error: itemsError
+          } = await supabase.from('order_items').select('id').eq('order_id', order.id).eq('user_id', user.id); // Adicionar filtro por usuário para segurança
 
           if (itemsError) {
             logger.error(`Error fetching items for order ${order.id}:`, itemsError);
             continue;
           }
-
           if (!items || items.length === 0) {
             emptyOrderIds.push(order.id);
             customerIdsToCheck.push(order.customer_id);
           }
         }
       }
-
       logger.debug(`Total empty orders found: ${emptyOrderIds.length}`);
-
       if (emptyOrderIds.length === 0) {
         toast({
           title: "Informação",
           description: "Nenhum pedido em aberto vazio encontrado.",
-          variant: "default",
+          variant: "default"
         });
         return;
       }
 
       // Excluir os pedidos vazios
       logger.debug('Deleting empty orders...');
-      const { error: deleteError } = await supabase
-        .from('orders')
-        .delete()
-        .in('id', emptyOrderIds)
-        .eq('user_id', user.id);
-
+      const {
+        error: deleteError
+      } = await supabase.from('orders').delete().in('id', emptyOrderIds).eq('user_id', user.id);
       if (deleteError) {
         logger.error('Error deleting empty orders:', deleteError);
         alert('Erro ao excluir pedidos vazios. Tente novamente.');
         return;
       }
-
       logger.success('Empty orders deleted successfully');
 
       // Verificar e remover clientes que ficaram sem pedidos
       const uniqueCustomerIds = [...new Set(customerIdsToCheck)];
       logger.debug(`Checking ${uniqueCustomerIds.length} customers for removal...`);
-      
       for (const customerId of uniqueCustomerIds) {
-        const { data: remainingOrders } = await supabase
-          .from('orders')
-          .select('id')
-          .eq('customer_id', customerId)
-          .eq('user_id', user.id);
-
+        const {
+          data: remainingOrders
+        } = await supabase.from('orders').select('id').eq('customer_id', customerId).eq('user_id', user.id);
         if (!remainingOrders || remainingOrders.length === 0) {
           logger.debug(`Removing orphan customer: ${customerId}`);
-          await supabase
-            .from('customers')
-            .delete()
-            .eq('id', customerId)
-            .eq('user_id', user.id);
+          await supabase.from('customers').delete().eq('id', customerId).eq('user_id', user.id);
         }
       }
 
@@ -488,32 +451,27 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
         const existingHistory = localStorage.getItem(historyKey);
         if (existingHistory) {
           const history = JSON.parse(existingHistory);
-          const filteredHistory = history.filter((order: any) => 
-            !emptyOrderIds.includes(order.id)
-          );
+          const filteredHistory = history.filter((order: any) => !emptyOrderIds.includes(order.id));
           localStorage.setItem(historyKey, JSON.stringify(filteredHistory));
           logger.debug('Local history cleaned');
         }
       } catch (localError) {
         logger.error('Error cleaning local history:', localError);
       }
-
       logger.debug('Reloading orders list...');
       await loadOrderHistory();
-      
       toast({
         title: "Sucesso!",
         description: `${emptyOrderIds.length} pedidos vazios foram excluídos`,
-        variant: "default",
+        variant: "default"
       });
       logger.success('Empty orders deletion completed');
-      
     } catch (error) {
       logger.error('Error deleting empty orders:', error);
       toast({
         title: "Erro",
         description: "Erro inesperado ao excluir pedidos vazios. Tente novamente.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setDeleting(false);
@@ -524,45 +482,36 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
   // Função para excluir todos os pedidos em aberto
   const handleDeleteAllOpenOrders = async () => {
     if (!user?.id || deleting) return;
-    
     setDeleting(true);
     try {
       // Buscar todos os pedidos em aberto
-      const { data: openOrders, error: findError } = await supabase
-        .from('orders')
-        .select('id, customer_id')
-        .eq('user_id', user.id)
-        .eq('status', 'open');
-
+      const {
+        data: openOrders,
+        error: findError
+      } = await supabase.from('orders').select('id, customer_id').eq('user_id', user.id).eq('status', 'open');
       if (findError) {
         logger.error('Error fetching open orders:', findError);
         return;
       }
-
       if (!openOrders || openOrders.length === 0) {
         alert('Nenhum pedido em aberto encontrado.');
         return;
       }
-
       const orderIds = openOrders.map(order => order.id);
       const customerIds = [...new Set(openOrders.map(order => order.customer_id))];
 
       // Excluir itens dos pedidos primeiro
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .delete()
-        .in('order_id', orderIds);
-
+      const {
+        error: itemsError
+      } = await supabase.from('order_items').delete().in('order_id', orderIds);
       if (itemsError) {
         logger.error('Error deleting order items:', itemsError);
       }
 
       // Excluir os pedidos
-      const { error: ordersError } = await supabase
-        .from('orders')
-        .delete()
-        .in('id', orderIds);
-
+      const {
+        error: ordersError
+      } = await supabase.from('orders').delete().in('id', orderIds);
       if (ordersError) {
         logger.error('Error deleting orders:', ordersError);
         return;
@@ -570,20 +519,13 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
 
       // Verificar e remover clientes que ficaram sem pedidos
       for (const customerId of customerIds) {
-        const { data: remainingOrders } = await supabase
-          .from('orders')
-          .select('id')
-          .eq('customer_id', customerId)
-          .eq('user_id', user.id);
-
+        const {
+          data: remainingOrders
+        } = await supabase.from('orders').select('id').eq('customer_id', customerId).eq('user_id', user.id);
         if (!remainingOrders || remainingOrders.length === 0) {
-          await supabase
-            .from('customers')
-            .delete()
-            .eq('id', customerId);
+          await supabase.from('customers').delete().eq('id', customerId);
         }
       }
-
       await loadOrderHistory();
       alert(`${orderIds.length} pedidos em aberto foram excluídos.`);
     } catch (error) {
@@ -603,15 +545,10 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
       emptyOpen: emptyOrders.length
     };
   }, [orders]);
-
   const isMobileOrTablet = isMobile || isTablet;
 
   // Render mobile/tablet card layout
-  const renderMobileOrderCard = (order: HistoryOrder) => (
-    <div 
-      key={order.id}
-      className="bg-slate-800/60 rounded-lg border border-slate-700/50 p-3 mb-2"
-    >
+  const renderMobileOrderCard = (order: HistoryOrder) => <div key={order.id} className="bg-slate-800/60 rounded-lg border border-slate-700/50 p-3 mb-2">
       {/* Header: Cliente, Data e Status */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex-1 min-w-0">
@@ -623,22 +560,10 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
           </p>
         </div>
         <div className="flex items-center gap-1.5 ml-2">
-          <Badge 
-            className={`text-[10px] px-1.5 py-0.5 font-medium ${
-              order.status === 'completed' 
-                ? 'bg-emerald-600/80 text-white' 
-                : 'bg-amber-600/80 text-white'
-            }`}
-          >
+          <Badge className={`text-[10px] px-1.5 py-0.5 font-medium ${order.status === 'completed' ? 'bg-emerald-600/80 text-white' : 'bg-amber-600/80 text-white'}`}>
             {order.status === 'completed' ? 'Finalizado' : 'Em Aberto'}
           </Badge>
-          <Badge 
-            className={`text-[10px] px-1.5 py-0.5 font-medium ${
-              order.type === 'venda' 
-                ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' 
-                : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-            }`}
-          >
+          <Badge className={`text-[10px] px-1.5 py-0.5 font-medium ${order.type === 'venda' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'}`}>
             {order.type === 'venda' ? 'Venda' : 'Compra'}
           </Badge>
         </div>
@@ -662,19 +587,12 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
           <p className="text-emerald-400 font-bold text-base">
             R$ {order.total.toFixed(2)}
           </p>
-          {order.status === 'completed' && (
-            <button
-              onClick={() => handleViewOrder(order.id)}
-              className="p-2 rounded-lg bg-slate-700/50 hover:bg-slate-600/50 text-slate-400 hover:text-white transition-colors"
-              title="Ver Detalhes"
-            >
+          {order.status === 'completed' && <button onClick={() => handleViewOrder(order.id)} className="p-2 rounded-lg bg-slate-700/50 hover:bg-slate-600/50 text-slate-400 hover:text-white transition-colors" title="Ver Detalhes">
               <Eye className="w-4 h-4" />
-            </button>
-          )}
+            </button>}
         </div>
       </div>
-    </div>
-  );
+    </div>;
 
   // Ref for filter scroll container
   const filterScrollRef = React.useRef<HTMLDivElement>(null);
@@ -682,18 +600,16 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
   // Auto-scroll to active filter button on mobile/tablet
   const handleFilterClick = (filterSetter: () => void, buttonIndex: number) => {
     filterSetter();
-    
+
     // Auto-scroll to make the clicked button visible
     if (filterScrollRef.current && isMobileOrTablet) {
       const container = filterScrollRef.current;
       const buttons = container.querySelectorAll('button');
       const targetButton = buttons[buttonIndex];
-      
       if (targetButton) {
         const containerRect = container.getBoundingClientRect();
         const buttonRect = targetButton.getBoundingClientRect();
-        const scrollLeft = buttonRect.left - containerRect.left + container.scrollLeft - (containerRect.width / 2) + (buttonRect.width / 2);
-        
+        const scrollLeft = buttonRect.left - containerRect.left + container.scrollLeft - containerRect.width / 2 + buttonRect.width / 2;
         container.scrollTo({
           left: Math.max(0, scrollLeft),
           behavior: 'smooth'
@@ -701,13 +617,8 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
       }
     }
   };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={() => onClose()}>
-      <DialogContent 
-        hideCloseButton={isMobileOrTablet}
-        className={`${isMobileOrTablet ? 'w-screen h-screen max-w-none max-h-none m-0 rounded-none' : '!w-[95vw] !max-w-[1200px] !h-[90vh] !max-h-[90vh]'} p-0 bg-slate-900 border-slate-700 flex flex-col`}
-      >
+  return <Dialog open={isOpen} onOpenChange={() => onClose()}>
+      <DialogContent hideCloseButton={isMobileOrTablet} className={`${isMobileOrTablet ? 'w-screen h-screen max-w-none max-h-none m-0 rounded-none' : '!w-[95vw] !max-w-[1200px] !h-[90vh] !max-h-[90vh]'} p-0 bg-slate-900 border-slate-700 flex flex-col`}>
         {/* Header */}
         <DialogHeader className={`${isMobileOrTablet ? 'px-4 py-2' : 'p-6'} border-b border-slate-700 bg-slate-800`}>
           <div className="flex items-center justify-between">
@@ -717,12 +628,7 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
                 Histórico de Pedidos
               </DialogTitle>
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-full hover:bg-slate-700 transition-colors"
-            >
-              <X className="w-5 h-5 text-slate-400" />
-            </button>
+            
           </div>
           <DialogDescription className={`text-slate-400 ${isMobileOrTablet ? 'text-[10px]' : 'text-sm'}`}>
             Consulte e gerencie seus pedidos anteriores
@@ -730,173 +636,75 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
         </DialogHeader>
 
         {/* Filtros Mobile/Tablet - Compact Pills with Auto-Scroll */}
-        {isMobileOrTablet ? (
-          <div className="bg-slate-800/50 border-b border-slate-700/50 px-3 py-2">
-            <div 
-              ref={filterScrollRef}
-              className="flex gap-1.5 overflow-x-auto hide-scrollbar scroll-smooth"
-            >
-              <button
-                onClick={() => handleFilterClick(() => setFilterStatus('all'), 0)}
-                className={`px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-all duration-200 ${
-                  filterStatus === 'all' 
-                    ? 'bg-emerald-600 text-white scale-105 shadow-lg shadow-emerald-600/30' 
-                    : 'bg-slate-700/50 text-slate-400'
-                }`}
-              >
+        {isMobileOrTablet ? <div className="bg-slate-800/50 border-b border-slate-700/50 px-3 py-2">
+            <div ref={filterScrollRef} className="flex gap-1.5 overflow-x-auto hide-scrollbar scroll-smooth">
+              <button onClick={() => handleFilterClick(() => setFilterStatus('all'), 0)} className={`px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-all duration-200 ${filterStatus === 'all' ? 'bg-emerald-600 text-white scale-105 shadow-lg shadow-emerald-600/30' : 'bg-slate-700/50 text-slate-400'}`}>
                 Todos
               </button>
-              <button
-                onClick={() => handleFilterClick(() => setFilterStatus('open'), 1)}
-                className={`px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-all duration-200 ${
-                  filterStatus === 'open' 
-                    ? 'bg-amber-600 text-white scale-105 shadow-lg shadow-amber-600/30' 
-                    : 'bg-slate-700/50 text-slate-400'
-                }`}
-              >
+              <button onClick={() => handleFilterClick(() => setFilterStatus('open'), 1)} className={`px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-all duration-200 ${filterStatus === 'open' ? 'bg-amber-600 text-white scale-105 shadow-lg shadow-amber-600/30' : 'bg-slate-700/50 text-slate-400'}`}>
                 Em Aberto
               </button>
-              <button
-                onClick={() => handleFilterClick(() => setFilterStatus('completed'), 2)}
-                className={`px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-all duration-200 ${
-                  filterStatus === 'completed' 
-                    ? 'bg-emerald-600 text-white scale-105 shadow-lg shadow-emerald-600/30' 
-                    : 'bg-slate-700/50 text-slate-400'
-                }`}
-              >
+              <button onClick={() => handleFilterClick(() => setFilterStatus('completed'), 2)} className={`px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-all duration-200 ${filterStatus === 'completed' ? 'bg-emerald-600 text-white scale-105 shadow-lg shadow-emerald-600/30' : 'bg-slate-700/50 text-slate-400'}`}>
                 Finalizados
               </button>
               <div className="w-px bg-slate-600/50 mx-0.5 flex-shrink-0" />
-              <button
-                onClick={() => handleFilterClick(() => setFilterType('all'), 4)}
-                className={`px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-all duration-200 ${
-                  filterType === 'all' 
-                    ? 'bg-slate-600 text-white scale-105 shadow-lg shadow-slate-600/30' 
-                    : 'bg-slate-700/50 text-slate-400'
-                }`}
-              >
+              <button onClick={() => handleFilterClick(() => setFilterType('all'), 4)} className={`px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-all duration-200 ${filterType === 'all' ? 'bg-slate-600 text-white scale-105 shadow-lg shadow-slate-600/30' : 'bg-slate-700/50 text-slate-400'}`}>
                 Tipos
               </button>
-              <button
-                onClick={() => handleFilterClick(() => setFilterType('venda'), 5)}
-                className={`px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-all duration-200 ${
-                  filterType === 'venda' 
-                    ? 'bg-amber-500 text-white scale-105 shadow-lg shadow-amber-500/30' 
-                    : 'bg-slate-700/50 text-slate-400'
-                }`}
-              >
+              <button onClick={() => handleFilterClick(() => setFilterType('venda'), 5)} className={`px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-all duration-200 ${filterType === 'venda' ? 'bg-amber-500 text-white scale-105 shadow-lg shadow-amber-500/30' : 'bg-slate-700/50 text-slate-400'}`}>
                 Vendas
               </button>
-              <button
-                onClick={() => handleFilterClick(() => setFilterType('compra'), 6)}
-                className={`px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-all duration-200 ${
-                  filterType === 'compra' 
-                    ? 'bg-emerald-500 text-white scale-105 shadow-lg shadow-emerald-500/30' 
-                    : 'bg-slate-700/50 text-slate-400'
-                }`}
-              >
+              <button onClick={() => handleFilterClick(() => setFilterType('compra'), 6)} className={`px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-all duration-200 ${filterType === 'compra' ? 'bg-emerald-500 text-white scale-105 shadow-lg shadow-emerald-500/30' : 'bg-slate-700/50 text-slate-400'}`}>
                 Compras
               </button>
               <div className="w-px bg-slate-600/50 mx-0.5 flex-shrink-0" />
-              <button 
-                onClick={() => handleFilterClick(() => setShowFilters(!showFilters), 8)}
-                className={`px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-all duration-200 flex items-center gap-1 ${
-                  showFilters ? 'bg-slate-600 text-white scale-105' : 'bg-slate-700/50 text-slate-400'
-                }`}
-              >
+              <button onClick={() => handleFilterClick(() => setShowFilters(!showFilters), 8)} className={`px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-all duration-200 flex items-center gap-1 ${showFilters ? 'bg-slate-600 text-white scale-105' : 'bg-slate-700/50 text-slate-400'}`}>
                 <Filter className="w-2.5 h-2.5" />
                 Filtros
               </button>
             </div>
             
             {/* Expandable Filters Panel */}
-            {showFilters && (
-              <div className="px-3 pb-2 space-y-2">
+            {showFilters && <div className="px-3 pb-2 space-y-2">
                 {/* Date Filters */}
                 <div className="flex gap-2">
                   <div className="flex-1">
                     <Label className="text-slate-500 text-[10px] mb-0.5 block">De:</Label>
-                    <Input
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      className="bg-slate-700/50 border-slate-600/50 text-white text-[10px] h-7"
-                    />
+                    <Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-slate-700/50 border-slate-600/50 text-white text-[10px] h-7" />
                   </div>
                   <div className="flex-1">
                     <Label className="text-slate-500 text-[10px] mb-0.5 block">Até:</Label>
-                    <Input
-                      type="date"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      className="bg-slate-700/50 border-slate-600/50 text-white text-[10px] h-7"
-                    />
+                    <Input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-slate-700/50 border-slate-600/50 text-white text-[10px] h-7" />
                   </div>
                 </div>
 
                 {/* Actions */}
-                {openOrdersStats.totalOpen > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
+                {openOrdersStats.totalOpen > 0 && <div className="flex flex-wrap gap-1.5">
                     <span className="text-slate-500 text-[10px] w-full">
                       Em aberto: {openOrdersStats.totalOpen} {openOrdersStats.emptyOpen > 0 && `(${openOrdersStats.emptyOpen} vazios)`}
                     </span>
-                    {openOrdersStats.emptyOpen > 0 && (
-                      <button
-                        onClick={() => setShowDeleteEmptyConfirm(true)}
-                        disabled={deleting}
-                        className="flex items-center gap-1 bg-amber-600/20 border border-amber-500/30 text-amber-400 px-2 py-1 rounded text-[10px] font-medium"
-                      >
+                    {openOrdersStats.emptyOpen > 0 && <button onClick={() => setShowDeleteEmptyConfirm(true)} disabled={deleting} className="flex items-center gap-1 bg-amber-600/20 border border-amber-500/30 text-amber-400 px-2 py-1 rounded text-[10px] font-medium">
                         <Trash2 className="w-2.5 h-2.5" />
                         Excluir Vazios ({openOrdersStats.emptyOpen})
-                      </button>
-                    )}
-                    <button
-                      onClick={() => setShowDeleteAllOpenConfirm(true)}
-                      disabled={deleting}
-                      className="flex items-center gap-1 bg-red-600/20 border border-red-500/30 text-red-400 px-2 py-1 rounded text-[10px] font-medium"
-                    >
+                      </button>}
+                    <button onClick={() => setShowDeleteAllOpenConfirm(true)} disabled={deleting} className="flex items-center gap-1 bg-red-600/20 border border-red-500/30 text-red-400 px-2 py-1 rounded text-[10px] font-medium">
                       <AlertTriangle className="w-2.5 h-2.5" />
                       Excluir Todos ({openOrdersStats.totalOpen})
                     </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        ) : (
-          /* Desktop Filters */
-          <div className="flex flex-wrap gap-4 p-6 bg-slate-800 border-b border-slate-700">
+                  </div>}
+              </div>}
+          </div> : (/* Desktop Filters */
+      <div className="flex flex-wrap gap-4 p-6 bg-slate-800 border-b border-slate-700">
             {/* Filtros de Status e Tipo */}
             <div className="flex flex-wrap gap-4">
               <div className="flex gap-2">
-                <button
-                  onClick={() => setFilterStatus('all')}
-                  className={`px-3 py-1 rounded text-sm ${
-                    filterStatus === 'all' 
-                      ? 'bg-emerald-600 text-white' 
-                      : 'bg-slate-600 text-slate-300 hover:bg-slate-500'
-                  }`}
-                >
+                <button onClick={() => setFilterStatus('all')} className={`px-3 py-1 rounded text-sm ${filterStatus === 'all' ? 'bg-emerald-600 text-white' : 'bg-slate-600 text-slate-300 hover:bg-slate-500'}`}>
                   Todos
                 </button>
-                <button
-                  onClick={() => setFilterStatus('open')}
-                  className={`px-3 py-1 rounded text-sm ${
-                    filterStatus === 'open' 
-                      ? 'bg-amber-600 text-white' 
-                      : 'bg-slate-600 text-slate-300 hover:bg-slate-500'
-                  }`}
-                >
+                <button onClick={() => setFilterStatus('open')} className={`px-3 py-1 rounded text-sm ${filterStatus === 'open' ? 'bg-amber-600 text-white' : 'bg-slate-600 text-slate-300 hover:bg-slate-500'}`}>
                   Em Aberto
                 </button>
-                <button
-                  onClick={() => setFilterStatus('completed')}
-                  className={`px-3 py-1 rounded text-sm ${
-                    filterStatus === 'completed' 
-                      ? 'bg-emerald-600 text-white' 
-                      : 'bg-slate-600 text-slate-300 hover:bg-slate-500'
-                  }`}
-                >
+                <button onClick={() => setFilterStatus('completed')} className={`px-3 py-1 rounded text-sm ${filterStatus === 'completed' ? 'bg-emerald-600 text-white' : 'bg-slate-600 text-slate-300 hover:bg-slate-500'}`}>
                   Finalizados
                 </button>
               </div>
@@ -904,34 +712,13 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
               <Separator orientation="vertical" className="h-8 bg-slate-600" />
 
               <div className="flex gap-2">
-                <button
-                  onClick={() => setFilterType('all')}
-                  className={`px-3 py-1 rounded text-sm ${
-                    filterType === 'all' 
-                      ? 'bg-emerald-600 text-white' 
-                      : 'bg-slate-600 text-slate-300 hover:bg-slate-500'
-                  }`}
-                >
+                <button onClick={() => setFilterType('all')} className={`px-3 py-1 rounded text-sm ${filterType === 'all' ? 'bg-emerald-600 text-white' : 'bg-slate-600 text-slate-300 hover:bg-slate-500'}`}>
                   Todos Tipos
                 </button>
-                <button
-                  onClick={() => setFilterType('venda')}
-                  className={`px-3 py-1 rounded text-sm ${
-                    filterType === 'venda' 
-                      ? 'bg-amber-500 text-white' 
-                      : 'bg-slate-600 text-slate-300 hover:bg-slate-500'
-                  }`}
-                >
+                <button onClick={() => setFilterType('venda')} className={`px-3 py-1 rounded text-sm ${filterType === 'venda' ? 'bg-amber-500 text-white' : 'bg-slate-600 text-slate-300 hover:bg-slate-500'}`}>
                   Vendas
                 </button>
-                <button
-                  onClick={() => setFilterType('compra')}
-                  className={`px-3 py-1 rounded text-sm ${
-                    filterType === 'compra' 
-                      ? 'bg-emerald-500 text-white' 
-                      : 'bg-slate-600 text-slate-300 hover:bg-slate-500'
-                  }`}
-                >
+                <button onClick={() => setFilterType('compra')} className={`px-3 py-1 rounded text-sm ${filterType === 'compra' ? 'bg-emerald-500 text-white' : 'bg-slate-600 text-slate-300 hover:bg-slate-500'}`}>
                   Compras
                 </button>
               </div>
@@ -944,95 +731,54 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-slate-400" />
                 <Label htmlFor="startDate" className="text-slate-300 text-sm">De:</Label>
-                <Input
-                  id="startDate"
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="bg-slate-700 border-slate-600 text-white w-40"
-                />
+                <Input id="startDate" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="bg-slate-700 border-slate-600 text-white w-40" />
               </div>
               <div className="flex items-center gap-2">
                 <Label htmlFor="endDate" className="text-slate-300 text-sm">Até:</Label>
-                <Input
-                  id="endDate"
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="bg-slate-700 border-slate-600 text-white w-40"
-                />
+                <Input id="endDate" type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="bg-slate-700 border-slate-600 text-white w-40" />
               </div>
-              {(startDate || endDate) && (
-                <Button
-                  onClick={() => {
-                    setStartDate('');
-                    setEndDate('');
-                  }}
-                  variant="outline"
-                  size="sm"
-                  className="text-slate-400 border-slate-600 hover:bg-slate-700"
-                >
+              {(startDate || endDate) && <Button onClick={() => {
+            setStartDate('');
+            setEndDate('');
+          }} variant="outline" size="sm" className="text-slate-400 border-slate-600 hover:bg-slate-700">
                   Limpar
-                </Button>
-              )}
+                </Button>}
             </div>
 
             {/* Botões de Exclusão */}
-            {openOrdersStats.totalOpen > 0 && (
-              <>
+            {openOrdersStats.totalOpen > 0 && <>
                 <Separator orientation="vertical" className="h-8 bg-slate-600" />
                 <div className="flex gap-2 items-center">
                   <div className="text-slate-400 text-sm">
                     Em aberto: {openOrdersStats.totalOpen} 
                     {openOrdersStats.emptyOpen > 0 && ` (${openOrdersStats.emptyOpen} vazios)`}
                   </div>
-                  {openOrdersStats.emptyOpen > 0 && (
-                    <Button
-                      onClick={() => setShowDeleteEmptyConfirm(true)}
-                      disabled={deleting}
-                      size="sm"
-                      className="bg-amber-600 hover:bg-amber-700 text-white"
-                    >
+                  {openOrdersStats.emptyOpen > 0 && <Button onClick={() => setShowDeleteEmptyConfirm(true)} disabled={deleting} size="sm" className="bg-amber-600 hover:bg-amber-700 text-white">
                       <Trash2 className="h-4 w-4 mr-1" />
                       Excluir Vazios ({openOrdersStats.emptyOpen})
-                    </Button>
-                  )}
-                  <Button
-                    onClick={() => setShowDeleteAllOpenConfirm(true)}
-                    disabled={deleting}
-                    size="sm"
-                    className="bg-red-600 hover:bg-red-700 text-white"
-                  >
+                    </Button>}
+                  <Button onClick={() => setShowDeleteAllOpenConfirm(true)} disabled={deleting} size="sm" className="bg-red-600 hover:bg-red-700 text-white">
                     <AlertTriangle className="h-4 w-4 mr-1" />
                     Excluir Todos ({openOrdersStats.totalOpen})
                   </Button>
                 </div>
-              </>
-            )}
-          </div>
-        )}
+              </>}
+          </div>)}
 
         {/* Lista de Pedidos */}
         <ScrollArea className="flex-1">
           <div className={isMobileOrTablet ? 'p-4' : 'p-6'}>
-            {loading ? (
-              <div className="flex items-center justify-center h-32">
+            {loading ? <div className="flex items-center justify-center h-32">
                 <div className="text-white">Carregando histórico...</div>
-              </div>
-            ) : paginatedOrders.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-32 text-center">
+              </div> : paginatedOrders.length === 0 ? <div className="flex flex-col items-center justify-center h-32 text-center">
                 <Package className="w-12 h-12 text-slate-600 mb-3" />
                 <p className="text-slate-400">Nenhum pedido encontrado</p>
                 <p className="text-slate-500 text-sm mt-1">Tente ajustar os filtros</p>
-              </div>
-            ) : isMobileOrTablet ? (
-              /* Mobile/Tablet Card Layout */
-              <div>
+              </div> : isMobileOrTablet ? (/* Mobile/Tablet Card Layout */
+          <div>
                 {paginatedOrders.map(renderMobileOrderCard)}
-              </div>
-            ) : (
-              /* Desktop Table Layout */
-              <Table>
+              </div>) : (/* Desktop Table Layout */
+          <Table>
                 <TableHeader>
                   <TableRow className="border-slate-700 hover:bg-transparent">
                     <TableHead className="text-slate-300">Cliente</TableHead>
@@ -1045,8 +791,7 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedOrders.map((order) => (
-                    <TableRow key={order.id} className="border-slate-700 hover:bg-slate-800/50">
+                  {paginatedOrders.map(order => <TableRow key={order.id} className="border-slate-700 hover:bg-slate-800/50">
                       <TableCell className="text-white font-medium">
                         {order.customerName}
                       </TableCell>
@@ -1055,24 +800,12 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
                         <div className="text-sm text-slate-400">{order.formattedTime}</div>
                       </TableCell>
                       <TableCell>
-                        <Badge 
-                          className={
-                            order.status === 'completed' 
-                              ? 'bg-emerald-600 text-white hover:bg-emerald-700' 
-                              : 'bg-amber-600 text-white hover:bg-amber-700'
-                          }
-                        >
+                        <Badge className={order.status === 'completed' ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-amber-600 text-white hover:bg-amber-700'}>
                           {order.status === 'completed' ? 'Finalizado' : 'Em Aberto'}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge 
-                          className={
-                            order.type === 'venda' 
-                              ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' 
-                              : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                          }
-                        >
+                        <Badge className={order.type === 'venda' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'}>
                           {order.type === 'venda' ? 'Venda' : 'Compra'}
                         </Badge>
                       </TableCell>
@@ -1093,100 +826,57 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
                         </div>
                       </TableCell>
                       <TableCell>
-                        {order.status === 'completed' ? (
-                          <Button
-                            onClick={() => handleViewOrder(order.id)}
-                            size="sm"
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                          >
+                        {order.status === 'completed' ? <Button onClick={() => handleViewOrder(order.id)} size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white">
                             <Eye className="h-4 w-4 mr-1" />
                             Ver Pedido
-                          </Button>
-                        ) : (
-                          <span className="text-slate-500 text-sm">Em andamento</span>
-                        )}
+                          </Button> : <span className="text-slate-500 text-sm">Em andamento</span>}
                       </TableCell>
-                    </TableRow>
-                  ))}
+                    </TableRow>)}
                 </TableBody>
-              </Table>
-            )}
+              </Table>)}
           </div>
         </ScrollArea>
 
         {/* Paginação */}
-        {totalPages > 1 && (
-          <div className={`flex items-center justify-between ${isMobileOrTablet ? 'px-4 py-3' : 'p-6'} border-t border-slate-700 bg-slate-800`}>
+        {totalPages > 1 && <div className={`flex items-center justify-between ${isMobileOrTablet ? 'px-4 py-3' : 'p-6'} border-t border-slate-700 bg-slate-800`}>
             <div className={`text-slate-400 ${isMobileOrTablet ? 'text-xs' : 'text-sm'}`}>
-              {isMobileOrTablet ? (
-                `${startIndex + 1}-${Math.min(startIndex + ITEMS_PER_PAGE, filteredOrders.length)} de ${filteredOrders.length}`
-              ) : (
-                `Mostrando ${startIndex + 1} a ${Math.min(startIndex + ITEMS_PER_PAGE, filteredOrders.length)} de ${filteredOrders.length} pedidos`
-              )}
+              {isMobileOrTablet ? `${startIndex + 1}-${Math.min(startIndex + ITEMS_PER_PAGE, filteredOrders.length)} de ${filteredOrders.length}` : `Mostrando ${startIndex + 1} a ${Math.min(startIndex + ITEMS_PER_PAGE, filteredOrders.length)} de ${filteredOrders.length} pedidos`}
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
-                variant="outline"
-                size="sm"
-                className="bg-slate-700 text-white border-slate-600 hover:bg-slate-600 disabled:opacity-50"
-              >
+              <Button onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1} variant="outline" size="sm" className="bg-slate-700 text-white border-slate-600 hover:bg-slate-600 disabled:opacity-50">
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               
               {/* Números das páginas */}
-              {!isMobileOrTablet && (
-                <div className="flex gap-1">
-                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
-                    
-                    return (
-                      <Button
-                        key={pageNum}
-                        onClick={() => setCurrentPage(pageNum)}
-                        variant={currentPage === pageNum ? "default" : "outline"}
-                        size="sm"
-                        className={
-                          currentPage === pageNum 
-                            ? "bg-emerald-600 text-white hover:bg-emerald-700 border-emerald-600" 
-                            : "bg-slate-700 text-white border-slate-600 hover:bg-slate-600"
-                        }
-                      >
+              {!isMobileOrTablet && <div className="flex gap-1">
+                  {Array.from({
+              length: Math.min(totalPages, 5)
+            }, (_, i) => {
+              let pageNum;
+              if (totalPages <= 5) {
+                pageNum = i + 1;
+              } else if (currentPage <= 3) {
+                pageNum = i + 1;
+              } else if (currentPage >= totalPages - 2) {
+                pageNum = totalPages - 4 + i;
+              } else {
+                pageNum = currentPage - 2 + i;
+              }
+              return <Button key={pageNum} onClick={() => setCurrentPage(pageNum)} variant={currentPage === pageNum ? "default" : "outline"} size="sm" className={currentPage === pageNum ? "bg-emerald-600 text-white hover:bg-emerald-700 border-emerald-600" : "bg-slate-700 text-white border-slate-600 hover:bg-slate-600"}>
                         {pageNum}
-                      </Button>
-                    );
-                  })}
-                </div>
-              )}
+                      </Button>;
+            })}
+                </div>}
 
-              {isMobileOrTablet && (
-                <span className="text-white text-sm font-medium">
+              {isMobileOrTablet && <span className="text-white text-sm font-medium">
                   {currentPage}/{totalPages}
-                </span>
-              )}
+                </span>}
               
-              <Button
-                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                disabled={currentPage === totalPages}
-                variant="outline"
-                size="sm"
-                className="bg-slate-700 text-white border-slate-600 hover:bg-slate-600 disabled:opacity-50"
-              >
+              <Button onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages} variant="outline" size="sm" className="bg-slate-700 text-white border-slate-600 hover:bg-slate-600 disabled:opacity-50">
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
-          </div>
-        )}
+          </div>}
       </DialogContent>
 
       {/* Modal de Confirmação - Excluir Pedidos Vazios */}
@@ -1204,17 +894,10 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-            <AlertDialogCancel 
-              onClick={() => setShowDeleteEmptyConfirm(false)}
-              className="bg-slate-700 hover:bg-slate-600 text-white border-slate-600"
-            >
+            <AlertDialogCancel onClick={() => setShowDeleteEmptyConfirm(false)} className="bg-slate-700 hover:bg-slate-600 text-white border-slate-600">
               Cancelar
             </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteEmptyOpenOrders}
-              disabled={deleting}
-              className="bg-amber-600 hover:bg-amber-700 text-white"
-            >
+            <AlertDialogAction onClick={handleDeleteEmptyOpenOrders} disabled={deleting} className="bg-amber-600 hover:bg-amber-700 text-white">
               {deleting ? 'Excluindo...' : `Excluir ${openOrdersStats.emptyOpen} Vazios`}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -1243,17 +926,10 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-            <AlertDialogCancel 
-              onClick={() => setShowDeleteAllOpenConfirm(false)}
-              className="bg-slate-700 hover:bg-slate-600 text-white border-slate-600"
-            >
+            <AlertDialogCancel onClick={() => setShowDeleteAllOpenConfirm(false)} className="bg-slate-700 hover:bg-slate-600 text-white border-slate-600">
               Cancelar
             </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteAllOpenOrders}
-              disabled={deleting}
-              className="bg-red-600 hover:bg-red-700 text-white"
-            >
+            <AlertDialogAction onClick={handleDeleteAllOpenOrders} disabled={deleting} className="bg-red-600 hover:bg-red-700 text-white">
               {deleting ? 'Excluindo...' : `Excluir Todos (${openOrdersStats.totalOpen})`}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -1261,30 +937,18 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
       </AlertDialog>
 
       {/* Modal de Senha para Ver Pedido */}
-      <PasswordPromptModal
-        open={showPasswordModal}
-        onOpenChange={(open) => {
-          setShowPasswordModal(open);
-          if (!open) {
-            setSelectedOrderId(null);
-          }
-        }}
-        onAuthenticated={handlePasswordAuthenticated}
-        title="Autenticação Necessária"
-        description="Digite sua senha para visualizar os detalhes do pedido."
-      />
+      <PasswordPromptModal open={showPasswordModal} onOpenChange={open => {
+      setShowPasswordModal(open);
+      if (!open) {
+        setSelectedOrderId(null);
+      }
+    }} onAuthenticated={handlePasswordAuthenticated} title="Autenticação Necessária" description="Digite sua senha para visualizar os detalhes do pedido." />
 
       {/* Modal de Detalhes do Pedido */}
-      <TransactionDetailsModal
-        isOpen={showDetailsModal}
-        onClose={() => {
-          setShowDetailsModal(false);
-          setSelectedOrderForDetails(null);
-        }}
-        transaction={selectedOrderForDetails}
-        onReprint={handleReprintOrder}
-        onDelete={handleDeleteClick}
-      />
+      <TransactionDetailsModal isOpen={showDetailsModal} onClose={() => {
+      setShowDetailsModal(false);
+      setSelectedOrderForDetails(null);
+    }} transaction={selectedOrderForDetails} onReprint={handleReprintOrder} onDelete={handleDeleteClick} />
 
       {/* Modal de Confirmação - Excluir Pedido Individual */}
       <AlertDialog open={showDeleteSingleConfirm} onOpenChange={setShowDeleteSingleConfirm}>
@@ -1298,32 +962,22 @@ const OrderHistoryModal: React.FC<OrderHistoryModalProps> = ({ isOpen, onClose }
               Tem certeza que deseja excluir este pedido? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          {orderToDelete && (
-            <div className="text-sm text-slate-300 space-y-1">
+          {orderToDelete && <div className="text-sm text-slate-300 space-y-1">
               <div><strong>ID:</strong> {orderToDelete.id.substring(0, 8)}</div>
               <div><strong>Tipo:</strong> {orderToDelete.type === 'compra' ? 'Compra' : 'Venda'}</div>
               <div><strong>Valor:</strong> R$ {orderToDelete.total.toFixed(2)}</div>
-            </div>
-          )}
+            </div>}
           <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-            <AlertDialogCancel 
-              onClick={() => setShowDeleteSingleConfirm(false)}
-              className="bg-slate-700 hover:bg-slate-600 text-white border-slate-600"
-            >
+            <AlertDialogCancel onClick={() => setShowDeleteSingleConfirm(false)} className="bg-slate-700 hover:bg-slate-600 text-white border-slate-600">
               Cancelar
             </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteSingleOrder}
-              disabled={deleting}
-              className="bg-rose-600 hover:bg-rose-700 text-white"
-            >
+            <AlertDialogAction onClick={handleDeleteSingleOrder} disabled={deleting} className="bg-rose-600 hover:bg-rose-700 text-white">
               {deleting ? 'Excluindo...' : 'Excluir'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Dialog>
-  );
+    </Dialog>;
 };
 
 // Função para salvar pedidos localmente para backup
@@ -1342,22 +996,19 @@ export const saveOrderToLocalHistory = (order: Order, customerName: string) => {
     } catch (authError) {
       console.log('Usando ID padrão para histórico local');
     }
-    
     const historyKey = `order_history_${userId}`;
-    
     const existingHistory = localStorage.getItem(historyKey);
     const history = existingHistory ? JSON.parse(existingHistory) : [];
-    
     const historyOrder: HistoryOrder = {
       ...order,
       customerName,
       formattedDate: new Date(order.timestamp).toLocaleDateString('pt-BR'),
-      formattedTime: new Date(order.timestamp).toLocaleTimeString('pt-BR', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
+      formattedTime: new Date(order.timestamp).toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit'
       })
     };
-    
+
     // Verificar se o pedido já existe
     const existingIndex = history.findIndex((h: HistoryOrder) => h.id === order.id);
     if (existingIndex >= 0) {
@@ -1365,17 +1016,15 @@ export const saveOrderToLocalHistory = (order: Order, customerName: string) => {
     } else {
       history.unshift(historyOrder);
     }
-    
+
     // Manter apenas os últimos 1000 pedidos no localStorage
     if (history.length > 1000) {
       history.splice(1000);
     }
-    
     localStorage.setItem(historyKey, JSON.stringify(history));
     console.log('Pedido salvo no histórico local:', order.id);
   } catch (error) {
     console.error('Erro ao salvar pedido no histórico local:', error);
   }
 };
-
 export default OrderHistoryModal;
