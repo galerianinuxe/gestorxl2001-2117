@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Pencil, Trash2, Check, X, Shield, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Check, X, Shield, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { MaterialCategory } from '@/types/pdv';
 import { getMaterialCategories, saveMaterialCategory, removeMaterialCategory, toggleCategoryActive, seedDefaultCategoriesAndMaterials } from '@/utils/supabaseStorage';
@@ -48,6 +48,8 @@ const CategoryManagementModal: React.FC<CategoryManagementModalProps> = ({
   const [isAdding, setIsAdding] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryColor, setNewCategoryColor] = useState('blue');
+  const [isResetting, setIsResetting] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   // Calculate which colors are currently in use
   const usedColors = categories.map(c => c.color);
@@ -94,6 +96,43 @@ const CategoryManagementModal: React.FC<CategoryManagementModalProps> = ({
       });
     } finally {
       setIsSeedLoading(false);
+    }
+  };
+
+  const handleResetCategories = async () => {
+    setIsResetting(true);
+    try {
+      // Delete all user categories first
+      const userCats = categories.filter(c => !c.is_system);
+      for (const cat of userCats) {
+        await removeMaterialCategory(cat.id);
+      }
+      
+      // Delete all system categories to recreate them fresh
+      const systemCats = categories.filter(c => c.is_system);
+      for (const cat of systemCats) {
+        await removeMaterialCategory(cat.id);
+      }
+      
+      // Re-seed default categories
+      await seedDefaultCategoriesAndMaterials();
+      await loadCategories();
+      onCategoriesChanged?.();
+      setShowResetConfirm(false);
+      
+      toast({
+        title: "Sucesso",
+        description: "Categorias resetadas para o padrão!"
+      });
+    } catch (error) {
+      console.error('Error resetting categories:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao resetar categorias",
+        variant: "destructive"
+      });
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -553,7 +592,40 @@ const CategoryManagementModal: React.FC<CategoryManagementModalProps> = ({
           </ScrollArea>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-col sm:flex-row gap-2">
+          {showResetConfirm ? (
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <span className="text-xs text-amber-400">Confirmar reset?</span>
+              <Button
+                size="sm"
+                onClick={handleResetCategories}
+                disabled={isResetting}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                {isResetting ? (
+                  <><Loader2 className="w-3 h-3 mr-1 animate-spin" /> Resetando...</>
+                ) : (
+                  'Sim, resetar'
+                )}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowResetConfirm(false)}
+                className="border-slate-600 text-slate-300 hover:bg-slate-700"
+              >
+                Cancelar
+              </Button>
+            </div>
+          ) : (
+            <Button
+              variant="outline"
+              onClick={() => setShowResetConfirm(true)}
+              className="text-amber-400 border-amber-600/50 hover:bg-amber-600/20"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" /> Resetar Categorias
+            </Button>
+          )}
           <Button
             variant="outline"
             onClick={onClose}
