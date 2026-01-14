@@ -6,6 +6,8 @@ const ALLOWED_ORIGINS = [
   'https://www.xlata.site',
   'http://localhost:8080',
   'http://localhost:5173',
+  '.lovableproject.com',
+  '.lovable.app',
 ]
 
 // User agents de crawlers conhecidos
@@ -32,7 +34,8 @@ serve(async (req) => {
   
   // Verificar se a origem é permitida
   const isAllowedOrigin = ALLOWED_ORIGINS.some(allowed => 
-    origin.startsWith(allowed) || referer.startsWith(allowed)
+    origin.startsWith(allowed) || referer.startsWith(allowed) ||
+    origin.includes(allowed) || referer.includes(allowed)
   )
   
   // Verificar se tem header secreto (para uso interno)
