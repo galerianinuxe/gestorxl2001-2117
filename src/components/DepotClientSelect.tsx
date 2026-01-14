@@ -130,7 +130,7 @@ export function DepotClientSelect({
                 }}
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Cadastrar novo cliente
+                Add Cliente S/ Cadastro
               </Button>
             </div>
           </PopoverContent>
