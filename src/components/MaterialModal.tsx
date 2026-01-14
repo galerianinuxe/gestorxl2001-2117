@@ -564,7 +564,7 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
           onChange={handleDiferencaInputChange}
           placeholder="R$ 0,00"
           className="bg-gray-900 border border-gray-700 rounded text-center font-bold text-2xl"
-          style={{ color: '#10B981', fontSize: '1.69em' }}
+          style={{ color: diferencaTipo === 'acrescimo' ? '#10B981' : '#EF4444', fontSize: '1.69em' }}
           autoFocus
         />
       </div>
