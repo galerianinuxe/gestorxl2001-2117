@@ -176,6 +176,55 @@ const MaterialModal: React.FC<MaterialModalProps> = ({
     }
   }, [showDiferencaPopover, tempDiferencaValue, diferencaTipo]);
 
+  // Handle keyboard input for Tara (NumLock keyboard support)
+  useEffect(() => {
+    const handleTaraKeyDown = (e: KeyboardEvent) => {
+      // Only handle when tara section/popover is active
+      if (!showTaraPopover && activeSection !== 'tara') return;
+      
+      // Handle numeric keys (both main keyboard and NumLock)
+      if (e.key >= '0' && e.key <= '9') {
+        e.preventDefault();
+        setTempTaraValue(prevValue => {
+          const currentStr = prevValue.toFixed(3).replace('.', '');
+          const newStr = (currentStr + e.key).slice(-9);
+          return parseInt(newStr) / 1000;
+        });
+      }
+      // Handle backspace/delete
+      else if (e.key === 'Backspace' || e.key === 'Delete') {
+        e.preventDefault();
+        setTempTaraValue(prevValue => {
+          const currentStr = prevValue.toFixed(3).replace('.', '');
+          const newStr = ('0' + currentStr.slice(0, -1)).slice(-9);
+          return parseInt(newStr) / 1000;
+        });
+      }
+      // Handle Enter to apply
+      else if (e.key === 'Enter') {
+        e.preventDefault();
+        applyTaraValue();
+      }
+      // Handle Escape to cancel
+      else if (e.key === 'Escape') {
+        e.preventDefault();
+        setTempTaraValue(0);
+        if (isMobileOrTablet) {
+          setActiveSection('main');
+        } else {
+          setShowTaraPopover(false);
+        }
+      }
+    };
+    
+    if (showTaraPopover || activeSection === 'tara') {
+      window.addEventListener('keydown', handleTaraKeyDown);
+      return () => {
+        window.removeEventListener('keydown', handleTaraKeyDown);
+      };
+    }
+  }, [showTaraPopover, activeSection, tempTaraValue, isMobileOrTablet]);
+
   // Calculate adjusted price with applied difference
   const calculateAdjustedPrice = useCallback((basePrice: number, diff: number, type: 'acrescimo' | 'desconto') => {
     if (type === 'acrescimo') {
