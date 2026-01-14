@@ -2200,8 +2200,39 @@ export type Database = {
         }
         Relationships: []
       }
+      material_categories: {
+        Row: {
+          color: string
+          created_at: string
+          display_order: number
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       materials: {
         Row: {
+          category_id: string | null
           created_at: string | null
           id: string
           name: string
@@ -2213,6 +2244,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          category_id?: string | null
           created_at?: string | null
           id?: string
           name: string
@@ -2224,6 +2256,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          category_id?: string | null
           created_at?: string | null
           id?: string
           name?: string
@@ -2235,6 +2268,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "materials_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "material_categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "materials_unidade_id_fkey"
             columns: ["unidade_id"]
@@ -3670,6 +3710,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_material_settings: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+          use_categories: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          use_categories?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          use_categories?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_notifications: {
         Row: {
           created_at: string
@@ -3994,6 +4058,7 @@ export type Database = {
       get_user_materials: {
         Args: { target_user_id: string }
         Returns: {
+          category_id: string | null
           created_at: string | null
           id: string
           name: string
