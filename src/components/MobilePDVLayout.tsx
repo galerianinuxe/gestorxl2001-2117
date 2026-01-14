@@ -4,7 +4,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Bell, Printer, MessageSquare, DollarSign, Receipt, X, Clock, Wifi, Server, ChevronRight, Settings, WifiOff, ServerOff, Eye, EyeOff, LayoutDashboard } from 'lucide-react';
 import MobileBottomNav, { MobileTab } from './MobileBottomNav';
-import { Customer, Order, Material } from '@/types/pdv';
+import { Customer, Order, Material, MaterialCategory } from '@/types/pdv';
+import CategoryBar from './CategoryBar';
 import { useNavigate } from 'react-router-dom';
 import PasswordPromptModal from './PasswordPromptModal';
 
@@ -31,6 +32,12 @@ interface MobilePDVLayoutProps {
   currentBalance: number;
   isSaleMode: boolean;
   unreadCount: number;
+  
+  // Categories
+  useCategoriesEnabled?: boolean;
+  categories?: MaterialCategory[];
+  selectedCategoryId?: string | null;
+  onSelectCategory?: (categoryId: string | null) => void;
   
   // Handlers
   handleSelectCustomer: (customer: Customer | null) => void;
@@ -92,7 +99,11 @@ const MobilePDVLayout: React.FC<MobilePDVLayoutProps> = ({
   setShowExpenseModal,
   setShowClosingModal,
   onNavigateToScale,
-  setActiveTabRef
+  setActiveTabRef,
+  useCategoriesEnabled = false,
+  categories = [],
+  selectedCategoryId = null,
+  onSelectCategory
 }) => {
   const [activeTab, setActiveTab] = useState<MobileTab>('scale');
   
@@ -322,6 +333,21 @@ const MobilePDVLayout: React.FC<MobilePDVLayoutProps> = ({
               <span className="text-slate-400 text-xs">{materials.length} cadastrados</span>
             </div>
 
+            {/* Category Bar - Only show when categories are enabled */}
+            {useCategoriesEnabled && categories.length > 0 && onSelectCategory && (
+              <CategoryBar
+                categories={categories}
+                selectedCategoryId={selectedCategoryId ?? null}
+                onSelectCategory={onSelectCategory}
+                materialCountByCategory={materials.reduce((acc, m) => {
+                  if (m.category_id) {
+                    acc[m.category_id] = (acc[m.category_id] || 0) + 1;
+                  }
+                  return acc;
+                }, {} as Record<string, number>)}
+              />
+            )}
+
             {/* Grid de Materiais */}
             <ScrollArea className="flex-1">
               <React.Suspense fallback={<div className="bg-slate-900 text-slate-300 p-4">Carregando...</div>}>
@@ -331,7 +357,8 @@ const MobilePDVLayout: React.FC<MobilePDVLayoutProps> = ({
                   onManualInsert={() => {}} 
                   isSaleMode={isSaleMode} 
                   hasActiveOrder={!!activeOrder} 
-                  onNewOrderRequest={handleNewOrderRequest} 
+                  onNewOrderRequest={handleNewOrderRequest}
+                  selectedCategoryId={selectedCategoryId ?? null}
                 />
               </React.Suspense>
             </ScrollArea>

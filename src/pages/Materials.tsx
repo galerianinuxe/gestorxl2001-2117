@@ -8,8 +8,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ArrowLeft, Plus, Save, Trash, Download, Search, Settings, AlertTriangle } from "lucide-react";
-import { getMaterials, saveMaterial, removeMaterial } from "../utils/supabaseStorage";
-import { Material } from "../types/pdv";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getMaterials, saveMaterial, removeMaterial, getMaterialCategories, getUserMaterialSettings } from "../utils/supabaseStorage";
+import { Material, MaterialCategory } from "../types/pdv";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import DeleteMaterialModal from "../components/DeleteMaterialModal";
@@ -29,6 +30,9 @@ const Materials = () => {
   const [materialPrice, setMaterialPrice] = useState<string>("");
   const [materialSalePrice, setMaterialSalePrice] = useState<string>("");
   const [materialUnit, setMaterialUnit] = useState<string>("kg");
+  const [materialCategoryId, setMaterialCategoryId] = useState<string | null>(null);
+  const [categories, setCategories] = useState<MaterialCategory[]>([]);
+  const [useCategoriesEnabled, setUseCategoriesEnabled] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{
     open: boolean;
     material: Material | null;
@@ -57,8 +61,14 @@ const Materials = () => {
   const loadMaterials = async () => {
     try {
       setLoading(true);
-      const storedMaterials = await getMaterials();
+      const [storedMaterials, cats, settings] = await Promise.all([
+        getMaterials(),
+        getMaterialCategories(),
+        getUserMaterialSettings()
+      ]);
       setMaterials(storedMaterials);
+      setCategories(cats);
+      setUseCategoriesEnabled(settings?.use_categories ?? false);
     } catch (error) {
       console.error('Error loading materials:', error);
       toast({
@@ -171,6 +181,7 @@ const Materials = () => {
     setMaterialPrice(numberToMask(material.price));
     setMaterialSalePrice(numberToMask(material.salePrice ?? 0));
     setMaterialUnit(material.unit);
+    setMaterialCategoryId(material.category_id || null);
     setOpenDialog(true);
   };
   const handleAddMaterial = () => {
@@ -227,7 +238,8 @@ const Materials = () => {
           price,
           salePrice,
           unit: materialUnit,
-          user_id: user.id
+          user_id: user.id,
+          category_id: materialCategoryId || undefined
         };
         console.log('Atualizando material:', updatedMaterial);
         await saveMaterial(updatedMaterial);
@@ -248,7 +260,8 @@ const Materials = () => {
           price,
           salePrice,
           unit: materialUnit,
-          user_id: user.id
+          user_id: user.id,
+          category_id: materialCategoryId || undefined
         };
         console.log('Criando novo material:', newMaterial);
         await saveMaterial(newMaterial);
@@ -286,6 +299,7 @@ const Materials = () => {
     setMaterialPrice(maskBRL(""));
     setMaterialSalePrice(maskBRL(""));
     setMaterialUnit("kg");
+    setMaterialCategoryId(null);
     setMaterialSuggestions([]);
     setShowDuplicateWarning(false);
   };
@@ -594,6 +608,50 @@ const Materials = () => {
                 />
               </div>
             </div>
+            
+            {/* Category selector - Only show when categories are enabled */}
+            {useCategoriesEnabled && categories.length > 0 && (
+              <div className="space-y-2 mt-4">
+                <Label htmlFor="material-category" className="text-slate-300 text-sm">Categoria</Label>
+                <Select
+                  value={materialCategoryId || "none"}
+                  onValueChange={(value) => setMaterialCategoryId(value === "none" ? null : value)}
+                  disabled={loading || isSubmitting}
+                >
+                  <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                    <SelectValue placeholder="Selecione uma categoria" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-700">
+                    <SelectItem value="none" className="text-slate-300 focus:bg-slate-700 focus:text-white">
+                      Nenhuma (sem categoria)
+                    </SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem 
+                        key={category.id} 
+                        value={category.id}
+                        className="text-slate-300 focus:bg-slate-700 focus:text-white"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className={`w-3 h-3 rounded-full ${
+                            category.color === 'blue' ? 'bg-blue-600' :
+                            category.color === 'purple' ? 'bg-purple-600' :
+                            category.color === 'orange' ? 'bg-orange-500' :
+                            category.color === 'red' ? 'bg-red-600' :
+                            category.color === 'yellow' ? 'bg-yellow-500' :
+                            category.color === 'pink' ? 'bg-pink-500' :
+                            category.color === 'gray' ? 'bg-gray-500' :
+                            category.color === 'brown' ? 'bg-amber-700' :
+                            category.color === 'black' ? 'bg-gray-900' :
+                            category.color === 'sky' ? 'bg-sky-400' : 'bg-blue-600'
+                          }`} />
+                          {category.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button 
