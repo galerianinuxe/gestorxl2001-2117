@@ -2,7 +2,7 @@ import React, { useState, useEffect, memo, startTransition } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Bell, Printer, MessageSquare, DollarSign, Receipt, X, Clock, Wifi, Server, ChevronRight, Settings, WifiOff, ServerOff, Eye, EyeOff } from 'lucide-react';
+import { Bell, Printer, MessageSquare, DollarSign, Receipt, X, Clock, Wifi, Server, ChevronRight, Settings, WifiOff, ServerOff, Eye, EyeOff, LayoutDashboard } from 'lucide-react';
 import MobileBottomNav, { MobileTab } from './MobileBottomNav';
 import { Customer, Order, Material } from '@/types/pdv';
 import { useNavigate } from 'react-router-dom';
@@ -185,9 +185,13 @@ const MobilePDVLayout: React.FC<MobilePDVLayoutProps> = ({
       setShowExpenseModal(true);
     } else if (pendingAction === 'closeDay' && setShowClosingModal) {
       setShowClosingModal(true);
-    } else if (pendingAction === 'settings') {
+    } else if (pendingAction === 'dashboard') {
       startTransition(() => {
         navigate('/dashboard');
+      });
+    } else if (pendingAction === 'settings') {
+      startTransition(() => {
+        navigate('/configuracoes');
       });
     }
     setPendingAction(null);
@@ -195,7 +199,7 @@ const MobilePDVLayout: React.FC<MobilePDVLayoutProps> = ({
 
   // Handle menu action with password
   const handleMenuAction = (action: string) => {
-    if (action === 'addFunds' || action === 'expense' || action === 'closeDay' || action === 'settings') {
+    if (action === 'addFunds' || action === 'expense' || action === 'closeDay' || action === 'settings' || action === 'dashboard') {
       setPendingAction(action);
       setShowPasswordModal(true);
     } else if (action === 'print' && setShowMaterialsPrintModal) {
@@ -455,6 +459,11 @@ const MobilePDVLayout: React.FC<MobilePDVLayoutProps> = ({
 
                 {/* Menu Actions */}
                 <div className="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
+                  <MenuItem 
+                    icon={<LayoutDashboard className="w-5 h-5" />}
+                    label="Dashboard"
+                    onClick={() => handleMenuAction('dashboard')}
+                  />
                   <MenuItem 
                     icon={<DollarSign className="w-5 h-5" />}
                     label="Adicionar Saldo"
