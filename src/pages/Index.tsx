@@ -39,8 +39,9 @@ const ErrorReportModal = React.lazy(() => import('../components/ErrorReportModal
 const MobilePDVLayout = React.lazy(() => import('../components/MobilePDVLayout'));
 import { PrintConfirmationModal } from '../components/PrintConfirmationModal';
 import { MaterialsPrintModal } from '../components/MaterialsPrintModal';
-import { Customer, Order, Material, OrderItem } from '../types/pdv';
-import { getCustomers, getMaterials, getActiveCustomer, getActiveOrder, setActiveCustomer, setActiveOrder, saveOrder, saveCustomer, getActiveCashRegister, hasSufficientFunds, getOrders, openCashRegister, addCashToRegister, addExpenseToCashRegister, removeCustomer } from '../utils/supabaseStorage';
+import { Customer, Order, Material, OrderItem, MaterialCategory } from '../types/pdv';
+import { getCustomers, getMaterials, getActiveCustomer, getActiveOrder, setActiveCustomer, setActiveOrder, saveOrder, saveCustomer, getActiveCashRegister, hasSufficientFunds, getOrders, openCashRegister, addCashToRegister, addExpenseToCashRegister, removeCustomer, getMaterialCategories, getUserMaterialSettings } from '../utils/supabaseStorage';
+import CategoryBar from '../components/CategoryBar';
 import { createLogger } from '../utils/logger';
 import { autoSaveSessionData, restoreSessionData } from '../utils/localStorage';
 const LOW_BALANCE_THRESHOLD = 50;
@@ -93,6 +94,11 @@ const Index: React.FC = () => {
   const [showPrintConfirmModal, setShowPrintConfirmModal] = useState(false);
   const [showMaterialsPrintModal, setShowMaterialsPrintModal] = useState(false);
   const [showNotificationsModal, setShowNotificationsModal] = useState(false);
+  
+  // Category states
+  const [useCategoriesEnabled, setUseCategoriesEnabled] = useState(false);
+  const [categories, setCategories] = useState<MaterialCategory[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   
   const { unreadCount } = useNotifications();
 
@@ -212,6 +218,20 @@ const Index: React.FC = () => {
     return uuidRegex.test(uuid);
   }, []);
 
+  // Load category settings
+  const loadCategorySettings = useCallback(async () => {
+    try {
+      const [settings, cats] = await Promise.all([
+        getUserMaterialSettings(),
+        getMaterialCategories()
+      ]);
+      setUseCategoriesEnabled(settings?.use_categories ?? false);
+      setCategories(cats);
+    } catch (error) {
+      console.error('Error loading category settings:', error);
+    }
+  }, []);
+
   // Otimizar carregamento de dados com Promise.all e restauração de sessão
   const loadData = useCallback(async () => {
     try {
@@ -226,6 +246,9 @@ const Index: React.FC = () => {
 
       // Paralelizar requests para melhor performance
       const [materialsFromSupabase, sessionData] = await Promise.all([getMaterials(), restoreSessionData()]);
+      
+      // Load category settings
+      await loadCategorySettings();
       setMaterials(materialsFromSupabase);
       if (sessionData) {
         const {
@@ -281,7 +304,7 @@ const Index: React.FC = () => {
       console.error('Error loading data:', error);
       setIsDataLoaded(true);
     }
-  }, []);
+  }, [loadCategorySettings]);
 
   // CORRIGIDO: Verificação de caixa simplificada
   const checkCashRegister = useCallback(async () => {
@@ -1099,6 +1122,10 @@ const Index: React.FC = () => {
         setShowExpenseModal={setShowExpenseModal}
         setShowClosingModal={setShowCashRegisterClosingModal}
         setActiveTabRef={setMobileTabSetter}
+        useCategoriesEnabled={useCategoriesEnabled}
+        categories={categories}
+        selectedCategoryId={selectedCategoryId}
+        onSelectCategory={setSelectedCategoryId}
       />
     </React.Suspense>
   );
@@ -1158,10 +1185,32 @@ const Index: React.FC = () => {
         </div>
         
         <div className="w-3/4 flex flex-col">
-          <div className="h-1/2">
-            <ScrollArea className="h-full touch-auto">
+          <div className="h-1/2 flex flex-col">
+            {/* Category Bar - Only show when categories are enabled */}
+            {useCategoriesEnabled && categories.length > 0 && (
+              <CategoryBar
+                categories={categories}
+                selectedCategoryId={selectedCategoryId}
+                onSelectCategory={setSelectedCategoryId}
+                materialCountByCategory={materials.reduce((acc, m) => {
+                  if (m.category_id) {
+                    acc[m.category_id] = (acc[m.category_id] || 0) + 1;
+                  }
+                  return acc;
+                }, {} as Record<string, number>)}
+              />
+            )}
+            <ScrollArea className="flex-1 touch-auto">
               <React.Suspense fallback={<div className="bg-slate-900 text-slate-300 p-4">Carregando...</div>}>
-                <MemoizedMaterialGrid materials={materials} onMaterialSelect={handleSelectMaterial} onManualInsert={() => {}} isSaleMode={isSaleMode} hasActiveOrder={!!activeOrder} onNewOrderRequest={handleNewOrderRequest} />
+                <MemoizedMaterialGrid 
+                  materials={materials} 
+                  onMaterialSelect={handleSelectMaterial} 
+                  onManualInsert={() => {}} 
+                  isSaleMode={isSaleMode} 
+                  hasActiveOrder={!!activeOrder} 
+                  onNewOrderRequest={handleNewOrderRequest}
+                  selectedCategoryId={selectedCategoryId}
+                />
               </React.Suspense>
             </ScrollArea>
           </div>
