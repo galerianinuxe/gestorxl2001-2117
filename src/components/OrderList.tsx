@@ -408,11 +408,11 @@ const OrderList: React.FC<OrderListProps> = ({
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex space-x-2 mt-4">
-            <AlertDialogAction onClick={handleCancelNewOrder} className="bg-slate-700 hover:bg-slate-600 text-white">
+          <AlertDialogFooter className="flex flex-col-reverse sm:flex-row gap-2 mt-4">
+            <AlertDialogAction onClick={handleCancelNewOrder} className="bg-slate-700 hover:bg-slate-600 text-white w-full sm:w-auto">
               Cancelar
             </AlertDialogAction>
-            <AlertDialogAction onClick={handleConfirmNewOrder} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+            <AlertDialogAction onClick={handleConfirmNewOrder} className="bg-emerald-600 hover:bg-emerald-700 text-white w-full sm:w-auto">
               Criar Pedido
             </AlertDialogAction>
           </AlertDialogFooter>
