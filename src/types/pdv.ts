@@ -29,7 +29,22 @@ export interface Material {
   price: number;
   salePrice: number;
   unit: string;
-  user_id: string; // <-- Add this line to match the DB and fix the error
+  user_id: string;
+  category_id?: string | null;
+}
+
+export interface MaterialCategory {
+  id: string;
+  user_id: string;
+  name: string;
+  color: string;
+  display_order: number;
+}
+
+export interface UserMaterialSettings {
+  id: string;
+  user_id: string;
+  use_categories: boolean;
 }
 
 export interface CashRegister {

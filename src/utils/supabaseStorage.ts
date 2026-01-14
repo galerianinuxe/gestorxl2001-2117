@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Customer, Order, Material, CashRegister, CashTransaction, CashSummary } from '../types/pdv';
+import { Customer, Order, Material, CashRegister, CashTransaction, CashSummary, MaterialCategory, UserMaterialSettings } from '../types/pdv';
 import { cleanMaterialName, cleanOrderItemNames } from './materialNameCleaner';
 import { createLogger } from './logger';
 
@@ -378,7 +378,8 @@ export const getMaterials = async (): Promise<Material[]> => {
     price: Number(material.price),
     salePrice: Number(material.sale_price),
     unit: material.unit || 'kg',
-    user_id: material.user_id || user.id
+    user_id: material.user_id || user.id,
+    category_id: material.category_id || null
   })) || [];
 };
 
@@ -411,13 +412,14 @@ export const saveMaterial = async (material: Material): Promise<void> => {
     throw new Error(`Material com nome "${material.name.trim()}" já existe.`);
   }
 
-  const materialData = {
+  const materialData: any = {
     id: materialId,
     name: material.name.trim(),
     price: Number(material.price),
     sale_price: Number(material.salePrice),
     unit: material.unit || 'kg',
-    user_id: user.id
+    user_id: user.id,
+    category_id: material.category_id || null
   };
 
   console.log('Material data to save:', materialData);
@@ -472,7 +474,8 @@ export const getMaterialById = async (id: string): Promise<Material | undefined>
     price: Number(data.price),
     salePrice: Number(data.sale_price),
     unit: data.unit || 'kg',
-    user_id: data.user_id || user.id
+    user_id: data.user_id || user.id,
+    category_id: data.category_id || null
   } : undefined;
 };
 
@@ -879,5 +882,130 @@ export const calculateCashSummary = async (cashRegister: CashRegister): Promise<
     expectedAmount,
     finalAmount: cashRegister.finalAmount,
     expenses
+  };
+};
+
+// =====================================================
+// MATERIAL CATEGORIES FUNCTIONS
+// =====================================================
+
+// Get all material categories for the current user
+export const getMaterialCategories = async (): Promise<MaterialCategory[]> => {
+  const user = await ensureAuthenticated();
+  
+  const { data, error } = await supabase
+    .from('material_categories')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('display_order', { ascending: true });
+  
+  if (error) {
+    console.error('Error fetching material categories:', error);
+    return [];
+  }
+  
+  return data?.map(cat => ({
+    id: cat.id,
+    user_id: cat.user_id,
+    name: cat.name,
+    color: cat.color,
+    display_order: cat.display_order
+  })) || [];
+};
+
+// Save (create or update) a material category
+export const saveMaterialCategory = async (category: Omit<MaterialCategory, 'user_id'>): Promise<MaterialCategory> => {
+  const user = await ensureAuthenticated();
+  
+  const categoryData = {
+    id: category.id,
+    user_id: user.id,
+    name: category.name.trim(),
+    color: category.color,
+    display_order: category.display_order
+  };
+  
+  const { data, error } = await supabase
+    .from('material_categories')
+    .upsert(categoryData, { onConflict: 'id' })
+    .select()
+    .single();
+  
+  if (error) {
+    console.error('Error saving material category:', error);
+    throw error;
+  }
+  
+  return {
+    id: data.id,
+    user_id: data.user_id,
+    name: data.name,
+    color: data.color,
+    display_order: data.display_order
+  };
+};
+
+// Remove a material category
+export const removeMaterialCategory = async (categoryId: string): Promise<void> => {
+  const user = await ensureAuthenticated();
+  
+  const { error } = await supabase
+    .from('material_categories')
+    .delete()
+    .eq('id', categoryId)
+    .eq('user_id', user.id);
+  
+  if (error) {
+    console.error('Error removing material category:', error);
+    throw error;
+  }
+};
+
+// Get user material settings
+export const getUserMaterialSettings = async (): Promise<UserMaterialSettings | null> => {
+  const user = await ensureAuthenticated();
+  
+  const { data, error } = await supabase
+    .from('user_material_settings')
+    .select('*')
+    .eq('user_id', user.id)
+    .maybeSingle();
+  
+  if (error) {
+    console.error('Error fetching user material settings:', error);
+    return null;
+  }
+  
+  if (!data) return null;
+  
+  return {
+    id: data.id,
+    user_id: data.user_id,
+    use_categories: data.use_categories
+  };
+};
+
+// Update user material settings
+export const updateUserMaterialSettings = async (useCategories: boolean): Promise<UserMaterialSettings> => {
+  const user = await ensureAuthenticated();
+  
+  const { data, error } = await supabase
+    .from('user_material_settings')
+    .upsert({
+      user_id: user.id,
+      use_categories: useCategories
+    }, { onConflict: 'user_id' })
+    .select()
+    .single();
+  
+  if (error) {
+    console.error('Error updating user material settings:', error);
+    throw error;
+  }
+  
+  return {
+    id: data.id,
+    user_id: data.user_id,
+    use_categories: data.use_categories
   };
 };

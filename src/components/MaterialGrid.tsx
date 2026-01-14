@@ -11,6 +11,7 @@ interface MaterialGridProps {
   isSaleMode?: boolean;
   hasActiveOrder?: boolean;
   onNewOrderRequest?: () => void;
+  selectedCategoryId?: string | null;
 }
 
 const MaterialGrid = React.memo(({ 
@@ -18,7 +19,8 @@ const MaterialGrid = React.memo(({
   onMaterialSelect, 
   isSaleMode = false, 
   hasActiveOrder = false,
-  onNewOrderRequest 
+  onNewOrderRequest,
+  selectedCategoryId = null
 }: MaterialGridProps) => {
   // Handler memoizado para cliques
   const handleClick = React.useCallback((material: Material) => {
@@ -120,12 +122,18 @@ const MaterialGrid = React.memo(({
     return 'h-full'; // Mantém desktop como está
   };
 
+  // Filtrar materiais por categoria se necessário
+  const filteredMaterials = React.useMemo(() => {
+    if (selectedCategoryId === null) return materials;
+    return materials.filter(m => m.category_id === selectedCategoryId);
+  }, [materials, selectedCategoryId]);
+
   const totalSlots = getTotalSlots();
 
   return (
     <>
       <div data-tutorial="material-grid" className={`grid ${getGridCols()} gap-[2px] ${getMinHeight()} bg-slate-800 relative p-[2px]`}>
-        {materials.map((material) => (
+        {filteredMaterials.map((material) => (
           <button
             key={material.id}
             onClick={() => handleClick(material)}
@@ -143,7 +151,7 @@ const MaterialGrid = React.memo(({
         ))}
         
         {/* Preencher espaços vazios */}
-        {Array.from({ length: Math.max(0, totalSlots - materials.length) }).map((_, index) => (
+        {Array.from({ length: Math.max(0, totalSlots - filteredMaterials.length) }).map((_, index) => (
           <div key={`empty-${index}`} className="bg-slate-900 border border-slate-700"></div>
         ))}
       </div>
