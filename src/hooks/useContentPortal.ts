@@ -69,6 +69,10 @@ export interface HelpArticle {
   created_at: string;
   updated_at: string;
   category?: HelpCategory;
+  // Video fields
+  video_url?: string | null;
+  video_thumbnail?: string | null;
+  youtube_video_id?: string | null;
 }
 
 export interface PillarPage {

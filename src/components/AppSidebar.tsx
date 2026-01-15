@@ -97,7 +97,7 @@ export function AppSidebar({
     { title: "Clientes", icon: Users, href: "/clientes" },
     { title: "Funcionários", icon: UserCog, href: "/funcionarios" },
     { title: "Configurações", icon: Settings, href: "/configuracoes" },
-    { title: "Ajuda & Guia", icon: BookOpen, href: "/guia-completo" },
+    { title: "Ajuda & Guia", icon: BookOpen, href: "/ajuda" },
     { title: "Planos", icon: Crown, href: "/planos" },
   ];
 

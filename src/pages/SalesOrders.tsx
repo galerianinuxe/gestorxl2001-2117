@@ -2,12 +2,16 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, DollarSign, Scale, FileText, TrendingUp } from 'lucide-react';
+import { ArrowLeft, DollarSign, Scale, FileText, TrendingUp, Tag } from 'lucide-react';
 import ContextualHelpButton from '@/components/ContextualHelpButton';
-import { getOrders, getMaterials } from '@/utils/supabaseStorage';
-import { Order } from '@/types/pdv';
+import { getOrders, getMaterials, getMaterialCategories } from '@/utils/supabaseStorage';
+import { Order, MaterialCategory } from '@/types/pdv';
 import { StandardFilter, FilterPeriod } from '@/components/StandardFilter';
 import { MetricCard } from '@/components/MetricCard';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Pagination,
   PaginationContent,
@@ -21,13 +25,17 @@ const SalesOrders = () => {
   const [searchParams] = useSearchParams();
   const startDate = searchParams.get('startDate') || '';
   const endDate = searchParams.get('endDate') || '';
+  const isMobile = useIsMobile();
+  
   const [orders, setOrders] = useState<Order[]>([]);
   const [materials, setMaterials] = useState<any[]>([]);
+  const [categories, setCategories] = useState<MaterialCategory[]>([]);
   const [loading, setLoading] = useState(true);
   
   const [selectedPeriod, setSelectedPeriod] = useState<FilterPeriod>('monthly');
   const [filterStartDate, setFilterStartDate] = useState(startDate);
   const [filterEndDate, setFilterEndDate] = useState(endDate);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 30;
 
@@ -35,12 +43,14 @@ const SalesOrders = () => {
     const loadData = async () => {
       try {
         setLoading(true);
-        const [ordersData, materialsData] = await Promise.all([
+        const [ordersData, materialsData, categoriesData] = await Promise.all([
           getOrders(),
-          getMaterials()
+          getMaterials(),
+          getMaterialCategories()
         ]);
         setOrders(ordersData);
         setMaterials(materialsData);
+        setCategories(categoriesData);
       } catch (error) {
         console.error('Error loading data:', error);
       } finally {
@@ -50,6 +60,13 @@ const SalesOrders = () => {
 
     loadData();
   }, [startDate, endDate]);
+
+  // Helper to get category by material ID
+  const getCategoryByMaterialId = (materialId: string) => {
+    const material = materials.find(m => m.id === materialId);
+    if (!material?.category_id) return null;
+    return categories.find(c => c.id === material.category_id);
+  };
 
   const salesData = useMemo(() => {
     const now = new Date();
@@ -84,7 +101,7 @@ const SalesOrders = () => {
       }
     }
 
-    const salesOrders = orders.filter(order => {
+    let salesOrders = orders.filter(order => {
       const orderDate = new Date(order.timestamp);
       return order.type === 'venda' && 
              order.status === 'completed' &&
@@ -92,9 +109,20 @@ const SalesOrders = () => {
              orderDate <= filterEnd;
     });
 
+    // Filter by category if selected
+    if (selectedCategory !== 'all') {
+      salesOrders = salesOrders.filter(order =>
+        order.items.some(item => {
+          const material = materials.find(m => m.id === item.materialId);
+          return material?.category_id === selectedCategory;
+        })
+      );
+    }
+
     const salesItems: Array<{
       orderId: string;
       date: number;
+      materialId: string;
       materialName: string;
       quantity: number;
       salePrice: number;
@@ -105,6 +133,12 @@ const SalesOrders = () => {
 
     salesOrders.forEach(order => {
       order.items.forEach(item => {
+        // Skip if category filter active and item doesn't match
+        if (selectedCategory !== 'all') {
+          const material = materials.find(m => m.id === item.materialId);
+          if (material?.category_id !== selectedCategory) return;
+        }
+
         const material = materials.find(m => m.id === item.materialId);
         const purchasePrice = material?.price || 0;
         const profit = item.total - (purchasePrice * item.quantity);
@@ -112,6 +146,7 @@ const SalesOrders = () => {
         salesItems.push({
           orderId: order.id,
           date: order.timestamp,
+          materialId: item.materialId,
           materialName: item.materialName,
           quantity: item.quantity,
           salePrice: item.price,
@@ -127,7 +162,7 @@ const SalesOrders = () => {
       salesOrders: salesOrders,
       salesOrdersCount: salesOrders.length
     };
-  }, [orders, materials, filterStartDate, filterEndDate, selectedPeriod]);
+  }, [orders, materials, filterStartDate, filterEndDate, selectedPeriod, selectedCategory]);
 
   const totalPages = Math.ceil(salesData.salesItems.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -136,7 +171,7 @@ const SalesOrders = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedPeriod, filterStartDate, filterEndDate]);
+  }, [selectedPeriod, filterStartDate, filterEndDate, selectedCategory]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -161,6 +196,7 @@ const SalesOrders = () => {
     setSelectedPeriod('monthly');
     setFilterStartDate('');
     setFilterEndDate('');
+    setSelectedCategory('all');
   };
 
   if (loading) {
@@ -195,7 +231,7 @@ const SalesOrders = () => {
       </header>
 
       <main className="flex-1 p-2 md:p-4 overflow-auto">
-        {/* Filtro Padronizado */}
+        {/* Filtro Padronizado com Categoria */}
         <StandardFilter
           selectedPeriod={selectedPeriod}
           onPeriodChange={setSelectedPeriod}
@@ -204,6 +240,33 @@ const SalesOrders = () => {
           endDate={filterEndDate}
           onEndDateChange={setFilterEndDate}
           onClear={clearFilters}
+          extraFilters={
+            categories.length > 0 ? (
+              <div className={isMobile ? "" : "min-w-[150px]"}>
+                {!isMobile && <Label className="text-slate-300 text-sm mb-1 block">Categoria</Label>}
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="h-10 bg-slate-800 border-slate-600 text-white">
+                    <Tag className="h-4 w-4 mr-2 text-emerald-500" />
+                    <SelectValue placeholder="Categoria" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-slate-600">
+                    <SelectItem value="all">Todas</SelectItem>
+                    {categories.filter(c => c.is_active !== false).map(cat => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        <span className="flex items-center gap-2">
+                          <span 
+                            className="w-2 h-2 rounded-full" 
+                            style={{ backgroundColor: cat.hex_color || cat.color || '#6b7280' }}
+                          />
+                          {cat.name}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : undefined
+          }
         />
 
         {/* Resumo - Cards Compactos */}
@@ -247,6 +310,7 @@ const SalesOrders = () => {
                     <TableRow className="border-slate-600">
                       <TableHead className="text-slate-300 text-sm p-2">Data</TableHead>
                       <TableHead className="text-slate-300 text-sm p-2">Material</TableHead>
+                      <TableHead className="text-slate-300 text-sm p-2 hidden lg:table-cell">Categoria</TableHead>
                       <TableHead className="text-slate-300 text-sm p-2 hidden sm:table-cell">Peso</TableHead>
                       <TableHead className="text-slate-300 text-sm p-2 hidden md:table-cell">Preço Compra</TableHead>
                       <TableHead className="text-slate-300 text-sm p-2 hidden md:table-cell">Preço Venda</TableHead>
@@ -255,31 +319,50 @@ const SalesOrders = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paginatedSalesData.map((item, index) => (
-                      <TableRow key={`${item.orderId}-${index}`} className="border-slate-600 hover:bg-slate-600/30">
-                        <TableCell className="text-slate-300 text-sm p-2">
-                          {formatDate(item.date)}
-                        </TableCell>
-                        <TableCell className="text-slate-300 text-sm p-2 max-w-[100px] truncate">
-                          {item.materialName}
-                        </TableCell>
-                        <TableCell className="text-slate-300 text-sm p-2 hidden sm:table-cell">
-                          {formatWeight(item.quantity)}
-                        </TableCell>
-                        <TableCell className="text-slate-300 text-sm p-2 hidden md:table-cell">
-                          {formatCurrency(item.purchasePrice)}
-                        </TableCell>
-                        <TableCell className="text-slate-300 text-sm p-2 hidden md:table-cell">
-                          {formatCurrency(item.salePrice)}
-                        </TableCell>
-                        <TableCell className="text-white font-semibold text-sm p-2">
-                          {formatCurrency(item.saleTotal)}
-                        </TableCell>
-                        <TableCell className={`font-semibold text-sm p-2 ${item.profit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                          {formatCurrency(item.profit)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {paginatedSalesData.map((item, index) => {
+                      const category = getCategoryByMaterialId(item.materialId);
+                      return (
+                        <TableRow key={`${item.orderId}-${index}`} className="border-slate-600 hover:bg-slate-600/30">
+                          <TableCell className="text-slate-300 text-sm p-2">
+                            {formatDate(item.date)}
+                          </TableCell>
+                          <TableCell className="text-slate-300 text-sm p-2 max-w-[100px] truncate">
+                            {item.materialName}
+                          </TableCell>
+                          <TableCell className="p-2 hidden lg:table-cell">
+                            {category ? (
+                              <Badge 
+                                variant="outline"
+                                className="text-xs border-0"
+                                style={{ 
+                                  backgroundColor: `${category.hex_color || category.color || '#6b7280'}20`,
+                                  color: category.hex_color || category.color || '#9ca3af'
+                                }}
+                              >
+                                {category.name}
+                              </Badge>
+                            ) : (
+                              <span className="text-slate-500 text-xs">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-slate-300 text-sm p-2 hidden sm:table-cell">
+                            {formatWeight(item.quantity)}
+                          </TableCell>
+                          <TableCell className="text-slate-300 text-sm p-2 hidden md:table-cell">
+                            {formatCurrency(item.purchasePrice)}
+                          </TableCell>
+                          <TableCell className="text-slate-300 text-sm p-2 hidden md:table-cell">
+                            {formatCurrency(item.salePrice)}
+                          </TableCell>
+                          <TableCell className="text-white font-semibold text-sm p-2">
+                            {formatCurrency(item.saleTotal)}
+                          </TableCell>
+                          <TableCell className={`font-semibold text-sm p-2 ${item.profit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {formatCurrency(item.profit)}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>

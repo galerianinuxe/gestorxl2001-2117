@@ -1,15 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { Settings, Save, RotateCcw, Printer, Crown } from 'lucide-react';
+import { Settings, Save, RotateCcw, Printer, Crown, Layout, Image, Type } from 'lucide-react';
 
 interface ReceiptFormatSettings {
   id?: string;
@@ -81,7 +79,6 @@ const AdvancedReceiptConfig: React.FC<AdvancedReceiptConfigProps> = ({ open, onC
   const [activeTab, setActiveTab] = useState<'50mm' | '80mm'>('50mm');
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Verificar se é admin
   const checkAdminStatus = async () => {
     if (!user?.id) return;
     
@@ -104,7 +101,6 @@ const AdvancedReceiptConfig: React.FC<AdvancedReceiptConfigProps> = ({ open, onC
     }
   }, [user]);
 
-  // Carregar configurações do usuário
   const loadSettings = async () => {
     if (!user?.id) return;
 
@@ -136,7 +132,6 @@ const AdvancedReceiptConfig: React.FC<AdvancedReceiptConfigProps> = ({ open, onC
     }
   };
 
-  // Salvar configurações
   const saveSettings = async () => {
     if (!user?.id) return;
 
@@ -168,7 +163,7 @@ const AdvancedReceiptConfig: React.FC<AdvancedReceiptConfigProps> = ({ open, onC
 
       toast({
         title: "Configurações salvas",
-        description: "As configurações dos comprovantes foram atualizadas com sucesso!",
+        description: "As configurações dos comprovantes foram atualizadas!",
       });
 
       onClose();
@@ -184,7 +179,6 @@ const AdvancedReceiptConfig: React.FC<AdvancedReceiptConfigProps> = ({ open, onC
     }
   };
 
-  // Resetar para padrão
   const resetToDefault = () => {
     if (activeTab === '50mm') {
       setSettings50mm(defaultSettings['50mm']);
@@ -194,18 +188,16 @@ const AdvancedReceiptConfig: React.FC<AdvancedReceiptConfigProps> = ({ open, onC
     
     toast({
       title: "Resetado",
-      description: `Configurações do formato ${activeTab} foram resetadas para o padrão`,
+      description: `Configurações do formato ${activeTab} foram resetadas`,
     });
   };
 
-  // Tornar padrão para todos os usuários - usando SQL direto
   const makeDefault = async () => {
     if (!user?.id || !isAdmin) return;
 
     const currentSettings = activeTab === '50mm' ? settings50mm : settings80mm;
 
     try {
-      // Executar SQL direto através do cliente Supabase
       const { error } = await supabase
         .from('receipt_format_settings')
         .upsert({
@@ -238,8 +230,8 @@ const AdvancedReceiptConfig: React.FC<AdvancedReceiptConfigProps> = ({ open, onC
       }
 
       toast({
-        title: "Padrão definido com sucesso!",
-        description: `Configurações do formato ${activeTab} agora são o padrão para todos os usuários`,
+        title: "Padrão definido!",
+        description: `Configurações do formato ${activeTab} são o padrão para todos`,
       });
     } catch (error) {
       console.error('Erro ao definir padrão:', error);
@@ -251,31 +243,17 @@ const AdvancedReceiptConfig: React.FC<AdvancedReceiptConfigProps> = ({ open, onC
     }
   };
 
-  // Imprimir página de teste
   const printTestPage = () => {
     const currentSettings = activeTab === '50mm' ? settings50mm : settings80mm;
     
-    // Dados fictícios para teste
     const testData = {
       customer: { name: "Cliente Teste Ltda" },
       order: {
         id: "TEST-001",
         timestamp: new Date().toISOString(),
         items: [
-          {
-            materialName: "Alumínio",
-            quantity: 10.5,
-            price: 3.50,
-            total: 36.75,
-            tara: 0.5
-          },
-          {
-            materialName: "Cobre",
-            quantity: 5.2,
-            price: 15.00,
-            total: 78.00,
-            tara: 0.2
-          }
+          { materialName: "Alumínio", quantity: 10.5, price: 3.50, total: 36.75, tara: 0.5 },
+          { materialName: "Cobre", quantity: 5.2, price: 15.00, total: 78.00, tara: 0.2 }
         ],
         total: 114.75
       }
@@ -286,142 +264,46 @@ const AdvancedReceiptConfig: React.FC<AdvancedReceiptConfigProps> = ({ open, onC
     const netWeight = totalWeight - totalTara;
 
     const printContent = `
-      <div style="
-        width: ${currentSettings.container_width};
-        max-width: ${currentSettings.container_width};
-        margin: 0;
-        padding: ${currentSettings.padding};
-        font-family: 'Roboto', Arial, sans-serif;
-        font-size: 12px;
-        line-height: 1.3;
-        color: #000 !important;
-        background: #fff !important;
-        -webkit-print-color-adjust: exact;
-        color-adjust: exact;
-      ">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: ${currentSettings.margins};">
-          <div style="width: 30%; flex: 0 0 30%; margin: 0; padding: 0;">
-            <div style="
-              width: 60px;
-              height: 40px;
-              background: #333;
-              color: white;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              font-weight: bold;
-              font-size: 10px;
-            ">LOGO</div>
-          </div>
-          
-          <div style="width: 70%; flex: 0 0 70%; text-align: center;">
-            <div style="font-size: ${currentSettings.phone_font_size}; font-weight: bold;">
-              <div>(11) 96351-2105</div>
-              <div style="margin-top: 2px;">(11) 94567-8901</div>
-            </div>
-            <div style="font-size: ${currentSettings.address_font_size}; margin-top: 3mm; font-weight: bold; text-align: center;">
-              Rua Teste, 123 - Centro - São Paulo/SP
-            </div>
-          </div>
+      <div style="width: ${currentSettings.container_width}; max-width: ${currentSettings.container_width}; margin: 0; padding: ${currentSettings.padding}; font-family: 'Roboto', Arial, sans-serif; font-size: 12px; line-height: 1.3; color: #000 !important; background: #fff !important;">
+        <div style="text-align: center; font-size: ${currentSettings.phone_font_size}; font-weight: bold; margin-bottom: 2mm;">
+          (11) 96351-2105
         </div>
-        
-        <div style="text-align: center; font-weight: bold; font-size: ${currentSettings.title_font_size}; margin-bottom: 1.05mm;">
+        <div style="text-align: center; font-size: ${currentSettings.address_font_size}; margin-bottom: 3mm;">
+          Rua Teste, 123 - Centro - São Paulo/SP
+        </div>
+        <div style="text-align: center; font-weight: bold; font-size: ${currentSettings.title_font_size}; margin-bottom: 2mm;">
           COMPROVANTE DE TESTE
         </div>
-        
-        <div style="text-align: center; margin-bottom: 3.6mm; font-size: ${currentSettings.customer_font_size}; font-weight: bold;">
+        <div style="text-align: center; font-size: ${currentSettings.customer_font_size}; margin-bottom: 3mm;">
           Cliente: ${testData.customer.name}
         </div>
-        
-        <div style="border-bottom: 2px solid #000; margin: ${currentSettings.margins};"></div>
-        
-        <table style="
-          width: 100%;
-          border-collapse: collapse;
-          font-size: ${currentSettings.table_font_size};
-          margin-bottom: 3mm;
-          font-weight: bold;
-        ">
-          <thead>
-            <tr>
-              <th style="text-align: left; border-bottom: 1px solid #000; padding: 2mm 0; font-weight: bold;">Material</th>
-              <th style="text-align: right; border-bottom: 1px solid #000; padding: 2mm 0; font-weight: bold;">Peso</th>
-              <th style="text-align: right; border-bottom: 1px solid #000; padding: 2mm 0; font-weight: bold;">R$/kg</th>
-              <th style="text-align: right; border-bottom: 1px solid #000; padding: 2mm 0; font-weight: bold;">Total</th>
-            </tr>
-          </thead>
+        <div style="border-bottom: 1px dashed #000; margin: 2mm 0;"></div>
+        <table style="width: 100%; font-size: ${currentSettings.table_font_size}; margin-bottom: 2mm;">
+          <thead><tr><th style="text-align: left;">Material</th><th style="text-align: right;">Peso</th><th style="text-align: right;">Total</th></tr></thead>
           <tbody>
-            ${testData.order.items.map(item => {
-              const pesoLiquido = item.quantity - (item.tara || 0);
-              return `
-                <tr>
-                  <td style="padding: 1mm 0; vertical-align: top; font-weight: bold;">
-                    ${item.materialName}
-                    ${item.tara && item.tara > 0 ? `<br/><span style="font-size: ${activeTab === '50mm' ? '5px' : '10.8px'}; font-weight: bold;">Tara: ${item.tara.toFixed(3)} kg</span>` : ""}
-                    ${item.tara && item.tara > 0 ? `<br/><span style="font-size: ${activeTab === '50mm' ? '5px' : '10.8px'}; font-weight: bold;">P. Líquido: ${pesoLiquido.toFixed(3)} kg</span>` : ""}
-                  </td>
-                  <td style="text-align: right; padding: 1mm 0; font-weight: bold;">${item.quantity.toFixed(3)}</td>
-                  <td style="text-align: right; padding: 1mm 0; font-weight: bold;">${item.price.toFixed(2)}</td>
-                  <td style="text-align: right; padding: 1mm 0; font-weight: bold;">${item.total.toFixed(2)}</td>
-                </tr>
-              `;
-            }).join("")}
+            ${testData.order.items.map(item => `<tr><td>${item.materialName}</td><td style="text-align: right;">${item.quantity.toFixed(2)}kg</td><td style="text-align: right;">R$ ${item.total.toFixed(2)}</td></tr>`).join('')}
           </tbody>
         </table>
-        
-        <div style="border-bottom: 2px solid #000; margin: ${currentSettings.margins};"></div>
-        
-        <div style="display: flex; justify-content: space-between; margin: 1.4mm 0; font-size: ${currentSettings.totals_font_size}; font-weight: bold;">
-          <span>Peso Bruto:</span>
-          <span>${totalWeight.toFixed(3)} kg</span>
-        </div>
-        
-        <div style="display: flex; justify-content: space-between; margin: 1.4mm 0; font-size: ${currentSettings.totals_font_size}; font-weight: bold;">
-          <span>Total Tara:</span>
-          <span>${totalTara.toFixed(3)} kg</span>
-        </div>
-        
-        <div style="display: flex; justify-content: space-between; margin: 1.4mm 0; font-size: ${currentSettings.totals_font_size}; font-weight: bold;">
-          <span>Peso Líquido:</span>
-          <span>${netWeight.toFixed(3)} kg</span>
-        </div>
-        
-        <div style="border-bottom: 2px solid #000; margin: ${currentSettings.margins};"></div>
-        
-        <div style="text-align: right; font-weight: bold; font-size: ${currentSettings.final_total_font_size}; margin: 2.16mm 0;">
+        <div style="border-bottom: 1px dashed #000; margin: 2mm 0;"></div>
+        <div style="display: flex; justify-content: space-between; font-size: ${currentSettings.totals_font_size}; margin: 1mm 0;"><span>Peso Bruto:</span><span>${totalWeight.toFixed(2)} kg</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: ${currentSettings.totals_font_size}; margin: 1mm 0;"><span>Total Tara:</span><span>${totalTara.toFixed(2)} kg</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: ${currentSettings.totals_font_size}; margin: 1mm 0;"><span>Peso Líquido:</span><span>${netWeight.toFixed(2)} kg</span></div>
+        <div style="border-bottom: 1px dashed #000; margin: 2mm 0;"></div>
+        <div style="text-align: right; font-weight: bold; font-size: ${currentSettings.final_total_font_size}; margin: 2mm 0;">
           Total: R$ ${testData.order.total.toFixed(2)}
         </div>
-        
-        <div style="text-align: center; font-size: ${currentSettings.datetime_font_size}; margin: ${currentSettings.margins}; font-weight: bold;">
+        <div style="text-align: center; font-size: ${currentSettings.datetime_font_size}; margin: 2mm 0;">
           ${new Date().toLocaleString('pt-BR')}
         </div>
-        
-        <div style="text-align: center; font-size: ${currentSettings.quote_font_size}; margin-top: 4mm; font-weight: bold; font-style: italic;">
-          "O sucesso é a soma de pequenos esforços repetidos dia após dia."
+        <div style="text-align: center; font-size: ${currentSettings.quote_font_size}; font-style: italic; margin-top: 3mm;">
+          "O sucesso é a soma de pequenos esforços."
         </div>
       </div>
     `;
 
-    // Criar uma nova janela para impressão
     const printWindow = window.open('', '_blank');
     if (printWindow) {
-      printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <title>Teste de Comprovante ${activeTab}</title>
-            <style>
-              body { margin: 0; padding: 20px; }
-              @media print {
-                body { margin: 0; padding: 0; }
-              }
-            </style>
-          </head>
-          <body>
-            ${printContent}
-          </body>
-        </html>
-      `);
+      printWindow.document.write(`<!DOCTYPE html><html><head><title>Teste ${activeTab}</title><style>body{margin:0;padding:10px;}@media print{body{margin:0;padding:0;}}</style></head><body>${printContent}</body></html>`);
       printWindow.document.close();
       printWindow.print();
     }
@@ -435,91 +317,74 @@ const AdvancedReceiptConfig: React.FC<AdvancedReceiptConfigProps> = ({ open, onC
 
   if (!open) return null;
 
-  const currentSettings = activeTab === '50mm' ? settings50mm : settings80mm;
-  const setCurrentSettings = activeTab === '50mm' ? setSettings50mm : setSettings80mm;
-
-  const updateSetting = (key: keyof ReceiptFormatSettings, value: string) => {
-    setCurrentSettings(prev => ({ ...prev, [key]: value }));
-  };
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-pdv-dark border border-gray-700 rounded-lg w-full h-full max-w-none max-h-none m-4 overflow-hidden">
-        <div className="bg-pdv-dark-light border-b border-gray-700 p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Settings className="h-6 w-6 text-pdv-green" />
-              <h2 className="text-xl font-bold text-white">Configurações Avançadas de Comprovante</h2>
-            </div>
-            <Button variant="outline" onClick={onClose} className="text-white border-gray-600 hover:bg-gray-700" style={{ backgroundColor: 'transparent' }}>
-              ✕
-            </Button>
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+      <div className="bg-slate-900 border border-slate-700 rounded-lg w-full max-w-2xl max-h-[90vh] flex flex-col shadow-xl">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-slate-700">
+          <div className="flex items-center gap-2">
+            <Settings className="h-5 w-5 text-emerald-500" />
+            <h2 className="text-lg font-semibold text-white">Configurações de Comprovante</h2>
           </div>
+          <Button variant="ghost" size="sm" onClick={onClose} className="text-slate-400 hover:text-white h-8 w-8 p-0">
+            ✕
+          </Button>
         </div>
 
-        <div className="p-6 overflow-y-auto h-[calc(100vh-200px)]">
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-4">
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as '50mm' | '80mm')}>
-            <TabsList className="grid w-full grid-cols-2 bg-gray-800 mb-6">
-              <TabsTrigger value="50mm" className="text-white data-[state=active]:bg-pdv-green data-[state=active]:text-black">
-                Formato 50mm
+            <TabsList className="grid w-full grid-cols-2 bg-slate-800 mb-4">
+              <TabsTrigger value="50mm" className="text-white data-[state=active]:bg-emerald-600 data-[state=active]:text-white text-sm">
+                50mm
               </TabsTrigger>
-              <TabsTrigger value="80mm" className="text-white data-[state=active]:bg-pdv-green data-[state=active]:text-black">
-                Formato 80mm
+              <TabsTrigger value="80mm" className="text-white data-[state=active]:bg-emerald-600 data-[state=active]:text-white text-sm">
+                80mm
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="50mm" className="space-y-6">
+            <TabsContent value="50mm">
               <ConfigurationForm 
                 settings={settings50mm}
                 onUpdate={(key, value) => setSettings50mm(prev => ({ ...prev, [key]: value }))}
-                onReset={() => setSettings50mm(defaultSettings['50mm'])}
               />
             </TabsContent>
 
-            <TabsContent value="80mm" className="space-y-6">
+            <TabsContent value="80mm">
               <ConfigurationForm 
                 settings={settings80mm}
                 onUpdate={(key, value) => setSettings80mm(prev => ({ ...prev, [key]: value }))}
-                onReset={() => setSettings80mm(defaultSettings['80mm'])}
               />
             </TabsContent>
           </Tabs>
         </div>
 
-        <div className="bg-pdv-dark-light border-t border-gray-700 p-4 flex justify-between">
-          <div className="flex gap-3">
+        {/* Footer */}
+        <div className="border-t border-slate-700 p-3 flex flex-wrap gap-2 justify-between">
+          <div className="flex gap-2">
             {isAdmin && (
-              <Button
-                variant="outline"
-                onClick={makeDefault}
-                className="bg-purple-600 hover:bg-purple-700 text-white border-purple-600"
-              >
-                <Crown className="h-4 w-4 mr-2" />
-                Tornar Padrão
+              <Button variant="outline" size="sm" onClick={makeDefault} className="bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 border-purple-600/50 text-xs">
+                <Crown className="h-3.5 w-3.5 mr-1" />
+                Padrão
               </Button>
             )}
-
-            <Button
-              variant="outline"
-              onClick={resetToDefault}
-              className="bg-yellow-600 hover:bg-yellow-700 text-white border-yellow-600"
-            >
-              <RotateCcw className="h-4 w-4 mr-2" />
-              Resetar {activeTab}
+            <Button variant="outline" size="sm" onClick={resetToDefault} className="bg-yellow-600/20 hover:bg-yellow-600/30 text-yellow-400 border-yellow-600/50 text-xs">
+              <RotateCcw className="h-3.5 w-3.5 mr-1" />
+              Resetar
+            </Button>
+            <Button variant="outline" size="sm" onClick={printTestPage} className="text-slate-300 border-slate-600 hover:bg-slate-700 text-xs">
+              <Printer className="h-3.5 w-3.5 mr-1" />
+              Testar
             </Button>
           </div>
 
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={onClose} className="text-white border-gray-600 hover:bg-gray-700" style={{ backgroundColor: 'transparent' }}>
+          <div className="flex gap-2">
+            <Button variant="ghost" size="sm" onClick={onClose} className="text-slate-400 hover:text-white text-xs">
               Cancelar
             </Button>
-            <Button
-              onClick={saveSettings}
-              disabled={saving}
-              className="bg-pdv-green hover:bg-pdv-green/90 text-black"
-            >
-              <Save className="h-4 w-4 mr-2" />
-              {saving ? 'Salvando...' : 'Salvar Configurações'}
+            <Button size="sm" onClick={saveSettings} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs">
+              <Save className="h-3.5 w-3.5 mr-1" />
+              {saving ? 'Salvando...' : 'Salvar'}
             </Button>
           </div>
         </div>
@@ -531,170 +396,152 @@ const AdvancedReceiptConfig: React.FC<AdvancedReceiptConfigProps> = ({ open, onC
 interface ConfigurationFormProps {
   settings: ReceiptFormatSettings;
   onUpdate: (key: keyof ReceiptFormatSettings, value: string) => void;
-  onReset: () => void;
 }
 
 const ConfigurationForm: React.FC<ConfigurationFormProps> = ({ settings, onUpdate }) => {
   return (
-    <div className="space-y-6">
-      {/* Configurações de Layout */}
-      <Card className="bg-gray-800 border-gray-700">
-        <CardHeader>
-          <CardTitle className="text-white">Layout e Dimensões</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label className="text-white">Largura do Container</Label>
-              <Input
-                value={settings.container_width}
-                onChange={(e) => onUpdate('container_width', e.target.value)}
-                className="bg-gray-900 border-gray-600 text-white"
-                placeholder="50mm"
-              />
-            </div>
-            <div>
-              <Label className="text-white">Padding</Label>
-              <Input
-                value={settings.padding}
-                onChange={(e) => onUpdate('padding', e.target.value)}
-                className="bg-gray-900 border-gray-600 text-white"
-                placeholder="1mm"
-              />
-            </div>
-            <div>
-              <Label className="text-white">Margens</Label>
-              <Input
-                value={settings.margins}
-                onChange={(e) => onUpdate('margins', e.target.value)}
-                className="bg-gray-900 border-gray-600 text-white"
-                placeholder="1mm 0"
-              />
-            </div>
+    <div className="space-y-4">
+      {/* Layout Section */}
+      <div className="bg-slate-800/50 rounded-lg p-3">
+        <div className="flex items-center gap-2 mb-3">
+          <Layout className="h-4 w-4 text-emerald-500" />
+          <h4 className="text-sm font-medium text-white">Layout</h4>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          <div>
+            <Label className="text-[11px] text-slate-400">Largura</Label>
+            <Input
+              value={settings.container_width}
+              onChange={(e) => onUpdate('container_width', e.target.value)}
+              className="h-8 text-sm bg-slate-900 border-slate-600 text-white"
+            />
           </div>
-        </CardContent>
-      </Card>
+          <div>
+            <Label className="text-[11px] text-slate-400">Padding</Label>
+            <Input
+              value={settings.padding}
+              onChange={(e) => onUpdate('padding', e.target.value)}
+              className="h-8 text-sm bg-slate-900 border-slate-600 text-white"
+            />
+          </div>
+          <div>
+            <Label className="text-[11px] text-slate-400">Margens</Label>
+            <Input
+              value={settings.margins}
+              onChange={(e) => onUpdate('margins', e.target.value)}
+              className="h-8 text-sm bg-slate-900 border-slate-600 text-white"
+            />
+          </div>
+        </div>
+      </div>
 
-      {/* Configurações de Logo */}
-      <Card className="bg-gray-800 border-gray-700">
-        <CardHeader>
-          <CardTitle className="text-white">Logo</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label className="text-white">Largura Máxima do Logo</Label>
-              <Input
-                value={settings.logo_max_width}
-                onChange={(e) => onUpdate('logo_max_width', e.target.value)}
-                className="bg-gray-900 border-gray-600 text-white"
-                placeholder="100%"
-              />
-            </div>
-            <div>
-              <Label className="text-white">Altura Máxima do Logo</Label>
-              <Input
-                value={settings.logo_max_height}
-                onChange={(e) => onUpdate('logo_max_height', e.target.value)}
-                className="bg-gray-900 border-gray-600 text-white"
-                placeholder="20mm"
-              />
-            </div>
+      {/* Logo Section */}
+      <div className="bg-slate-800/50 rounded-lg p-3">
+        <div className="flex items-center gap-2 mb-3">
+          <Image className="h-4 w-4 text-emerald-500" />
+          <h4 className="text-sm font-medium text-white">Logo</h4>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Label className="text-[11px] text-slate-400">Largura Máx.</Label>
+            <Input
+              value={settings.logo_max_width}
+              onChange={(e) => onUpdate('logo_max_width', e.target.value)}
+              className="h-8 text-sm bg-slate-900 border-slate-600 text-white"
+            />
           </div>
-        </CardContent>
-      </Card>
+          <div>
+            <Label className="text-[11px] text-slate-400">Altura Máx.</Label>
+            <Input
+              value={settings.logo_max_height}
+              onChange={(e) => onUpdate('logo_max_height', e.target.value)}
+              className="h-8 text-sm bg-slate-900 border-slate-600 text-white"
+            />
+          </div>
+        </div>
+      </div>
 
-      {/* Configurações de Fonte */}
-      <Card className="bg-gray-800 border-gray-700">
-        <CardHeader>
-          <CardTitle className="text-white">Tamanhos de Fonte</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label className="text-white">Telefones</Label>
-              <Input
-                value={settings.phone_font_size}
-                onChange={(e) => onUpdate('phone_font_size', e.target.value)}
-                className="bg-gray-900 border-gray-600 text-white"
-                placeholder="8px"
-              />
-            </div>
-            <div>
-              <Label className="text-white">Endereço</Label>
-              <Input
-                value={settings.address_font_size}
-                onChange={(e) => onUpdate('address_font_size', e.target.value)}
-                className="bg-gray-900 border-gray-600 text-white"
-                placeholder="6px"
-              />
-            </div>
-            <div>
-              <Label className="text-white">Título</Label>
-              <Input
-                value={settings.title_font_size}
-                onChange={(e) => onUpdate('title_font_size', e.target.value)}
-                className="bg-gray-900 border-gray-600 text-white"
-                placeholder="10px"
-              />
-            </div>
-            <div>
-              <Label className="text-white">Cliente</Label>
-              <Input
-                value={settings.customer_font_size}
-                onChange={(e) => onUpdate('customer_font_size', e.target.value)}
-                className="bg-gray-900 border-gray-600 text-white"
-                placeholder="9px"
-              />
-            </div>
-            <div>
-              <Label className="text-white">Tabela</Label>
-              <Input
-                value={settings.table_font_size}
-                onChange={(e) => onUpdate('table_font_size', e.target.value)}
-                className="bg-gray-900 border-gray-600 text-white"
-                placeholder="6px"
-              />
-            </div>
-            <div>
-              <Label className="text-white">Totais</Label>
-              <Input
-                value={settings.totals_font_size}
-                onChange={(e) => onUpdate('totals_font_size', e.target.value)}
-                className="bg-gray-900 border-gray-600 text-white"
-                placeholder="7px"
-              />
-            </div>
-            <div>
-              <Label className="text-white">Total Final</Label>
-              <Input
-                value={settings.final_total_font_size}
-                onChange={(e) => onUpdate('final_total_font_size', e.target.value)}
-                className="bg-gray-900 border-gray-600 text-white"
-                placeholder="10px"
-              />
-            </div>
-            <div>
-              <Label className="text-white">Data/Hora</Label>
-              <Input
-                value={settings.datetime_font_size}
-                onChange={(e) => onUpdate('datetime_font_size', e.target.value)}
-                className="bg-gray-900 border-gray-600 text-white"
-                placeholder="7px"
-              />
-            </div>
-            <div>
-              <Label className="text-white">Frase Motivacional</Label>
-              <Input
-                value={settings.quote_font_size}
-                onChange={(e) => onUpdate('quote_font_size', e.target.value)}
-                className="bg-gray-900 border-gray-600 text-white"
-                placeholder="6px"
-              />
-            </div>
+      {/* Fonts Section */}
+      <div className="bg-slate-800/50 rounded-lg p-3">
+        <div className="flex items-center gap-2 mb-3">
+          <Type className="h-4 w-4 text-emerald-500" />
+          <h4 className="text-sm font-medium text-white">Tamanhos de Fonte</h4>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          <div>
+            <Label className="text-[11px] text-slate-400">Telefones</Label>
+            <Input
+              value={settings.phone_font_size}
+              onChange={(e) => onUpdate('phone_font_size', e.target.value)}
+              className="h-8 text-sm bg-slate-900 border-slate-600 text-white"
+            />
           </div>
-        </CardContent>
-      </Card>
+          <div>
+            <Label className="text-[11px] text-slate-400">Endereço</Label>
+            <Input
+              value={settings.address_font_size}
+              onChange={(e) => onUpdate('address_font_size', e.target.value)}
+              className="h-8 text-sm bg-slate-900 border-slate-600 text-white"
+            />
+          </div>
+          <div>
+            <Label className="text-[11px] text-slate-400">Título</Label>
+            <Input
+              value={settings.title_font_size}
+              onChange={(e) => onUpdate('title_font_size', e.target.value)}
+              className="h-8 text-sm bg-slate-900 border-slate-600 text-white"
+            />
+          </div>
+          <div>
+            <Label className="text-[11px] text-slate-400">Cliente</Label>
+            <Input
+              value={settings.customer_font_size}
+              onChange={(e) => onUpdate('customer_font_size', e.target.value)}
+              className="h-8 text-sm bg-slate-900 border-slate-600 text-white"
+            />
+          </div>
+          <div>
+            <Label className="text-[11px] text-slate-400">Tabela</Label>
+            <Input
+              value={settings.table_font_size}
+              onChange={(e) => onUpdate('table_font_size', e.target.value)}
+              className="h-8 text-sm bg-slate-900 border-slate-600 text-white"
+            />
+          </div>
+          <div>
+            <Label className="text-[11px] text-slate-400">Totais</Label>
+            <Input
+              value={settings.totals_font_size}
+              onChange={(e) => onUpdate('totals_font_size', e.target.value)}
+              className="h-8 text-sm bg-slate-900 border-slate-600 text-white"
+            />
+          </div>
+          <div>
+            <Label className="text-[11px] text-slate-400">Total Final</Label>
+            <Input
+              value={settings.final_total_font_size}
+              onChange={(e) => onUpdate('final_total_font_size', e.target.value)}
+              className="h-8 text-sm bg-slate-900 border-slate-600 text-white"
+            />
+          </div>
+          <div>
+            <Label className="text-[11px] text-slate-400">Data/Hora</Label>
+            <Input
+              value={settings.datetime_font_size}
+              onChange={(e) => onUpdate('datetime_font_size', e.target.value)}
+              className="h-8 text-sm bg-slate-900 border-slate-600 text-white"
+            />
+          </div>
+          <div>
+            <Label className="text-[11px] text-slate-400">Frase</Label>
+            <Input
+              value={settings.quote_font_size}
+              onChange={(e) => onUpdate('quote_font_size', e.target.value)}
+              className="h-8 text-sm bg-slate-900 border-slate-600 text-white"
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
