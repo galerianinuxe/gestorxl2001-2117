@@ -14,7 +14,10 @@ import { useHelpArticle, useHelpArticles } from '@/hooks/useContentPortal';
 const HelpArticle = () => {
   const { slug } = useParams<{ slug: string }>();
   const { article, loading } = useHelpArticle(slug || '');
-  const { articles: relatedArticles } = useHelpArticles({ module: article?.module });
+  const { articles: relatedArticles } = useHelpArticles({ 
+    module: article?.module,
+    enabled: !!article?.module 
+  });
   const [htmlContent, setHtmlContent] = useState('');
   const [feedback, setFeedback] = useState<'yes' | 'no' | null>(null);
 

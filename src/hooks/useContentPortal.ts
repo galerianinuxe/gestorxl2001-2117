@@ -235,11 +235,20 @@ export const useHelpCategories = () => {
   return { categories, loading };
 };
 
-export const useHelpArticles = (options?: { categorySlug?: string; module?: string }) => {
+export const useHelpArticles = (options?: { categorySlug?: string; module?: string; enabled?: boolean }) => {
   const [articles, setArticles] = useState<HelpArticle[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Default enabled to true if not provided
+  const isEnabled = options?.enabled !== false;
+
   useEffect(() => {
+    // Skip fetch if disabled
+    if (!isEnabled) {
+      setLoading(false);
+      return;
+    }
+
     const fetchArticles = async () => {
       let query = supabase
         .from('help_articles')
@@ -268,7 +277,7 @@ export const useHelpArticles = (options?: { categorySlug?: string; module?: stri
     };
 
     fetchArticles();
-  }, [options?.categorySlug, options?.module]);
+  }, [options?.categorySlug, options?.module, isEnabled]);
 
   return { articles, loading };
 };
