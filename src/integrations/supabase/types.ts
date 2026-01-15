@@ -1572,7 +1572,10 @@ export type Database = {
           status: Database["public"]["Enums"]["content_status"]
           title: string
           updated_at: string
+          video_thumbnail: string | null
+          video_url: string | null
           view_count: number | null
+          youtube_video_id: string | null
         }
         Insert: {
           allow_indexing?: boolean | null
@@ -1595,7 +1598,10 @@ export type Database = {
           status?: Database["public"]["Enums"]["content_status"]
           title: string
           updated_at?: string
+          video_thumbnail?: string | null
+          video_url?: string | null
           view_count?: number | null
+          youtube_video_id?: string | null
         }
         Update: {
           allow_indexing?: boolean | null
@@ -1618,7 +1624,10 @@ export type Database = {
           status?: Database["public"]["Enums"]["content_status"]
           title?: string
           updated_at?: string
+          video_thumbnail?: string | null
+          video_url?: string | null
           view_count?: number | null
+          youtube_video_id?: string | null
         }
         Relationships: [
           {

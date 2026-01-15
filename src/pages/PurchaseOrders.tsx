@@ -5,16 +5,17 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, ShoppingCart, Search, X, DollarSign, Scale, Filter } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Search, X, DollarSign, Scale, Filter, Tag } from 'lucide-react';
 import ContextualHelpButton from '@/components/ContextualHelpButton';
-import { getOrders, getMaterials } from '@/utils/supabaseStorage';
-import { Order, Material } from '@/types/pdv';
+import { getOrders, getMaterials, getMaterialCategories } from '@/utils/supabaseStorage';
+import { Order, Material, MaterialCategory } from '@/types/pdv';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { StandardFilter, FilterPeriod } from '@/components/StandardFilter';
 import { MetricCard } from '@/components/MetricCard';
 import { Label } from '@/components/ui/label';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const PurchaseOrders = () => {
   const [searchParams] = useSearchParams();
@@ -24,12 +25,14 @@ const PurchaseOrders = () => {
   
   const [orders, setOrders] = useState<Order[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
+  const [categories, setCategories] = useState<MaterialCategory[]>([]);
   const [loading, setLoading] = useState(true);
   
   const [selectedPeriod, setSelectedPeriod] = useState<FilterPeriod>('monthly');
   const [filterStartDate, setFilterStartDate] = useState(startDate);
   const [filterEndDate, setFilterEndDate] = useState(endDate);
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [materialSearchOpen, setMaterialSearchOpen] = useState(false);
   const [materialSearchValue, setMaterialSearchValue] = useState('');
   
@@ -40,12 +43,14 @@ const PurchaseOrders = () => {
     const loadData = async () => {
       try {
         setLoading(true);
-        const [ordersData, materialsData] = await Promise.all([
+        const [ordersData, materialsData, categoriesData] = await Promise.all([
           getOrders(),
-          getMaterials()
+          getMaterials(),
+          getMaterialCategories()
         ]);
         setOrders(ordersData);
         setMaterials(materialsData);
+        setCategories(categoriesData);
       } catch (error) {
         console.error('Error loading data:', error);
       } finally {
@@ -55,6 +60,13 @@ const PurchaseOrders = () => {
 
     loadData();
   }, [startDate, endDate]);
+
+  // Helper to get category name by material ID
+  const getCategoryByMaterialId = (materialId: string) => {
+    const material = materials.find(m => m.id === materialId);
+    if (!material?.category_id) return null;
+    return categories.find(c => c.id === material.category_id);
+  };
 
   const purchaseOrders = useMemo(() => {
     let filteredOrders = orders.filter(order => 
@@ -108,8 +120,18 @@ const PurchaseOrders = () => {
       );
     }
 
+    // Filter by category
+    if (selectedCategory !== 'all') {
+      filteredOrders = filteredOrders.filter(order =>
+        order.items.some(item => {
+          const material = materials.find(m => m.id === item.materialId);
+          return material?.category_id === selectedCategory;
+        })
+      );
+    }
+
     return filteredOrders.sort((a, b) => b.timestamp - a.timestamp);
-  }, [orders, selectedPeriod, filterStartDate, filterEndDate, selectedMaterials]);
+  }, [orders, materials, selectedPeriod, filterStartDate, filterEndDate, selectedMaterials, selectedCategory]);
 
   const totalPages = Math.ceil(purchaseOrders.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -118,7 +140,7 @@ const PurchaseOrders = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedPeriod, filterStartDate, filterEndDate, selectedMaterials]);
+  }, [selectedPeriod, filterStartDate, filterEndDate, selectedMaterials, selectedCategory]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -155,6 +177,7 @@ const PurchaseOrders = () => {
     setFilterStartDate('');
     setFilterEndDate('');
     setSelectedMaterials([]);
+    setSelectedCategory('all');
     setMaterialSearchValue('');
   };
 
@@ -194,7 +217,7 @@ const PurchaseOrders = () => {
       </header>
 
       <main className="flex-1 p-2 md:p-4 overflow-auto">
-        {/* Filtro Padronizado com Seleção de Materiais */}
+        {/* Filtro Padronizado com Seleção de Materiais e Categorias */}
         <StandardFilter
           selectedPeriod={selectedPeriod}
           onPeriodChange={setSelectedPeriod}
@@ -204,150 +227,178 @@ const PurchaseOrders = () => {
           onEndDateChange={setFilterEndDate}
           onClear={clearFilters}
           extraFilters={
-            isMobile ? (
-              // Mobile: Botão compacto sem label
-              <Popover open={materialSearchOpen} onOpenChange={setMaterialSearchOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="h-10 px-3 rounded-xl bg-slate-800 border-slate-600 text-white hover:bg-slate-700 flex items-center gap-2"
-                  >
-                    <Filter className="h-4 w-4 text-emerald-500" />
-                    <span className="text-sm">Material</span>
-                    {selectedMaterials.length > 0 && (
-                      <Badge variant="secondary" className="bg-emerald-600 text-white text-xs px-1.5 py-0 h-5">
-                        {selectedMaterials.length}
-                      </Badge>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[220px] p-0 bg-slate-800 border-slate-600">
-                  <Command>
-                    <CommandInput 
-                      placeholder="Buscar material..." 
-                      value={materialSearchValue}
-                      onValueChange={setMaterialSearchValue}
-                      className="text-white"
-                    />
-                    <CommandList>
-                      <CommandEmpty className="text-slate-400 text-sm p-2">Nenhum material.</CommandEmpty>
-                      <CommandGroup>
-                        {uniqueMaterials
-                          .filter(material => 
-                            material.toLowerCase().includes(materialSearchValue.toLowerCase())
-                          )
-                          .slice(0, 10)
-                          .map((material) => (
-                            <CommandItem
-                              key={material}
-                              value={material}
-                              onSelect={() => {
-                                if (!selectedMaterials.includes(material)) {
-                                  setSelectedMaterials(prev => [...prev, material]);
-                                }
-                                setMaterialSearchValue('');
-                                setMaterialSearchOpen(false);
-                              }}
-                              className="text-white hover:bg-slate-700"
-                            >
-                              {material}
-                            </CommandItem>
-                          ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                  {selectedMaterials.length > 0 && (
-                    <div className="p-2 border-t border-slate-600">
-                      <div className="flex flex-wrap gap-1">
-                        {selectedMaterials.map((material) => (
-                          <span
-                            key={material}
-                            className="bg-emerald-600/20 text-emerald-400 px-2 py-1 rounded text-xs flex items-center gap-1"
-                          >
-                            {material.substring(0, 12)}
-                            <button onClick={() => removeMaterial(material)} className="hover:text-white">
-                              <X className="h-3 w-3" />
-                            </button>
+            <div className="flex flex-wrap gap-2 items-end">
+              {/* Category Filter */}
+              {categories.length > 0 && (
+                <div className={isMobile ? "" : "min-w-[150px]"}>
+                  {!isMobile && <Label className="text-slate-300 text-sm mb-1 block">Categoria</Label>}
+                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <SelectTrigger className="h-10 bg-slate-800 border-slate-600 text-white">
+                      <Tag className="h-4 w-4 mr-2 text-emerald-500" />
+                      <SelectValue placeholder="Categoria" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-600">
+                      <SelectItem value="all">Todas</SelectItem>
+                      {categories.filter(c => c.is_active !== false).map(cat => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          <span className="flex items-center gap-2">
+                            <span 
+                              className="w-2 h-2 rounded-full" 
+                              style={{ backgroundColor: cat.hex_color || cat.color || '#6b7280' }}
+                            />
+                            {cat.name}
                           </span>
-                        ))}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Material Filter */}
+              {isMobile ? (
+                <Popover open={materialSearchOpen} onOpenChange={setMaterialSearchOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="h-10 px-3 rounded-xl bg-slate-800 border-slate-600 text-white hover:bg-slate-700 flex items-center gap-2"
+                    >
+                      <Filter className="h-4 w-4 text-emerald-500" />
+                      <span className="text-sm">Material</span>
+                      {selectedMaterials.length > 0 && (
+                        <Badge variant="secondary" className="bg-emerald-600 text-white text-xs px-1.5 py-0 h-5">
+                          {selectedMaterials.length}
+                        </Badge>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[220px] p-0 bg-slate-800 border-slate-600">
+                    <Command>
+                      <CommandInput 
+                        placeholder="Buscar material..." 
+                        value={materialSearchValue}
+                        onValueChange={setMaterialSearchValue}
+                        className="text-white"
+                      />
+                      <CommandList>
+                        <CommandEmpty className="text-slate-400 text-sm p-2">Nenhum material.</CommandEmpty>
+                        <CommandGroup>
+                          {uniqueMaterials
+                            .filter(material => 
+                              material.toLowerCase().includes(materialSearchValue.toLowerCase())
+                            )
+                            .slice(0, 10)
+                            .map((material) => (
+                              <CommandItem
+                                key={material}
+                                value={material}
+                                onSelect={() => {
+                                  if (!selectedMaterials.includes(material)) {
+                                    setSelectedMaterials(prev => [...prev, material]);
+                                  }
+                                  setMaterialSearchValue('');
+                                  setMaterialSearchOpen(false);
+                                }}
+                                className="text-white hover:bg-slate-700"
+                              >
+                                {material}
+                              </CommandItem>
+                            ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                    {selectedMaterials.length > 0 && (
+                      <div className="p-2 border-t border-slate-600">
+                        <div className="flex flex-wrap gap-1">
+                          {selectedMaterials.map((material) => (
+                            <span
+                              key={material}
+                              className="bg-emerald-600/20 text-emerald-400 px-2 py-1 rounded text-xs flex items-center gap-1"
+                            >
+                              {material.substring(0, 12)}
+                              <button onClick={() => removeMaterial(material)} className="hover:text-white">
+                                <X className="h-3 w-3" />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
                       </div>
+                    )}
+                  </PopoverContent>
+                </Popover>
+              ) : (
+                <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-end">
+                  <div className="flex-1 min-w-[200px]">
+                    <Label className="text-slate-300 text-sm mb-1 block">Filtrar por Material</Label>
+                    <Popover open={materialSearchOpen} onOpenChange={setMaterialSearchOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full justify-between bg-slate-800 border-slate-600 text-white hover:bg-slate-700 h-10"
+                        >
+                          <Search className="mr-2 h-4 w-4" />
+                          {selectedMaterials.length > 0 
+                            ? `${selectedMaterials.length} selecionado(s)`
+                            : "Selecionar materiais"
+                          }
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[200px] p-0 bg-slate-800 border-slate-600">
+                        <Command>
+                          <CommandInput 
+                            placeholder="Buscar..." 
+                            value={materialSearchValue}
+                            onValueChange={setMaterialSearchValue}
+                            className="text-white"
+                          />
+                          <CommandList>
+                            <CommandEmpty className="text-slate-400 text-sm p-2">Nenhum material.</CommandEmpty>
+                            <CommandGroup>
+                              {uniqueMaterials
+                                .filter(material => 
+                                  material.toLowerCase().includes(materialSearchValue.toLowerCase())
+                                )
+                                .slice(0, 10)
+                                .map((material) => (
+                                  <CommandItem
+                                    key={material}
+                                    value={material}
+                                    onSelect={() => {
+                                      if (!selectedMaterials.includes(material)) {
+                                        setSelectedMaterials(prev => [...prev, material]);
+                                      }
+                                      setMaterialSearchValue('');
+                                      setMaterialSearchOpen(false);
+                                    }}
+                                    className="text-white hover:bg-slate-700"
+                                  >
+                                    {material}
+                                  </CommandItem>
+                                ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  {selectedMaterials.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {selectedMaterials.map((material) => (
+                        <span
+                          key={material}
+                          className="bg-emerald-600/20 text-emerald-400 px-2 py-1 rounded text-xs flex items-center gap-1"
+                        >
+                          {material.substring(0, 15)}
+                          <button onClick={() => removeMaterial(material)} className="hover:text-white">
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      ))}
                     </div>
                   )}
-                </PopoverContent>
-              </Popover>
-            ) : (
-              // Desktop: Estrutura completa com Label
-              <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-end">
-                <div className="flex-1 min-w-[200px]">
-                  <Label className="text-slate-300 text-sm mb-1 block">Filtrar por Material</Label>
-                  <Popover open={materialSearchOpen} onOpenChange={setMaterialSearchOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-between bg-slate-800 border-slate-600 text-white hover:bg-slate-700 h-10"
-                      >
-                        <Search className="mr-2 h-4 w-4" />
-                        {selectedMaterials.length > 0 
-                          ? `${selectedMaterials.length} selecionado(s)`
-                          : "Selecionar materiais"
-                        }
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[200px] p-0 bg-slate-800 border-slate-600">
-                      <Command>
-                        <CommandInput 
-                          placeholder="Buscar..." 
-                          value={materialSearchValue}
-                          onValueChange={setMaterialSearchValue}
-                          className="text-white"
-                        />
-                        <CommandList>
-                          <CommandEmpty className="text-slate-400 text-sm p-2">Nenhum material.</CommandEmpty>
-                          <CommandGroup>
-                            {uniqueMaterials
-                              .filter(material => 
-                                material.toLowerCase().includes(materialSearchValue.toLowerCase())
-                              )
-                              .slice(0, 10)
-                              .map((material) => (
-                                <CommandItem
-                                  key={material}
-                                  value={material}
-                                  onSelect={() => {
-                                    if (!selectedMaterials.includes(material)) {
-                                      setSelectedMaterials(prev => [...prev, material]);
-                                    }
-                                    setMaterialSearchValue('');
-                                    setMaterialSearchOpen(false);
-                                  }}
-                                  className="text-white hover:bg-slate-700"
-                                >
-                                  {material}
-                                </CommandItem>
-                              ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
                 </div>
-                {selectedMaterials.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {selectedMaterials.map((material) => (
-                      <span
-                        key={material}
-                        className="bg-emerald-600/20 text-emerald-400 px-2 py-1 rounded text-xs flex items-center gap-1"
-                      >
-                        {material.substring(0, 15)}
-                        <button onClick={() => removeMaterial(material)} className="hover:text-white">
-                          <X className="h-3 w-3" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )
+              )}
+            </div>
           }
         />
 
@@ -388,44 +439,82 @@ const PurchaseOrders = () => {
                         <TableHead className="text-slate-300 text-sm p-2">Data</TableHead>
                         <TableHead className="text-slate-300 text-sm p-2 hidden sm:table-cell">ID</TableHead>
                         <TableHead className="text-slate-300 text-sm p-2">Materiais</TableHead>
+                        <TableHead className="text-slate-300 text-sm p-2 hidden md:table-cell">Categoria</TableHead>
                         <TableHead className="text-slate-300 text-sm p-2 hidden sm:table-cell">Peso</TableHead>
                         <TableHead className="text-slate-300 text-sm p-2">Valor</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {paginatedOrders.map((order) => (
-                        <TableRow key={order.id} className="border-slate-600 hover:bg-slate-600/30">
-                          <TableCell className="text-slate-300 text-sm p-2">
-                            {formatDate(order.timestamp)}
-                          </TableCell>
-                          <TableCell className="text-slate-400 font-mono text-xs p-2 hidden sm:table-cell">
-                            {order.id.substring(0, 8)}
-                          </TableCell>
-                          <TableCell className="text-slate-300 text-sm p-2 max-w-[100px] truncate">
-                            {order.items.map(item => item.materialName).join(', ')}
-                          </TableCell>
-                          <TableCell className="text-slate-300 text-sm p-2 hidden sm:table-cell">
-                            {formatWeight(order.items.reduce((sum, item) => sum + item.quantity, 0))}
-                          </TableCell>
-                          <TableCell className="text-white font-semibold text-sm p-2">
-                            {formatCurrency(order.total)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {paginatedOrders.map((order) => {
+                        // Get unique categories for this order
+                        const orderCategories = order.items
+                          .map(item => getCategoryByMaterialId(item.materialId))
+                          .filter((cat, index, self) => cat && self.findIndex(c => c?.id === cat?.id) === index);
+                        
+                        return (
+                          <TableRow key={order.id} className="border-slate-600 hover:bg-slate-600/30">
+                            <TableCell className="text-slate-300 text-sm p-2">
+                              {formatDate(order.timestamp)}
+                            </TableCell>
+                            <TableCell className="text-slate-400 font-mono text-xs p-2 hidden sm:table-cell">
+                              {order.id.substring(0, 8)}
+                            </TableCell>
+                            <TableCell className="text-slate-300 text-sm p-2 max-w-[100px] truncate">
+                              {order.items.map(item => item.materialName).join(', ')}
+                            </TableCell>
+                            <TableCell className="p-2 hidden md:table-cell">
+                              <div className="flex flex-wrap gap-1">
+                                {orderCategories.length > 0 ? (
+                                  orderCategories.slice(0, 2).map(cat => (
+                                    <Badge 
+                                      key={cat!.id} 
+                                      variant="outline"
+                                      className="text-xs border-0"
+                                      style={{ 
+                                        backgroundColor: `${cat!.hex_color || cat!.color || '#6b7280'}20`,
+                                        color: cat!.hex_color || cat!.color || '#9ca3af'
+                                      }}
+                                    >
+                                      {cat!.name}
+                                    </Badge>
+                                  ))
+                                ) : (
+                                  <span className="text-slate-500 text-xs">-</span>
+                                )}
+                                {orderCategories.length > 2 && (
+                                  <span className="text-slate-400 text-xs">+{orderCategories.length - 2}</span>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-slate-300 text-sm p-2 hidden sm:table-cell">
+                              {formatWeight(order.items.reduce((sum, item) => sum + item.quantity, 0))}
+                            </TableCell>
+                            <TableCell className="text-white font-semibold text-sm p-2">
+                              {formatCurrency(order.total)}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>
                 
+                {/* Paginação */}
                 {totalPages > 1 && (
                   <div className="mt-4 flex justify-center">
                     <Pagination>
                       <PaginationContent>
                         <PaginationItem>
                           <PaginationPrevious 
-                            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                            className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (currentPage > 1) setCurrentPage(currentPage - 1);
+                            }}
+                            className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
                           />
                         </PaginationItem>
+                        
                         {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                           let page;
                           if (totalPages <= 5) {
@@ -439,20 +528,28 @@ const PurchaseOrders = () => {
                           }
                           return (
                             <PaginationItem key={page}>
-                              <PaginationLink
-                                onClick={() => setCurrentPage(page)}
+                              <PaginationLink 
+                                href="#"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setCurrentPage(page);
+                                }}
                                 isActive={currentPage === page}
-                                className="cursor-pointer"
                               >
                                 {page}
                               </PaginationLink>
                             </PaginationItem>
                           );
                         })}
+                        
                         <PaginationItem>
                           <PaginationNext 
-                            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                            className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+                            }}
+                            className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
                           />
                         </PaginationItem>
                       </PaginationContent>
@@ -461,8 +558,9 @@ const PurchaseOrders = () => {
                 )}
               </>
             ) : (
-              <div className="text-center py-6 text-slate-400">
-                Nenhuma compra encontrada no período selecionado.
+              <div className="text-center py-8 text-slate-400">
+                <ShoppingCart className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p>Nenhuma compra encontrada no período selecionado.</p>
               </div>
             )}
           </CardContent>
