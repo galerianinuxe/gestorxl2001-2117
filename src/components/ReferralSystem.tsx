@@ -28,6 +28,14 @@ interface ReferralStats {
   bonus_renovacoes: number;
 }
 
+interface ReferralSettingData {
+  plan_type: string;
+  plan_label: string;
+  bonus_days: number;
+  renewal_percentage: number;
+  is_active: boolean;
+}
+
 const ReferralSystem: React.FC = () => {
   const { user } = useAuth();
   const [referrals, setReferrals] = useState<ReferralData[]>([]);
@@ -36,6 +44,7 @@ const ReferralSystem: React.FC = () => {
   const [userName, setUserName] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [copying, setCopying] = useState(false);
+  const [referralSettings, setReferralSettings] = useState<ReferralSettingData[]>([]);
 
   const referralLink = refKey ? `https://xlata.site/register?ref=${refKey}` : '';
 
@@ -51,6 +60,17 @@ const ReferralSystem: React.FC = () => {
     try {
       setLoading(true);
       
+      // Buscar configurações de indicação
+      const { data: settingsData, error: settingsError } = await supabase
+        .from('referral_settings')
+        .select('plan_type, plan_label, bonus_days, renewal_percentage, is_active')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
+
+      if (!settingsError && settingsData) {
+        setReferralSettings(settingsData);
+      }
+
       // Buscar perfil do usuário com ref_key
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -282,7 +302,7 @@ const ReferralSystem: React.FC = () => {
         </Card>
       </div>
 
-      {/* Tabela de Bônus */}
+      {/* Tabela de Bônus - Dinâmica */}
       <Card className="bg-emerald-900/20 border-emerald-700/50">
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
@@ -290,33 +310,51 @@ const ReferralSystem: React.FC = () => {
             <div className="flex-1">
               <h4 className="text-emerald-200 font-medium mb-3">Tabela de Bônus por Plano</h4>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                <div className="bg-slate-800/50 rounded p-2 text-center">
-                  <p className="text-slate-400">Trial</p>
-                  <p className="text-emerald-300 font-bold">+3 dias</p>
-                </div>
-                <div className="bg-slate-800/50 rounded p-2 text-center">
-                  <p className="text-slate-400">Mensal</p>
-                  <p className="text-emerald-300 font-bold">+7 dias</p>
-                </div>
-                <div className="bg-slate-800/50 rounded p-2 text-center">
-                  <p className="text-slate-400">Trimestral</p>
-                  <p className="text-emerald-300 font-bold">+15 dias</p>
-                </div>
-                <div className="bg-slate-800/50 rounded p-2 text-center">
-                  <p className="text-slate-400">Semestral</p>
-                  <p className="text-emerald-300 font-bold">+30 dias</p>
-                </div>
-                <div className="bg-slate-800/50 rounded p-2 text-center">
-                  <p className="text-slate-400">Anual</p>
-                  <p className="text-emerald-300 font-bold">+45 dias</p>
-                </div>
-                <div className="bg-slate-800/50 rounded p-2 text-center">
-                  <p className="text-slate-400">Trienal</p>
-                  <p className="text-emerald-300 font-bold">+90 dias</p>
-                </div>
-                <div className="bg-cyan-900/30 rounded p-2 text-center col-span-2">
-                  <p className="text-cyan-400">Renovação = 50% do bônus</p>
-                </div>
+                {referralSettings.length > 0 ? (
+                  <>
+                    {referralSettings.map((setting) => (
+                      <div key={setting.plan_type} className="bg-slate-800/50 rounded p-2 text-center">
+                        <p className="text-slate-400">{setting.plan_label}</p>
+                        <p className="text-emerald-300 font-bold">+{setting.bonus_days} dias</p>
+                      </div>
+                    ))}
+                    <div className="bg-cyan-900/30 rounded p-2 text-center col-span-2 sm:col-span-4">
+                      <p className="text-cyan-400">
+                        Renovação = {referralSettings[0]?.renewal_percentage || 50}% do bônus
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="bg-slate-800/50 rounded p-2 text-center">
+                      <p className="text-slate-400">Trial</p>
+                      <p className="text-emerald-300 font-bold">+3 dias</p>
+                    </div>
+                    <div className="bg-slate-800/50 rounded p-2 text-center">
+                      <p className="text-slate-400">Mensal</p>
+                      <p className="text-emerald-300 font-bold">+7 dias</p>
+                    </div>
+                    <div className="bg-slate-800/50 rounded p-2 text-center">
+                      <p className="text-slate-400">Trimestral</p>
+                      <p className="text-emerald-300 font-bold">+15 dias</p>
+                    </div>
+                    <div className="bg-slate-800/50 rounded p-2 text-center">
+                      <p className="text-slate-400">Semestral</p>
+                      <p className="text-emerald-300 font-bold">+30 dias</p>
+                    </div>
+                    <div className="bg-slate-800/50 rounded p-2 text-center">
+                      <p className="text-slate-400">Anual</p>
+                      <p className="text-emerald-300 font-bold">+45 dias</p>
+                    </div>
+                    <div className="bg-slate-800/50 rounded p-2 text-center">
+                      <p className="text-slate-400">Trienal</p>
+                      <p className="text-emerald-300 font-bold">+90 dias</p>
+                    </div>
+                    <div className="bg-cyan-900/30 rounded p-2 text-center col-span-2">
+                      <p className="text-cyan-400">Renovação = 50% do bônus</p>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>

@@ -1875,6 +1875,7 @@ export type Database = {
           hero_image_size_tablet: string | null
           hero_image_url: string | null
           hero_main_title: string
+          hero_media_type: string | null
           hero_secondary_button_text: string | null
           hero_security_label: string | null
           hero_social_proof_rating: string | null
@@ -1883,6 +1884,8 @@ export type Database = {
           hero_social_proof_users_label: string | null
           hero_subtitle: string
           hero_video_inline: boolean | null
+          hero_video_type: string | null
+          hero_video_url: string | null
           id: string
           json_ld_data: string | null
           logo_url: string | null
@@ -1923,6 +1926,7 @@ export type Database = {
           hero_image_size_tablet?: string | null
           hero_image_url?: string | null
           hero_main_title?: string
+          hero_media_type?: string | null
           hero_secondary_button_text?: string | null
           hero_security_label?: string | null
           hero_social_proof_rating?: string | null
@@ -1931,6 +1935,8 @@ export type Database = {
           hero_social_proof_users_label?: string | null
           hero_subtitle?: string
           hero_video_inline?: boolean | null
+          hero_video_type?: string | null
+          hero_video_url?: string | null
           id?: string
           json_ld_data?: string | null
           logo_url?: string | null
@@ -1971,6 +1977,7 @@ export type Database = {
           hero_image_size_tablet?: string | null
           hero_image_url?: string | null
           hero_main_title?: string
+          hero_media_type?: string | null
           hero_secondary_button_text?: string | null
           hero_security_label?: string | null
           hero_social_proof_rating?: string | null
@@ -1979,6 +1986,8 @@ export type Database = {
           hero_social_proof_users_label?: string | null
           hero_subtitle?: string
           hero_video_inline?: boolean | null
+          hero_video_type?: string | null
+          hero_video_url?: string | null
           id?: string
           json_ld_data?: string | null
           logo_url?: string | null
@@ -3083,6 +3092,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      referral_settings: {
+        Row: {
+          bonus_days: number
+          created_at: string | null
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          plan_label: string
+          plan_type: string
+          renewal_percentage: number
+          updated_at: string | null
+        }
+        Insert: {
+          bonus_days?: number
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          plan_label?: string
+          plan_type: string
+          renewal_percentage?: number
+          updated_at?: string | null
+        }
+        Update: {
+          bonus_days?: number
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          plan_label?: string
+          plan_type?: string
+          renewal_percentage?: number
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       role_default_permissions: {
         Row: {
