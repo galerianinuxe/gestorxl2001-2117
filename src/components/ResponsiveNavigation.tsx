@@ -6,14 +6,9 @@ import {
   X,
   LogIn,
   Zap,
-  Home,
-  CreditCard,
-  HelpCircle,
-  Phone,
-  ChevronRight,
-  BookOpen
+  ChevronRight
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import SystemLogo from './SystemLogo';
 
 interface ResponsiveNavigationProps {
@@ -26,13 +21,15 @@ const ResponsiveNavigation: React.FC<ResponsiveNavigationProps> = ({
   companyPhone
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
 
   const navigationItems = [
-    { title: "Início", href: "/landing", icon: Home },
-    { title: "Blog", href: "/blog", icon: BookOpen },
-    { title: "Planos", href: "/planos", icon: CreditCard },
-    { title: "Guia", href: "/guia-completo", icon: HelpCircle },
+    { title: "Início", href: "/landing", emoji: "🏠" },
+    { title: "Recursos", href: "/planos#recursos", emoji: "⚡" },
+    { title: "Planos", href: "/planos", emoji: "💎" },
+    { title: "Blog", href: "/blog", emoji: "📰" },
+    { title: "Ajuda", href: "/ajuda", emoji: "❓" },
   ];
 
   const handleNavigation = (href: string) => {
@@ -43,6 +40,13 @@ const ResponsiveNavigation: React.FC<ResponsiveNavigationProps> = ({
   const handleWhatsApp = () => {
     const message = encodeURIComponent(`Olá! Gostaria de saber mais sobre o Sistema XLata.site.`);
     window.open(`https://wa.me/5511963512105?text=${message}`, '_blank');
+  };
+
+  const isActive = (href: string) => {
+    if (href === '/landing') {
+      return location.pathname === '/' || location.pathname === '/landing';
+    }
+    return location.pathname.startsWith(href.split('#')[0]);
   };
 
   return (
@@ -59,17 +63,31 @@ const ResponsiveNavigation: React.FC<ResponsiveNavigationProps> = ({
               <button
                 key={item.title}
                 onClick={() => handleNavigation(item.href)}
-                className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800/50 rounded-lg transition-colors"
+                className={`relative px-3 py-2 text-sm font-medium transition-all duration-300 group ${
+                  isActive(item.href) 
+                    ? 'text-white' 
+                    : 'text-gray-400 hover:text-white'
+                }`}
               >
+                <span className="mr-1.5 text-base">{item.emoji}</span>
                 {item.title}
+                {/* Animated underline */}
+                <span 
+                  className={`absolute bottom-0 left-0 h-0.5 bg-green-500 transition-all duration-300 ${
+                    isActive(item.href) 
+                      ? 'w-full' 
+                      : 'w-0 group-hover:w-full'
+                  }`} 
+                />
               </button>
             ))}
             <button
               onClick={handleWhatsApp}
-              className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800/50 rounded-lg transition-colors flex items-center gap-2"
+              className="relative px-3 py-2 text-sm font-medium text-gray-400 hover:text-white transition-all duration-300 group"
             >
-              <Phone className="h-4 w-4" />
+              <span className="mr-1.5 text-base">📞</span>
               Contato
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-green-500 transition-all duration-300 group-hover:w-full" />
             </button>
           </div>
 
@@ -140,24 +158,32 @@ const ResponsiveNavigation: React.FC<ResponsiveNavigationProps> = ({
                     <button
                       key={item.title}
                       onClick={() => handleNavigation(item.href)}
-                      className="w-full flex items-center justify-between px-4 py-3 text-gray-200 hover:bg-gray-800/50 transition-colors"
+                      className={`w-full flex items-center justify-between px-4 py-3.5 transition-all duration-200 group ${
+                        isActive(item.href)
+                          ? 'bg-gray-800/50 text-white'
+                          : 'text-gray-200 hover:bg-gray-800/50'
+                      }`}
                     >
                       <div className="flex items-center gap-3">
-                        <item.icon className="h-5 w-5 text-gray-400" />
-                        <span className="font-medium">{item.title}</span>
+                        <span className="text-lg">{item.emoji}</span>
+                        <span className="font-medium group-hover:text-white transition-colors">{item.title}</span>
                       </div>
-                      <ChevronRight className="h-4 w-4 text-gray-500" />
+                      <ChevronRight className={`h-4 w-4 transition-all duration-200 ${
+                        isActive(item.href)
+                          ? 'text-green-400'
+                          : 'text-gray-500 group-hover:text-green-400 group-hover:translate-x-1'
+                      }`} />
                     </button>
                   ))}
                   <button
                     onClick={handleWhatsApp}
-                    className="w-full flex items-center justify-between px-4 py-3 text-gray-200 hover:bg-gray-800/50 transition-colors"
+                    className="w-full flex items-center justify-between px-4 py-3.5 text-gray-200 hover:bg-gray-800/50 transition-all duration-200 group"
                   >
                     <div className="flex items-center gap-3">
-                      <Phone className="h-5 w-5 text-gray-400" />
-                      <span className="font-medium">Contato WhatsApp</span>
+                      <span className="text-lg">📞</span>
+                      <span className="font-medium group-hover:text-white transition-colors">Contato WhatsApp</span>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-gray-500" />
+                    <ChevronRight className="h-4 w-4 text-gray-500 group-hover:text-green-400 group-hover:translate-x-1 transition-all duration-200" />
                   </button>
                 </div>
 
