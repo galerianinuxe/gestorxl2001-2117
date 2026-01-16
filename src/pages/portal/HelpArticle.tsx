@@ -21,6 +21,11 @@ const HelpArticle = () => {
   const [htmlContent, setHtmlContent] = useState('');
   const [feedback, setFeedback] = useState<'yes' | 'no' | null>(null);
 
+  // Scroll to top when navigating between articles
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [slug]);
+
   useEffect(() => {
     if (article?.content_md) {
       const html = marked(article.content_md) as string;
