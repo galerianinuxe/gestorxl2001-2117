@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, Play, Star, Users, Shield } from 'lucide-react';
@@ -24,6 +25,9 @@ interface LandingHeroProps {
     hero_image_size_tablet?: string;
     hero_image_size_mobile?: string;
     hero_image_alt?: string;
+    hero_media_type?: string;
+    hero_video_url?: string;
+    hero_video_type?: string;
   } | null;
   onStartTrial: () => void;
   onWatchVideo: () => void;
@@ -40,7 +44,20 @@ const getImageSizeClasses = (size: string, breakpoint: 'mobile' | 'tablet' | 'de
   return sizes[size]?.[breakpoint] || sizes.medium[breakpoint];
 };
 
+// Helper functions to detect YouTube/Vimeo
+function getYouTubeId(url: string): string | null {
+  const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\s?]+)/);
+  return match ? match[1] : null;
+}
+
+function getVimeoId(url: string): string | null {
+  const match = url.match(/vimeo\.com\/(\d+)/);
+  return match ? match[1] : null;
+}
+
 export function LandingHero({ settings, onStartTrial, onWatchVideo }: LandingHeroProps) {
+  const [showVideoEmbed, setShowVideoEmbed] = useState(false);
+
   const title = settings?.hero_main_title || 'Pese, Calcule e Imprima em';
   const highlight = settings?.hero_highlight_text || '3 Minutos';
   const subtitle = settings?.hero_subtitle || 'Sem erro. Sem fila. Sem discussão.';
@@ -56,12 +73,85 @@ export function LandingHero({ settings, onStartTrial, onWatchVideo }: LandingHer
   const socialProofRatingLabel = settings?.hero_social_proof_rating_label || 'de satisfação';
   const securityLabel = settings?.hero_security_label || 'Dados 100% seguros';
 
-  // Hero image settings
+  // Hero media settings
+  const heroMediaType = settings?.hero_media_type || 'image';
   const heroImageUrl = settings?.hero_image_url;
+  const heroVideoUrl = settings?.hero_video_url;
   const heroImageAlt = settings?.hero_image_alt || 'Imagem do Hero';
   const sizeMobile = settings?.hero_image_size_mobile || 'small';
   const sizeTablet = settings?.hero_image_size_tablet || 'medium';
   const sizeDesktop = settings?.hero_image_size_desktop || 'medium';
+
+  // Video detection
+  const youtubeId = heroVideoUrl ? getYouTubeId(heroVideoUrl) : null;
+  const vimeoId = heroVideoUrl ? getVimeoId(heroVideoUrl) : null;
+  const isEmbedVideo = !!youtubeId || !!vimeoId;
+  const thumbUrl = youtubeId ? `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg` : null;
+
+  const handlePlayVideo = () => {
+    if (isEmbedVideo) {
+      setShowVideoEmbed(true);
+    }
+  };
+
+  // Render video player (same style as "Como Funciona")
+  const renderVideoPlayer = () => {
+    if (!heroVideoUrl) return null;
+
+    if (isEmbedVideo) {
+      const embedUrl = youtubeId 
+        ? `https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0&modestbranding=1`
+        : `https://player.vimeo.com/video/${vimeoId}?autoplay=1`;
+
+      if (showVideoEmbed) {
+        return (
+          <div className="relative aspect-video max-w-[400px] md:max-w-[500px] lg:max-w-[600px] mx-auto bg-slate-900 rounded-xl overflow-hidden shadow-2xl">
+            <iframe
+              src={embedUrl}
+              className="absolute inset-0 w-full h-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        );
+      }
+
+      return (
+        <div 
+          className="relative aspect-video max-w-[400px] md:max-w-[500px] lg:max-w-[600px] mx-auto bg-slate-900 rounded-xl overflow-hidden cursor-pointer group shadow-2xl"
+          onClick={handlePlayVideo}
+        >
+          {thumbUrl && (
+            <img 
+              src={thumbUrl} 
+              alt="Vídeo do Hero"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          )}
+          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors" />
+          
+          {/* Play button - same style as Como Funciona */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <button className="w-16 h-16 md:w-20 md:h-20 bg-emerald-500 hover:bg-emerald-400 rounded-full flex items-center justify-center shadow-2xl transition-all group-hover:scale-110">
+              <Play className="w-6 h-6 md:w-8 md:h-8 text-white ml-1" fill="white" />
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // Native video player for uploaded videos
+    return (
+      <div className="relative aspect-video max-w-[400px] md:max-w-[500px] lg:max-w-[600px] mx-auto bg-slate-900 rounded-xl overflow-hidden shadow-2xl">
+        <video
+          src={heroVideoUrl}
+          className="w-full h-full object-cover"
+          controls
+          poster={undefined}
+        />
+      </div>
+    );
+  };
 
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-gradient-to-b from-slate-900 via-slate-900 to-slate-800">
@@ -71,8 +161,12 @@ export function LandingHero({ settings, onStartTrial, onWatchVideo }: LandingHer
       
       <div className="relative z-10 container mx-auto px-4 py-16 md:py-24">
         <div className="max-w-4xl mx-auto text-center">
-          {/* Hero Image - Above Badge */}
-          {heroImageUrl && (
+          {/* Hero Media - Image or Video */}
+          {heroMediaType === 'video' && heroVideoUrl ? (
+            <div className="mb-6 animate-fade-in">
+              {renderVideoPlayer()}
+            </div>
+          ) : heroImageUrl && (
             <div className="mb-6 animate-fade-in">
               <img 
                 src={heroImageUrl}

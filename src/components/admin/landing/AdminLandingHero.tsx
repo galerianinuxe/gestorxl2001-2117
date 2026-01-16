@@ -6,8 +6,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Save, Loader2, Users, Star, Shield, Image as ImageIcon, Monitor, Tablet, Smartphone } from 'lucide-react';
+import { Save, Loader2, Users, Star, Shield, Image as ImageIcon, Monitor, Tablet, Smartphone, Video, Play } from 'lucide-react';
 import { ImageUploader } from '@/components/ui/ImageUploader';
+import { VideoUploader } from '@/components/ui/VideoUploader';
 
 // Helper function to get preview size classes
 const getPreviewSizeClasses = (size: string) => {
@@ -44,6 +45,9 @@ export function AdminLandingHero() {
     hero_image_size_tablet: 'medium',
     hero_image_size_mobile: 'small',
     hero_image_alt: 'Imagem do Hero',
+    hero_media_type: 'image' as 'image' | 'video',
+    hero_video_url: '',
+    hero_video_type: 'url' as 'url' | 'upload',
   });
 
   useEffect(() => {
@@ -62,7 +66,12 @@ export function AdminLandingHero() {
 
       if (error) throw error;
       if (data) {
-        setSettings(prev => ({ ...prev, ...data }));
+        setSettings(prev => ({ 
+          ...prev, 
+          ...data,
+          hero_media_type: (data.hero_media_type === 'video' ? 'video' : 'image') as 'image' | 'video',
+          hero_video_type: (data.hero_video_type === 'upload' ? 'upload' : 'url') as 'url' | 'upload',
+        }));
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -74,31 +83,36 @@ export function AdminLandingHero() {
   const handleSave = async () => {
     setSaving(true);
     try {
+      const updateData = {
+        hero_main_title: settings.hero_main_title,
+        hero_subtitle: settings.hero_subtitle,
+        hero_description: settings.hero_description,
+        hero_button_text: settings.hero_button_text,
+        hero_badge_text: settings.hero_badge_text,
+        hero_highlight_text: settings.hero_highlight_text,
+        hero_secondary_button_text: settings.hero_secondary_button_text,
+        hero_social_proof_users: settings.hero_social_proof_users,
+        hero_social_proof_users_label: settings.hero_social_proof_users_label,
+        hero_social_proof_rating: settings.hero_social_proof_rating,
+        hero_social_proof_rating_label: settings.hero_social_proof_rating_label,
+        hero_security_label: settings.hero_security_label,
+        background_image_url: settings.background_image_url,
+        video_url: settings.video_url,
+        hero_image_url: settings.hero_image_url || null,
+        hero_image_size_desktop: settings.hero_image_size_desktop,
+        hero_image_size_tablet: settings.hero_image_size_tablet,
+        hero_image_size_mobile: settings.hero_image_size_mobile,
+        hero_image_alt: settings.hero_image_alt,
+        hero_media_type: settings.hero_media_type,
+        hero_video_url: settings.hero_video_url,
+        hero_video_type: settings.hero_video_type,
+        updated_at: new Date().toISOString(),
+      };
+
       if (settings.id) {
         const { error } = await supabase
           .from('landing_page_settings')
-          .update({
-            hero_main_title: settings.hero_main_title,
-            hero_subtitle: settings.hero_subtitle,
-            hero_description: settings.hero_description,
-            hero_button_text: settings.hero_button_text,
-            hero_badge_text: settings.hero_badge_text,
-            hero_highlight_text: settings.hero_highlight_text,
-            hero_secondary_button_text: settings.hero_secondary_button_text,
-            hero_social_proof_users: settings.hero_social_proof_users,
-            hero_social_proof_users_label: settings.hero_social_proof_users_label,
-            hero_social_proof_rating: settings.hero_social_proof_rating,
-            hero_social_proof_rating_label: settings.hero_social_proof_rating_label,
-            hero_security_label: settings.hero_security_label,
-            background_image_url: settings.background_image_url,
-            video_url: settings.video_url,
-            hero_image_url: settings.hero_image_url || null,
-            hero_image_size_desktop: settings.hero_image_size_desktop,
-            hero_image_size_tablet: settings.hero_image_size_tablet,
-            hero_image_size_mobile: settings.hero_image_size_mobile,
-            hero_image_alt: settings.hero_image_alt,
-            updated_at: new Date().toISOString(),
-          })
+          .update(updateData)
           .eq('id', settings.id);
 
         if (error) throw error;
@@ -110,25 +124,7 @@ export function AdminLandingHero() {
           .from('landing_page_settings')
           .insert({
             user_id: user.id,
-            hero_main_title: settings.hero_main_title,
-            hero_subtitle: settings.hero_subtitle,
-            hero_description: settings.hero_description,
-            hero_button_text: settings.hero_button_text,
-            hero_badge_text: settings.hero_badge_text,
-            hero_highlight_text: settings.hero_highlight_text,
-            hero_secondary_button_text: settings.hero_secondary_button_text,
-            hero_social_proof_users: settings.hero_social_proof_users,
-            hero_social_proof_users_label: settings.hero_social_proof_users_label,
-            hero_social_proof_rating: settings.hero_social_proof_rating,
-            hero_social_proof_rating_label: settings.hero_social_proof_rating_label,
-            hero_security_label: settings.hero_security_label,
-            background_image_url: settings.background_image_url,
-            video_url: settings.video_url,
-            hero_image_url: settings.hero_image_url || null,
-            hero_image_size_desktop: settings.hero_image_size_desktop,
-            hero_image_size_tablet: settings.hero_image_size_tablet,
-            hero_image_size_mobile: settings.hero_image_size_mobile,
-            hero_image_alt: settings.hero_image_alt,
+            ...updateData,
           });
 
         if (error) throw error;
@@ -234,151 +230,222 @@ export function AdminLandingHero() {
         </CardContent>
       </Card>
 
-      {/* Hero Image Settings */}
+      {/* Hero Media Settings - Image or Video */}
       <Card className="bg-slate-800 border-slate-700">
         <CardHeader>
           <CardTitle className="text-white flex items-center gap-2">
-            <ImageIcon className="w-5 h-5 text-emerald-400" />
-            Imagem do Hero
+            {settings.hero_media_type === 'video' ? (
+              <Video className="w-5 h-5 text-emerald-400" />
+            ) : (
+              <ImageIcon className="w-5 h-5 text-emerald-400" />
+            )}
+            Mídia do Hero
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Image Upload */}
+          {/* Toggle Imagem/Vídeo */}
           <div className="space-y-2">
-            <label className="text-sm text-slate-300">Imagem (aparece acima do badge)</label>
-            <ImageUploader 
-              value={settings.hero_image_url || null}
-              onChange={(url) => setSettings(prev => ({ ...prev, hero_image_url: url || '' }))}
-              bucket="landing-images"
-              folder="hero"
-            />
-          </div>
-
-          {/* Alt Text */}
-          <div className="space-y-2">
-            <label className="text-sm text-slate-300">Texto Alternativo (SEO/Acessibilidade)</label>
-            <Input
-              value={settings.hero_image_alt}
-              onChange={(e) => setSettings(prev => ({ ...prev, hero_image_alt: e.target.value }))}
-              placeholder="Descrição da imagem"
-              className="bg-slate-700 border-slate-600 text-white"
-            />
-          </div>
-
-          {/* Size Selectors */}
-          <div className="grid gap-4 md:grid-cols-3">
-            {/* Desktop */}
-            <div className="space-y-2">
-              <label className="text-sm text-slate-300 flex items-center gap-2">
-                <Monitor className="w-4 h-4" /> Desktop
-              </label>
-              <Select 
-                value={settings.hero_image_size_desktop} 
-                onValueChange={(value) => setSettings(prev => ({ ...prev, hero_image_size_desktop: value }))}
+            <label className="text-sm text-slate-300">Tipo de Mídia</label>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant={settings.hero_media_type === 'image' ? 'default' : 'outline'}
+                onClick={() => setSettings(prev => ({ ...prev, hero_media_type: 'image' }))}
+                className={settings.hero_media_type === 'image' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
               >
-                <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-700 border-slate-600">
-                  <SelectItem value="small">Pequeno (200px)</SelectItem>
-                  <SelectItem value="medium">Médio (350px)</SelectItem>
-                  <SelectItem value="large">Grande (500px)</SelectItem>
-                  <SelectItem value="full">Extra Grande (700px)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {/* Tablet */}
-            <div className="space-y-2">
-              <label className="text-sm text-slate-300 flex items-center gap-2">
-                <Tablet className="w-4 h-4" /> Tablet
-              </label>
-              <Select 
-                value={settings.hero_image_size_tablet} 
-                onValueChange={(value) => setSettings(prev => ({ ...prev, hero_image_size_tablet: value }))}
+                <ImageIcon className="w-4 h-4 mr-2" />
+                Imagem
+              </Button>
+              <Button
+                type="button"
+                variant={settings.hero_media_type === 'video' ? 'default' : 'outline'}
+                onClick={() => setSettings(prev => ({ ...prev, hero_media_type: 'video' }))}
+                className={settings.hero_media_type === 'video' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
               >
-                <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-700 border-slate-600">
-                  <SelectItem value="small">Pequeno (200px)</SelectItem>
-                  <SelectItem value="medium">Médio (300px)</SelectItem>
-                  <SelectItem value="large">Grande (400px)</SelectItem>
-                  <SelectItem value="full">Extra Grande (500px)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {/* Mobile */}
-            <div className="space-y-2">
-              <label className="text-sm text-slate-300 flex items-center gap-2">
-                <Smartphone className="w-4 h-4" /> Mobile
-              </label>
-              <Select 
-                value={settings.hero_image_size_mobile} 
-                onValueChange={(value) => setSettings(prev => ({ ...prev, hero_image_size_mobile: value }))}
-              >
-                <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-700 border-slate-600">
-                  <SelectItem value="small">Pequeno (150px)</SelectItem>
-                  <SelectItem value="medium">Médio (200px)</SelectItem>
-                  <SelectItem value="large">Grande (250px)</SelectItem>
-                  <SelectItem value="full">Extra Grande (300px)</SelectItem>
-                </SelectContent>
-              </Select>
+                <Video className="w-4 h-4 mr-2" />
+                Vídeo
+              </Button>
             </div>
           </div>
 
-          {/* Responsive Preview */}
-          {settings.hero_image_url && (
-            <div className="space-y-4">
-              <p className="text-xs text-slate-500">Preview Responsivo:</p>
+          {/* Conteúdo baseado no tipo de mídia */}
+          {settings.hero_media_type === 'image' ? (
+            <>
+              {/* Image Upload */}
+              <div className="space-y-2">
+                <label className="text-sm text-slate-300">Imagem (aparece acima do badge)</label>
+                <ImageUploader 
+                  value={settings.hero_image_url || null}
+                  onChange={(url) => setSettings(prev => ({ ...prev, hero_image_url: url || '' }))}
+                  bucket="landing-images"
+                  folder="hero"
+                />
+              </div>
+
+              {/* Alt Text */}
+              <div className="space-y-2">
+                <label className="text-sm text-slate-300">Texto Alternativo (SEO/Acessibilidade)</label>
+                <Input
+                  value={settings.hero_image_alt}
+                  onChange={(e) => setSettings(prev => ({ ...prev, hero_image_alt: e.target.value }))}
+                  placeholder="Descrição da imagem"
+                  className="bg-slate-700 border-slate-600 text-white"
+                />
+              </div>
+
+              {/* Size Selectors */}
               <div className="grid gap-4 md:grid-cols-3">
-                {/* Desktop Preview */}
-                <div className="bg-slate-900 rounded-lg p-4 border border-slate-600">
-                  <p className="text-xs text-slate-500 mb-3 flex items-center gap-1">
-                    <Monitor className="w-3 h-3" /> Desktop
-                  </p>
-                  <div className="flex justify-center items-center min-h-[80px]">
-                    <img 
-                      src={settings.hero_image_url} 
-                      alt="Preview Desktop"
-                      className={`object-contain ${getPreviewSizeClasses(settings.hero_image_size_desktop)}`}
-                    />
-                  </div>
+                {/* Desktop */}
+                <div className="space-y-2">
+                  <label className="text-sm text-slate-300 flex items-center gap-2">
+                    <Monitor className="w-4 h-4" /> Desktop
+                  </label>
+                  <Select 
+                    value={settings.hero_image_size_desktop} 
+                    onValueChange={(value) => setSettings(prev => ({ ...prev, hero_image_size_desktop: value }))}
+                  >
+                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-700 border-slate-600">
+                      <SelectItem value="small">Pequeno (200px)</SelectItem>
+                      <SelectItem value="medium">Médio (350px)</SelectItem>
+                      <SelectItem value="large">Grande (500px)</SelectItem>
+                      <SelectItem value="full">Extra Grande (700px)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 
-                {/* Tablet Preview */}
-                <div className="bg-slate-900 rounded-lg p-4 border border-slate-600">
-                  <p className="text-xs text-slate-500 mb-3 flex items-center gap-1">
-                    <Tablet className="w-3 h-3" /> Tablet
-                  </p>
-                  <div className="flex justify-center items-center min-h-[80px]">
-                    <img 
-                      src={settings.hero_image_url}
-                      alt="Preview Tablet"
-                      className={`object-contain ${getPreviewSizeClasses(settings.hero_image_size_tablet)}`}
-                    />
-                  </div>
+                {/* Tablet */}
+                <div className="space-y-2">
+                  <label className="text-sm text-slate-300 flex items-center gap-2">
+                    <Tablet className="w-4 h-4" /> Tablet
+                  </label>
+                  <Select 
+                    value={settings.hero_image_size_tablet} 
+                    onValueChange={(value) => setSettings(prev => ({ ...prev, hero_image_size_tablet: value }))}
+                  >
+                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-700 border-slate-600">
+                      <SelectItem value="small">Pequeno (200px)</SelectItem>
+                      <SelectItem value="medium">Médio (300px)</SelectItem>
+                      <SelectItem value="large">Grande (400px)</SelectItem>
+                      <SelectItem value="full">Extra Grande (500px)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 
-                {/* Mobile Preview */}
-                <div className="bg-slate-900 rounded-lg p-4 border border-slate-600">
-                  <p className="text-xs text-slate-500 mb-3 flex items-center gap-1">
-                    <Smartphone className="w-3 h-3" /> Mobile
-                  </p>
-                  <div className="flex justify-center items-center min-h-[80px]">
-                    <img 
-                      src={settings.hero_image_url}
-                      alt="Preview Mobile"
-                      className={`object-contain ${getPreviewSizeClasses(settings.hero_image_size_mobile)}`}
-                    />
-                  </div>
+                {/* Mobile */}
+                <div className="space-y-2">
+                  <label className="text-sm text-slate-300 flex items-center gap-2">
+                    <Smartphone className="w-4 h-4" /> Mobile
+                  </label>
+                  <Select 
+                    value={settings.hero_image_size_mobile} 
+                    onValueChange={(value) => setSettings(prev => ({ ...prev, hero_image_size_mobile: value }))}
+                  >
+                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-700 border-slate-600">
+                      <SelectItem value="small">Pequeno (150px)</SelectItem>
+                      <SelectItem value="medium">Médio (200px)</SelectItem>
+                      <SelectItem value="large">Grande (250px)</SelectItem>
+                      <SelectItem value="full">Extra Grande (300px)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
-            </div>
+
+              {/* Responsive Preview */}
+              {settings.hero_image_url && (
+                <div className="space-y-4">
+                  <p className="text-xs text-slate-500">Preview Responsivo:</p>
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <div className="bg-slate-900 rounded-lg p-4 border border-slate-600">
+                      <p className="text-xs text-slate-500 mb-3 flex items-center gap-1">
+                        <Monitor className="w-3 h-3" /> Desktop
+                      </p>
+                      <div className="flex justify-center items-center min-h-[80px]">
+                        <img 
+                          src={settings.hero_image_url} 
+                          alt="Preview Desktop"
+                          className={`object-contain ${getPreviewSizeClasses(settings.hero_image_size_desktop)}`}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="bg-slate-900 rounded-lg p-4 border border-slate-600">
+                      <p className="text-xs text-slate-500 mb-3 flex items-center gap-1">
+                        <Tablet className="w-3 h-3" /> Tablet
+                      </p>
+                      <div className="flex justify-center items-center min-h-[80px]">
+                        <img 
+                          src={settings.hero_image_url}
+                          alt="Preview Tablet"
+                          className={`object-contain ${getPreviewSizeClasses(settings.hero_image_size_tablet)}`}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="bg-slate-900 rounded-lg p-4 border border-slate-600">
+                      <p className="text-xs text-slate-500 mb-3 flex items-center gap-1">
+                        <Smartphone className="w-3 h-3" /> Mobile
+                      </p>
+                      <div className="flex justify-center items-center min-h-[80px]">
+                        <img 
+                          src={settings.hero_image_url}
+                          alt="Preview Mobile"
+                          className={`object-contain ${getPreviewSizeClasses(settings.hero_image_size_mobile)}`}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              {/* Video Upload/URL */}
+              <div className="space-y-2">
+                <label className="text-sm text-slate-300">Vídeo do Hero (mesmo estilo do "Como Funciona")</label>
+                <VideoUploader
+                  value={settings.hero_video_url || null}
+                  videoType={settings.hero_video_type}
+                  onChange={(url, type) => setSettings(prev => ({ 
+                    ...prev, 
+                    hero_video_url: url || '', 
+                    hero_video_type: type 
+                  }))}
+                  bucket="landing-videos"
+                  folder="hero"
+                />
+                <p className="text-xs text-slate-500">
+                  Suporte a YouTube, Vimeo ou upload direto (MP4, WebM, OGG - máx. 50MB)
+                </p>
+              </div>
+
+              {/* Video Preview */}
+              {settings.hero_video_url && (
+                <div className="space-y-2">
+                  <p className="text-xs text-slate-500">Preview:</p>
+                  <div className="bg-slate-900 rounded-lg p-4 border border-slate-600 flex items-center gap-4">
+                    <div className="w-16 h-16 bg-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Play className="w-6 h-6 text-white ml-1" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-sm font-medium truncate">Vídeo do Hero</p>
+                      <p className="text-slate-400 text-xs truncate">{settings.hero_video_url}</p>
+                      <p className="text-emerald-400 text-xs mt-1">
+                        {settings.hero_video_type === 'url' ? '🔗 Link externo' : '📤 Arquivo enviado'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
