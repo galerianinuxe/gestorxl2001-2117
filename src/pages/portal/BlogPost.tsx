@@ -20,6 +20,11 @@ const BlogPost = () => {
   const [copied, setCopied] = useState(false);
   const [htmlContent, setHtmlContent] = useState('');
 
+  // Scroll to top when navigating between articles
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [slug]);
+
   useEffect(() => {
     if (post?.content_md) {
       const html = marked(post.content_md) as string;
