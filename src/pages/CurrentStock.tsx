@@ -568,7 +568,7 @@ const CurrentStock = () => {
       {/* Modals */}
       <PasswordPromptModal
         open={showPasswordModal}
-        onClose={() => setShowPasswordModal(false)}
+        onOpenChange={setShowPasswordModal}
         onAuthenticated={handlePasswordAuthenticated}
         title="Zerar Estoque"
         description="Digite a senha para confirmar a limpeza do estoque."
@@ -576,18 +576,19 @@ const CurrentStock = () => {
 
       <ClearStockModal
         open={showClearStockModal}
-        onClose={() => setShowClearStockModal(false)}
+        onOpenChange={setShowClearStockModal}
         onStockCleared={handleStockCleared}
       />
 
       {selectedMaterial && (
         <MaterialDetailsModal
           open={showMaterialDetails}
-          onClose={() => {
-            setShowMaterialDetails(false);
-            setSelectedMaterial(null);
+          onOpenChange={(open) => {
+            setShowMaterialDetails(open);
+            if (!open) setSelectedMaterial(null);
           }}
           material={selectedMaterial}
+          totalWeight={materials.reduce((sum, m) => sum + m.currentStock, 0)}
         />
       )}
     </div>

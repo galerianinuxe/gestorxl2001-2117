@@ -575,9 +575,9 @@ const DailyFlow = () => {
       {/* Modal de senha para exclusão */}
       <PasswordPromptModal
         open={showPasswordModal}
-        onClose={() => {
-          setShowPasswordModal(false);
-          setItemToDelete(null);
+        onOpenChange={(open) => {
+          setShowPasswordModal(open);
+          if (!open) setItemToDelete(null);
         }}
         onAuthenticated={handleDeleteCashRegister}
         title="Excluir Fechamento"
