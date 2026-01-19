@@ -615,9 +615,9 @@ const Transactions = () => {
       {/* Modals */}
       <PasswordPromptModal
         open={showPasswordModal}
-        onClose={() => {
-          setShowPasswordModal(false);
-          setOrderToReprint(null);
+        onOpenChange={(open) => {
+          setShowPasswordModal(open);
+          if (!open) setOrderToReprint(null);
         }}
         onAuthenticated={handlePasswordAuthenticated}
         title="Reimprimir Comprovante"
@@ -625,7 +625,7 @@ const Transactions = () => {
       />
 
       <TransactionDetailsModal
-        open={showTransactionDetails}
+        isOpen={showTransactionDetails}
         onClose={() => {
           setShowTransactionDetails(false);
           setSelectedTransaction(null);
