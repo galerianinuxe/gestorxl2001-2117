@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, ShoppingCart, Search, X, DollarSign, Scale, Filter, Tag } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Search, X, DollarSign, Scale, Filter, Tag, Package } from 'lucide-react';
 import ContextualHelpButton from '@/components/ContextualHelpButton';
 import { getOrders, getMaterials, getMaterialCategories } from '@/utils/supabaseStorage';
 import { Order, Material, MaterialCategory } from '@/types/pdv';
@@ -16,6 +16,20 @@ import { Label } from '@/components/ui/label';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+// Interface para item de compra individual (padrão ERP)
+interface PurchaseItem {
+  orderId: string;
+  orderDate: number;
+  materialId: string;
+  materialName: string;
+  categoryId: string | null;
+  categoryName: string | null;
+  categoryColor: string | null;
+  weight: number;
+  unitPrice: number;
+  totalPrice: number;
+}
 
 const PurchaseOrders = () => {
   const [searchParams] = useSearchParams();
@@ -61,20 +75,8 @@ const PurchaseOrders = () => {
     loadData();
   }, [startDate, endDate]);
 
-  // Helper to get category name by material ID
-  const getCategoryByMaterialId = (materialId: string) => {
-    const material = materials.find(m => m.id === materialId);
-    if (!material?.category_id) return null;
-    return categories.find(c => c.id === material.category_id);
-  };
-
-  const purchaseOrders = useMemo(() => {
-    let filteredOrders = orders.filter(order => 
-      order.type === 'compra' && 
-      order.status === 'completed' &&
-      order.items && order.items.length > 0  // Ignorar ordens sem items
-    );
-
+  // Calcular range de datas baseado no período
+  const dateRange = useMemo(() => {
     const now = new Date();
     let filterStart: Date;
     let filterEnd: Date = new Date(now);
@@ -119,38 +121,95 @@ const PurchaseOrders = () => {
       }
     }
 
-    filteredOrders = filteredOrders.filter(order => {
+    return { filterStart, filterEnd };
+  }, [selectedPeriod, filterStartDate, filterEndDate]);
+
+  // TODOS OS ITENS DO PERÍODO (sem filtro de material/categoria)
+  const allPeriodItems = useMemo(() => {
+    const { filterStart, filterEnd } = dateRange;
+
+    // Filtrar pedidos de compra válidos no período
+    const ordersInPeriod = orders.filter(order => 
+      order.type === 'compra' && 
+      order.status === 'completed' &&
+      order.items && order.items.length > 0 &&
+      !order.cancelled
+    ).filter(order => {
       const orderDate = new Date(order.timestamp);
       return orderDate >= filterStart && orderDate <= filterEnd;
     });
 
+    // Flatten: converter pedidos em itens individuais
+    const items: PurchaseItem[] = [];
+    ordersInPeriod.forEach(order => {
+      order.items.forEach(item => {
+        const material = materials.find(m => m.id === item.materialId);
+        const category = material?.category_id 
+          ? categories.find(c => c.id === material.category_id) 
+          : null;
+        
+        items.push({
+          orderId: order.id,
+          orderDate: order.timestamp,
+          materialId: item.materialId,
+          materialName: item.materialName,
+          categoryId: category?.id || null,
+          categoryName: category?.name || null,
+          categoryColor: category?.hex_color || category?.color || null,
+          weight: item.quantity,
+          unitPrice: item.price,
+          totalPrice: item.total
+        });
+      });
+    });
+
+    return items;
+  }, [orders, materials, categories, dateRange]);
+
+  // ITENS FILTRADOS por material/categoria
+  const filteredItems = useMemo(() => {
+    let items = [...allPeriodItems];
+
+    // Filtro por material - agora filtra ITENS, não pedidos
     if (selectedMaterials.length > 0) {
-      filteredOrders = filteredOrders.filter(order => 
-        order.items.some(item => 
-          selectedMaterials.some(selectedMaterial => 
-            item.materialName.toLowerCase().includes(selectedMaterial.toLowerCase())
-          )
+      items = items.filter(item => 
+        selectedMaterials.some(selected => 
+          item.materialName.toLowerCase().includes(selected.toLowerCase())
         )
       );
     }
 
-    // Filter by category
+    // Filtro por categoria
     if (selectedCategory !== 'all') {
-      filteredOrders = filteredOrders.filter(order =>
-        order.items.some(item => {
-          const material = materials.find(m => m.id === item.materialId);
-          return material?.category_id === selectedCategory;
-        })
-      );
+      items = items.filter(item => item.categoryId === selectedCategory);
     }
 
-    return filteredOrders.sort((a, b) => b.timestamp - a.timestamp);
-  }, [orders, materials, selectedPeriod, filterStartDate, filterEndDate, selectedMaterials, selectedCategory]);
+    return items.sort((a, b) => b.orderDate - a.orderDate);
+  }, [allPeriodItems, selectedMaterials, selectedCategory]);
 
-  const totalPages = Math.ceil(purchaseOrders.length / itemsPerPage);
+  // TOTAIS GERAIS DO PERÍODO (não afetados por filtro de material)
+  const periodTotals = useMemo(() => ({
+    orderCount: new Set(allPeriodItems.map(item => item.orderId)).size,
+    totalWeight: allPeriodItems.reduce((sum, item) => sum + item.weight, 0),
+    totalAmount: allPeriodItems.reduce((sum, item) => sum + item.totalPrice, 0)
+  }), [allPeriodItems]);
+
+  // TOTAIS DO MATERIAL FILTRADO (somente quando há filtro)
+  const filteredTotals = useMemo(() => ({
+    itemCount: filteredItems.length,
+    orderCount: new Set(filteredItems.map(item => item.orderId)).size,
+    totalWeight: filteredItems.reduce((sum, item) => sum + item.weight, 0),
+    totalAmount: filteredItems.reduce((sum, item) => sum + item.totalPrice, 0)
+  }), [filteredItems]);
+
+  // Flag para saber se há filtro ativo
+  const hasFilter = selectedMaterials.length > 0 || selectedCategory !== 'all';
+
+  // Paginação
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedOrders = purchaseOrders.slice(startIndex, endIndex);
+  const paginatedItems = filteredItems.slice(startIndex, endIndex);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -163,18 +222,17 @@ const PurchaseOrders = () => {
     }).format(value);
   };
 
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString('pt-BR');
+  const formatDateTime = (timestamp: number) => {
+    const date = new Date(timestamp);
+    return {
+      date: date.toLocaleDateString('pt-BR'),
+      time: date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+    };
   };
 
   const formatWeight = (value: number) => {
     return `${value.toFixed(2)} kg`;
   };
-
-  const totalAmount = purchaseOrders.reduce((sum, order) => sum + order.total, 0);
-  const totalWeight = purchaseOrders.reduce((sum, order) => 
-    sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0
-  );
 
   const uniqueMaterials = useMemo(() => {
     const materialNames = new Set<string>();
@@ -416,78 +474,134 @@ const PurchaseOrders = () => {
           }
         />
 
-        {/* Resumo - Cards Compactos */}
-        <div className="grid grid-cols-3 gap-2 mb-3">
-          <MetricCard
-            icon={ShoppingCart}
-            iconColor="text-emerald-500"
-            label="Compras"
-            value={purchaseOrders.length}
-          />
-          <MetricCard
-            icon={DollarSign}
-            iconColor="text-emerald-500"
-            label="Total"
-            value={formatCurrency(totalAmount)}
-          />
-          <MetricCard
-            icon={Scale}
-            iconColor="text-emerald-500"
-            label="Peso Total"
-            value={formatWeight(totalWeight)}
-          />
+        {/* TOTAIS GERAIS DO PERÍODO - Sempre visíveis */}
+        <div className="mb-3">
+          <p className="text-slate-400 text-xs mb-2">Totais do Período</p>
+          <div className="grid grid-cols-3 gap-2">
+            <MetricCard
+              icon={ShoppingCart}
+              iconColor="text-emerald-500"
+              label="Compras"
+              value={periodTotals.orderCount}
+            />
+            <MetricCard
+              icon={DollarSign}
+              iconColor="text-emerald-500"
+              label="Total"
+              value={formatCurrency(periodTotals.totalAmount)}
+            />
+            <MetricCard
+              icon={Scale}
+              iconColor="text-emerald-500"
+              label="Peso Total"
+              value={formatWeight(periodTotals.totalWeight)}
+            />
+          </div>
         </div>
 
-        {/* Lista de Compras */}
+        {/* TOTAIS DO FILTRO - Somente quando há filtro ativo */}
+        {hasFilter && (
+          <div className="mb-3">
+            <p className="text-amber-400 text-xs mb-2 flex items-center gap-1">
+              <Filter className="h-3 w-3" />
+              Totais Filtrados
+              {selectedMaterials.length > 0 && `: ${selectedMaterials.join(', ')}`}
+              {selectedCategory !== 'all' && (
+                <>
+                  {selectedMaterials.length > 0 && ' | '}
+                  Categoria: {categories.find(c => c.id === selectedCategory)?.name}
+                </>
+              )}
+            </p>
+            <div className="grid grid-cols-4 gap-2">
+              <MetricCard
+                icon={Package}
+                iconColor="text-amber-500"
+                label="Itens"
+                value={filteredTotals.itemCount}
+              />
+              <MetricCard
+                icon={ShoppingCart}
+                iconColor="text-amber-500"
+                label="Pedidos"
+                value={filteredTotals.orderCount}
+              />
+              <MetricCard
+                icon={Scale}
+                iconColor="text-amber-500"
+                label="Peso"
+                value={formatWeight(filteredTotals.totalWeight)}
+              />
+              <MetricCard
+                icon={DollarSign}
+                iconColor="text-amber-500"
+                label="Valor"
+                value={formatCurrency(filteredTotals.totalAmount)}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Lista de Itens de Compra */}
         <Card className="bg-slate-700 border-slate-600">
           <CardHeader className="p-3">
-            <CardTitle className="text-white text-base md:text-lg">Materiais Comprados</CardTitle>
+            <CardTitle className="text-white text-base md:text-lg">
+              {hasFilter ? 'Itens Filtrados' : 'Todos os Itens de Compra'}
+              <span className="text-slate-400 text-sm font-normal ml-2">
+                ({filteredItems.length} {filteredItems.length === 1 ? 'item' : 'itens'})
+              </span>
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-2 md:p-3">
-            {purchaseOrders.length > 0 ? (
+            {filteredItems.length > 0 ? (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow className="border-slate-600">
-                      <TableHead className="text-slate-300 text-sm p-2">Data</TableHead>
-                      <TableHead className="text-slate-300 text-sm p-2">Materiais</TableHead>
+                      <TableHead className="text-slate-300 text-sm p-2">Data/Hora</TableHead>
+                      <TableHead className="text-slate-300 text-sm p-2">Pedido</TableHead>
+                      <TableHead className="text-slate-300 text-sm p-2">Material</TableHead>
                       <TableHead className="text-slate-300 text-sm p-2 hidden lg:table-cell">Categoria</TableHead>
                       <TableHead className="text-slate-300 text-sm p-2 hidden sm:table-cell">Peso</TableHead>
                       <TableHead className="text-slate-300 text-sm p-2">Valor</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paginatedOrders.map((order) => {
-                      const firstCategory = getCategoryByMaterialId(order.items[0]?.materialId);
+                    {paginatedItems.map((item, index) => {
+                      const { date, time } = formatDateTime(item.orderDate);
                       return (
-                        <TableRow key={order.id} className="border-slate-600 hover:bg-slate-600/30">
+                        <TableRow key={`${item.orderId}-${index}`} className="border-slate-600 hover:bg-slate-600/30">
                           <TableCell className="text-slate-300 text-sm p-2">
-                            {formatDate(order.timestamp)}
+                            <div>{date}</div>
+                            <div className="text-xs text-slate-500">{time}</div>
                           </TableCell>
-                          <TableCell className="text-slate-300 text-sm p-2 max-w-[150px] truncate">
-                            {order.items.map(item => item.materialName).join(', ')}
+                          <TableCell className="text-slate-400 text-xs p-2 font-mono">
+                            #{item.orderId.substring(0, 8)}
+                          </TableCell>
+                          <TableCell className="text-slate-300 text-sm p-2">
+                            {item.materialName}
                           </TableCell>
                           <TableCell className="p-2 hidden lg:table-cell">
-                            {firstCategory ? (
+                            {item.categoryName ? (
                               <Badge 
                                 variant="outline"
                                 className="text-xs border-0"
                                 style={{ 
-                                  backgroundColor: `${firstCategory.hex_color || firstCategory.color || '#6b7280'}20`,
-                                  color: firstCategory.hex_color || firstCategory.color || '#9ca3af'
+                                  backgroundColor: `${item.categoryColor || '#6b7280'}20`,
+                                  color: item.categoryColor || '#9ca3af'
                                 }}
                               >
-                                {firstCategory.name}
+                                {item.categoryName}
                               </Badge>
                             ) : (
                               <span className="text-slate-500 text-xs">-</span>
                             )}
                           </TableCell>
                           <TableCell className="text-slate-300 text-sm p-2 hidden sm:table-cell">
-                            {formatWeight(order.items.reduce((sum, item) => sum + item.quantity, 0))}
+                            {formatWeight(item.weight)}
                           </TableCell>
                           <TableCell className="text-white font-semibold text-sm p-2">
-                            {formatCurrency(order.total)}
+                            {formatCurrency(item.totalPrice)}
                           </TableCell>
                         </TableRow>
                       );
@@ -500,7 +614,10 @@ const PurchaseOrders = () => {
                 <ShoppingCart className="h-12 w-12 mx-auto mb-3 text-slate-500" />
                 <h3 className="text-white font-semibold mb-1">Nenhuma compra encontrada</h3>
                 <p className="text-slate-400 text-sm">
-                  As compras registradas no PDV aparecerão aqui.
+                  {hasFilter 
+                    ? 'Nenhum item corresponde aos filtros selecionados.' 
+                    : 'As compras registradas no PDV aparecerão aqui.'
+                  }
                 </p>
               </div>
             )}
