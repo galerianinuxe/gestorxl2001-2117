@@ -18,12 +18,16 @@ import { Label } from '@/components/ui/label';
 interface MaterialStock {
   materialName: string;
   currentStock: number;
-  purchasePrice: number;
-  salePrice: number;
-  totalValue: number;
-  profitProjection: number;
-  totalPurchases: number;
-  totalSales: number;
+  purchasePrice: number; // Preço atual do cadastro (referência)
+  salePrice: number; // Preço de venda atual do cadastro
+  totalValue: number; // Custo real do estoque (baseado em preços históricos)
+  profitProjection: number; // Projeção de lucro (valor venda - custo real)
+  totalPurchases: number; // Valor total das compras
+  totalSales: number; // Valor total das vendas
+  // Novos campos para cálculo com preços históricos
+  totalPurchaseCost: number; // Soma real dos valores pagos nas compras
+  totalPurchaseQuantity: number; // Quantidade total comprada
+  avgPurchasePrice: number; // Preço médio ponderado de compra
   transactions: Array<{
     date: number;
     type: 'compra' | 'venda';
@@ -103,12 +107,16 @@ const CurrentStock = () => {
             materialStocks[item.materialName] = {
               materialName: item.materialName,
               currentStock: 0,
-              purchasePrice: material?.price || 0,
-              salePrice: material?.salePrice || 0,
+              purchasePrice: material?.price || 0, // Preço atual (referência)
+              salePrice: material?.salePrice || 0, // Preço de venda atual
               totalValue: 0,
               profitProjection: 0,
               totalPurchases: 0,
               totalSales: 0,
+              // Novos campos para cálculo histórico
+              totalPurchaseCost: 0,
+              totalPurchaseQuantity: 0,
+              avgPurchasePrice: 0,
               transactions: []
             };
           }
@@ -116,6 +124,9 @@ const CurrentStock = () => {
           if (order.type === 'compra') {
             materialStocks[item.materialName].currentStock += item.quantity;
             materialStocks[item.materialName].totalPurchases += item.total;
+            // Acumular custo real e quantidade das compras
+            materialStocks[item.materialName].totalPurchaseCost += item.total;
+            materialStocks[item.materialName].totalPurchaseQuantity += item.quantity;
           } else if (order.type === 'venda') {
             materialStocks[item.materialName].currentStock -= item.quantity;
             materialStocks[item.materialName].totalSales += item.total;
@@ -203,9 +214,17 @@ const CurrentStock = () => {
     }
 
     Object.values(materialStocks).forEach(stock => {
+      // Calcular preço médio ponderado de compra (CMP)
+      if (stock.totalPurchaseQuantity > 0) {
+        stock.avgPurchasePrice = stock.totalPurchaseCost / stock.totalPurchaseQuantity;
+      }
+      
       if (stock.currentStock > 0) {
-        stock.totalValue = stock.currentStock * stock.purchasePrice;
-        stock.profitProjection = (stock.salePrice - stock.purchasePrice) * stock.currentStock;
+        // Custo real do estoque = estoque atual × preço médio de compra
+        stock.totalValue = stock.currentStock * stock.avgPurchasePrice;
+        // Projeção de lucro = (preço venda atual × estoque) - custo real
+        const projectedSaleValue = stock.salePrice * stock.currentStock;
+        stock.profitProjection = projectedSaleValue - stock.totalValue;
       }
       stock.transactions.sort((a, b) => b.date - a.date);
     });

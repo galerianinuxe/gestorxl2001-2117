@@ -8,12 +8,16 @@ import { ArrowLeft, TrendingUp, Package, DollarSign, ArrowUpCircle, ArrowDownCir
 interface MaterialStock {
   materialName: string;
   currentStock: number;
-  purchasePrice: number;
-  salePrice: number;
-  totalValue: number;
-  profitProjection: number;
+  purchasePrice: number; // Preço atual do cadastro (referência)
+  salePrice: number; // Preço de venda atual
+  totalValue: number; // Custo real do estoque (baseado em preços históricos)
+  profitProjection: number; // Projeção de lucro (valor venda - custo real)
   totalPurchases: number;
   totalSales: number;
+  // Campos para cálculo com preços históricos
+  totalPurchaseCost: number; // Soma real dos valores pagos nas compras
+  totalPurchaseQuantity: number; // Quantidade total comprada
+  avgPurchasePrice: number; // Preço médio ponderado de compra
   transactions: Array<{
     date: number;
     type: 'compra' | 'venda';
@@ -127,26 +131,40 @@ const MaterialDetailsView = ({ material, totalWeight, onBack }: MaterialDetailsV
           {/* Seção: Preços */}
           <div className="mb-4">
             <h3 className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2">Preços por kg</h3>
-            <div className="grid grid-cols-2 gap-2">
-              {/* Preço de Compra */}
+            <div className="grid grid-cols-3 gap-2">
+              {/* Preço Médio de Compra (Calculado) */}
               <Card className="bg-slate-700 border-slate-600">
                 <CardContent className="p-3">
                   <div className="flex items-center gap-1.5 mb-1">
                     <DollarSign className="h-3.5 w-3.5 text-yellow-500" />
-                    <span className="text-xs text-slate-400">Compra</span>
+                    <span className="text-xs text-slate-400">Média Compra</span>
                   </div>
-                  <div className="text-sm font-bold text-yellow-400">{formatCurrency(material.purchasePrice)}</div>
+                  <div className="text-sm font-bold text-yellow-400">{formatCurrency(material.avgPurchasePrice || 0)}</div>
+                  <div className="text-[10px] text-slate-500 mt-0.5">Custo médio real</div>
                 </CardContent>
               </Card>
               
-              {/* Preço de Venda */}
+              {/* Preço Atual de Compra (do cadastro) */}
+              <Card className="bg-slate-700/50 border-slate-600">
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <DollarSign className="h-3.5 w-3.5 text-slate-400" />
+                    <span className="text-xs text-slate-500">Compra Atual</span>
+                  </div>
+                  <div className="text-sm font-bold text-slate-400">{formatCurrency(material.purchasePrice)}</div>
+                  <div className="text-[10px] text-slate-500 mt-0.5">Preço cadastro</div>
+                </CardContent>
+              </Card>
+              
+              {/* Preço de Venda Atual */}
               <Card className="bg-slate-700 border-slate-600">
                 <CardContent className="p-3">
                   <div className="flex items-center gap-1.5 mb-1">
                     <DollarSign className="h-3.5 w-3.5 text-blue-500" />
-                    <span className="text-xs text-slate-400">Venda</span>
+                    <span className="text-xs text-slate-400">Venda Atual</span>
                   </div>
                   <div className="text-sm font-bold text-blue-400">{formatCurrency(material.salePrice)}</div>
+                  <div className="text-[10px] text-slate-500 mt-0.5">Valor de hoje</div>
                 </CardContent>
               </Card>
             </div>
@@ -156,25 +174,27 @@ const MaterialDetailsView = ({ material, totalWeight, onBack }: MaterialDetailsV
           <div className="mb-4">
             <h3 className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2">Valores em Estoque</h3>
             <div className="grid grid-cols-2 gap-2 mb-2">
-              {/* Custo Total */}
+              {/* Custo Real do Estoque (baseado em preços históricos) */}
               <Card className="bg-slate-700 border-slate-600">
                 <CardContent className="p-3">
                   <div className="flex items-center gap-1.5 mb-1">
                     <DollarSign className="h-3.5 w-3.5 text-yellow-500" />
-                    <span className="text-xs text-slate-400">Custo Total</span>
+                    <span className="text-xs text-slate-400">Custo Real</span>
                   </div>
                   <div className="text-sm font-bold text-yellow-400">{formatCurrency(material.totalValue)}</div>
+                  <div className="text-[10px] text-slate-500 mt-0.5">Valor pago historicamente</div>
                 </CardContent>
               </Card>
               
-              {/* Valor de Venda Total */}
+              {/* Valor de Venda Total (preço atual × estoque) */}
               <Card className="bg-slate-700 border-slate-600">
                 <CardContent className="p-3">
                   <div className="flex items-center gap-1.5 mb-1">
                     <DollarSign className="h-3.5 w-3.5 text-blue-500" />
-                    <span className="text-xs text-slate-400">Valor Venda</span>
+                    <span className="text-xs text-slate-400">Valor Venda Hoje</span>
                   </div>
                   <div className="text-sm font-bold text-blue-400">{formatCurrency(totalSaleValue)}</div>
+                  <div className="text-[10px] text-slate-500 mt-0.5">Se vender agora</div>
                 </CardContent>
               </Card>
             </div>
@@ -189,6 +209,7 @@ const MaterialDetailsView = ({ material, totalWeight, onBack }: MaterialDetailsV
                   </div>
                   <div className="text-lg font-bold text-emerald-400">{formatCurrency(material.profitProjection)}</div>
                 </div>
+                <div className="text-[10px] text-emerald-600 mt-1 text-right">Venda Hoje - Custo Real</div>
               </CardContent>
             </Card>
           </div>
