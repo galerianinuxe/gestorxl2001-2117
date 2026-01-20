@@ -3,11 +3,40 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import { ArrowLeft, TrendingDown, Loader2, FileText } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { ArrowLeft, TrendingDown, Loader2, FileText, Tag, Percent } from 'lucide-react';
 import ContextualHelpButton from '@/components/ContextualHelpButton';
 import { getCashRegisters, calculateCashSummary } from '@/utils/localStorage';
 import { StandardFilter, FilterPeriod } from '@/components/StandardFilter';
 import { MetricCard } from '@/components/MetricCard';
+
+// Interface tipada para item de despesa analítico
+interface ExpenseItem {
+  id: string;
+  timestamp: number;
+  registerId: string;
+  origin: 'PDV' | 'Manual';
+  description: string;
+  category: string;
+  details: string;
+  amount: number;
+}
+
+// Parser para extrair categoria da descrição (formato: "Categoria - Detalhe")
+const parseExpenseDescription = (description: string): { category: string; details: string } => {
+  const parts = description.split(' - ');
+  if (parts.length >= 2) {
+    return {
+      category: parts[0].trim(),
+      details: parts.slice(1).join(' - ').trim()
+    };
+  }
+  return {
+    category: 'Outros',
+    details: description.trim()
+  };
+};
 
 const Expenses = () => {
   const [searchParams] = useSearchParams();
@@ -16,6 +45,7 @@ const Expenses = () => {
   const [endDate, setEndDate] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const itemsPerPage = 20;
 
   useEffect(() => {
@@ -28,13 +58,7 @@ const Expenses = () => {
     if (urlPeriod) setSelectedPeriod(urlPeriod as FilterPeriod);
   }, [searchParams]);
 
-  const [expensesData, setExpensesData] = useState<Array<{
-    id: string;
-    amount: number;
-    description: string;
-    timestamp: number;
-    registerId: string;
-  }>>([]);
+  const [expensesData, setExpensesData] = useState<ExpenseItem[]>([]);
 
   useEffect(() => {
     const loadExpensesData = async () => {
@@ -48,9 +72,9 @@ const Expenses = () => {
         filterEndDate.setHours(23, 59, 59, 999);
 
         if (selectedPeriod === 'custom' && startDate && endDate) {
-          filterStartDate = new Date(startDate);
-          filterEndDate = new Date(endDate);
-          filterEndDate.setHours(23, 59, 59, 999);
+          // FIX: Usar 'T00:00:00' para forçar parsing como horário local (evita bug de timezone)
+          filterStartDate = new Date(startDate + 'T00:00:00');
+          filterEndDate = new Date(endDate + 'T23:59:59.999');
         } else {
           switch (selectedPeriod) {
             case 'daily':
@@ -91,21 +115,22 @@ const Expenses = () => {
           return registerDate >= filterStartDate && registerDate <= filterEndDate;
         });
 
-        const allExpenses: Array<{
-          id: string;
-          amount: number;
-          description: string;
-          timestamp: number;
-          registerId: string;
-        }> = [];
+        const allExpenses: ExpenseItem[] = [];
 
         await Promise.all(
           filteredRegisters.map(async (register) => {
             const summary = await calculateCashSummary(register);
             summary.expenses.forEach(expense => {
+              const parsed = parseExpenseDescription(expense.description);
               allExpenses.push({
-                ...expense,
-                registerId: register.id
+                id: expense.id,
+                timestamp: expense.timestamp,
+                registerId: register.id,
+                origin: 'PDV',
+                description: expense.description,
+                category: parsed.category,
+                details: parsed.details,
+                amount: expense.amount
               });
             });
           })
@@ -124,6 +149,42 @@ const Expenses = () => {
     loadExpensesData();
   }, [selectedPeriod, startDate, endDate]);
 
+  // Categorias únicas para o filtro
+  const uniqueCategories = useMemo(() => {
+    const categories = [...new Set(expensesData.map(e => e.category))];
+    return categories.sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }, [expensesData]);
+
+  // TOTAIS DO PERÍODO (fixos, não mudam com filtro de categoria)
+  const periodTotals = useMemo(() => ({
+    totalAmount: expensesData.reduce((sum, e) => sum + e.amount, 0),
+    totalCount: expensesData.length
+  }), [expensesData]);
+
+  // Itens filtrados por categoria
+  const filteredExpenses = useMemo(() => {
+    if (selectedCategory === 'all') return expensesData;
+    return expensesData.filter(e => e.category === selectedCategory);
+  }, [expensesData, selectedCategory]);
+
+  // TOTAIS FILTRADOS (só da categoria selecionada)
+  const filteredTotals = useMemo(() => {
+    if (selectedCategory === 'all') return null;
+    
+    const totalAmount = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
+    const percentage = periodTotals.totalAmount > 0 
+      ? (totalAmount / periodTotals.totalAmount) * 100 
+      : 0;
+    
+    return {
+      totalAmount,
+      totalCount: filteredExpenses.length,
+      percentage: percentage.toFixed(1)
+    };
+  }, [filteredExpenses, selectedCategory, periodTotals]);
+
+  const hasFilter = selectedCategory !== 'all';
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -139,21 +200,20 @@ const Expenses = () => {
     return new Date(timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   };
 
-  const totalPages = Math.ceil(expensesData.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredExpenses.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedExpenses = expensesData.slice(startIndex, endIndex);
+  const paginatedExpenses = filteredExpenses.slice(startIndex, endIndex);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedPeriod, startDate, endDate]);
-
-  const totalExpenses = expensesData.reduce((sum, expense) => sum + expense.amount, 0);
+  }, [selectedPeriod, startDate, endDate, selectedCategory]);
 
   const clearFilters = () => {
     setSelectedPeriod('last30');
     setStartDate('');
     setEndDate('');
+    setSelectedCategory('all');
   };
 
   return (
@@ -175,7 +235,7 @@ const Expenses = () => {
       </header>
 
       <main className="flex-1 p-2 md:p-4 overflow-auto">
-        {/* Filtro Padronizado */}
+        {/* Filtro Padronizado com Filtro de Categoria */}
         <StandardFilter
           selectedPeriod={selectedPeriod}
           onPeriodChange={setSelectedPeriod}
@@ -184,28 +244,77 @@ const Expenses = () => {
           endDate={endDate}
           onEndDateChange={setEndDate}
           onClear={clearFilters}
+          extraFilters={
+            <div className="grid grid-cols-1 gap-2">
+              <Label className="text-slate-300 text-sm">Categoria</Label>
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                  <SelectValue placeholder="Todas as categorias" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-700 border-slate-600">
+                  <SelectItem value="all" className="text-white hover:bg-slate-600">
+                    Todas as categorias
+                  </SelectItem>
+                  {uniqueCategories.map(cat => (
+                    <SelectItem key={cat} value={cat} className="text-white hover:bg-slate-600">
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          }
         />
 
-        {/* Resumo - Cards Compactos */}
+        {/* Totais do Período (sempre visíveis) */}
         <div className="grid grid-cols-2 gap-2 mb-3">
           <MetricCard
             icon={TrendingDown}
             iconColor="text-rose-500"
-            label="Total Despesas"
-            value={formatCurrency(totalExpenses)}
+            label="Total Despesas (Período)"
+            value={formatCurrency(periodTotals.totalAmount)}
           />
           <MetricCard
             icon={FileText}
             iconColor="text-emerald-500"
-            label="Nº de Despesas"
-            value={expensesData.length}
+            label="Nº de Lançamentos"
+            value={periodTotals.totalCount}
           />
         </div>
+
+        {/* Totais da Categoria Filtrada (só aparece com filtro ativo) */}
+        {filteredTotals && (
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            <MetricCard
+              icon={Tag}
+              iconColor="text-amber-500"
+              label={`Categoria: ${selectedCategory}`}
+              value={formatCurrency(filteredTotals.totalAmount)}
+              className="bg-amber-900/20 border-amber-700/30"
+            />
+            <MetricCard
+              icon={FileText}
+              iconColor="text-amber-500"
+              label="Lançamentos (Filtro)"
+              value={filteredTotals.totalCount}
+              className="bg-amber-900/20 border-amber-700/30"
+            />
+            <MetricCard
+              icon={Percent}
+              iconColor="text-amber-500"
+              label="Participação"
+              value={`${filteredTotals.percentage}%`}
+              className="bg-amber-900/20 border-amber-700/30"
+            />
+          </div>
+        )}
 
         {/* Lista de Despesas */}
         <Card className="bg-slate-700 border-slate-600">
           <CardHeader className="p-3">
-            <CardTitle className="text-white text-base md:text-lg">Lista de Despesas</CardTitle>
+            <CardTitle className="text-white text-base md:text-lg">
+              {hasFilter ? `Despesas: ${selectedCategory}` : 'Lista de Despesas'}
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-2 md:p-3">
             {isLoading ? (
@@ -220,9 +329,12 @@ const Expenses = () => {
                     <TableHeader>
                       <TableRow className="border-slate-600">
                         <TableHead className="text-slate-300 text-sm p-2">Data/Hora</TableHead>
+                        <TableHead className="text-slate-300 text-sm p-2 hidden md:table-cell">ID</TableHead>
+                        <TableHead className="text-slate-300 text-sm p-2 hidden sm:table-cell">Origem</TableHead>
+                        <TableHead className="text-slate-300 text-sm p-2">Categoria</TableHead>
                         <TableHead className="text-slate-300 text-sm p-2">Descrição</TableHead>
                         <TableHead className="text-slate-300 text-sm p-2">Valor</TableHead>
-                        <TableHead className="text-slate-300 text-sm p-2 hidden sm:table-cell">Caixa</TableHead>
+                        <TableHead className="text-slate-300 text-sm p-2 hidden lg:table-cell">Caixa</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -232,13 +344,26 @@ const Expenses = () => {
                             <div>{formatDate(expense.timestamp)}</div>
                             <div className="text-xs text-slate-500">{formatTime(expense.timestamp)}</div>
                           </TableCell>
+                          <TableCell className="text-slate-400 font-mono text-xs p-2 hidden md:table-cell">
+                            {expense.id.substring(0, 8)}
+                          </TableCell>
+                          <TableCell className="text-slate-300 text-sm p-2 hidden sm:table-cell">
+                            <span className="px-2 py-1 rounded text-xs bg-blue-900/50 text-blue-300">
+                              {expense.origin}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-slate-300 text-sm p-2">
+                            <span className="px-2 py-1 rounded text-xs bg-slate-600 text-slate-200">
+                              {expense.category}
+                            </span>
+                          </TableCell>
                           <TableCell className="text-slate-300 text-sm p-2 max-w-[150px] truncate">
-                            {expense.description}
+                            {expense.details}
                           </TableCell>
                           <TableCell className="text-rose-400 font-semibold text-sm p-2">
                             {formatCurrency(expense.amount)}
                           </TableCell>
-                          <TableCell className="text-slate-400 font-mono text-xs p-2 hidden sm:table-cell">
+                          <TableCell className="text-slate-400 font-mono text-xs p-2 hidden lg:table-cell">
                             {expense.registerId.substring(0, 8)}
                           </TableCell>
                         </TableRow>
@@ -296,7 +421,11 @@ const Expenses = () => {
               </>
             ) : (
               <div className="text-center py-6 text-slate-400">
-                Nenhuma despesa encontrada no período selecionado.
+                <TrendingDown className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p>Nenhuma despesa encontrada no período selecionado.</p>
+                {hasFilter && (
+                  <p className="text-sm mt-1">Tente remover o filtro de categoria.</p>
+                )}
               </div>
             )}
           </CardContent>
