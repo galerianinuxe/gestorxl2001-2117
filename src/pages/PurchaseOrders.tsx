@@ -84,6 +84,7 @@ const PurchaseOrders = () => {
 
     if (selectedPeriod === 'custom' && filterStartDate && filterEndDate) {
       filterStart = new Date(filterStartDate);
+      filterStart.setHours(0, 0, 0, 0);
       filterEnd = new Date(filterEndDate);
       filterEnd.setHours(23, 59, 59, 999);
     } else {
