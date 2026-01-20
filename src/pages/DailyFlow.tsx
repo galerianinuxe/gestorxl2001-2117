@@ -38,7 +38,8 @@ const DailyFlow = () => {
     userName: string;
   }>>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [isLoading, setIsLoading] = useState(true);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   const [selectedOperator, setSelectedOperator] = useState<string>('all');
@@ -71,6 +72,7 @@ const DailyFlow = () => {
     if (!user) return;
     
     const loadDailyFlowData = async () => {
+      setIsLoading(true);
       try {
         const cashRegisters = await getCashRegisters();
         const closedRegisters = cashRegisters.filter(register => register.status === 'closed');
@@ -99,6 +101,8 @@ const DailyFlow = () => {
       } catch (error) {
         console.error('Error loading daily flow data:', error);
         setDailyFlowData([]);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -112,9 +116,8 @@ const DailyFlow = () => {
     filterEndDate.setHours(23, 59, 59, 999);
 
     if (selectedPeriod === 'custom' && startDate && endDate) {
-      filterStartDate = new Date(startDate);
-      filterEndDate = new Date(endDate);
-      filterEndDate.setHours(23, 59, 59, 999);
+      filterStartDate = new Date(startDate + 'T00:00:00');
+      filterEndDate = new Date(endDate + 'T23:59:59.999');
     } else {
       switch (selectedPeriod) {
         case 'daily':
@@ -180,7 +183,7 @@ const DailyFlow = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedPeriod, startDate, endDate, selectedOperator]);
+  }, [selectedPeriod, startDate, endDate, selectedOperator, itemsPerPage]);
 
   const totalSales = filteredDailyFlowData.reduce((sum, item) => sum + item.totalSales, 0);
   const totalPurchases = filteredDailyFlowData.reduce((sum, item) => sum + item.totalPurchases, 0);
@@ -282,14 +285,14 @@ const DailyFlow = () => {
   }, [dailyFlowData]);
 
   const OperatorFilter = (
-    <div className="flex items-center gap-2">
-      <Label className="text-slate-300 text-sm whitespace-nowrap">Operador:</Label>
+    <div className="grid grid-cols-1 gap-2">
+      <Label className="text-slate-300 text-sm">Operador</Label>
       <Select value={selectedOperator} onValueChange={setSelectedOperator}>
-        <SelectTrigger className="bg-slate-800 border-slate-600 text-white h-10 min-w-[150px]">
+        <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
           <User className="h-4 w-4 mr-2" />
           <SelectValue placeholder="Todos" />
         </SelectTrigger>
-        <SelectContent className="bg-slate-800 border-slate-600">
+        <SelectContent className="bg-slate-700 border-slate-600">
           <SelectItem value="all" className="text-white">Todos os Operadores</SelectItem>
           {uniqueOperators.map((operator) => (
             <SelectItem key={operator} value={operator} className="text-white">
@@ -298,6 +301,30 @@ const DailyFlow = () => {
           ))}
         </SelectContent>
       </Select>
+    </div>
+  );
+
+  const PaginationSelector = (
+    <div className="grid grid-cols-1 gap-2">
+      <Label className="text-slate-300 text-sm">Por Página</Label>
+      <Select value={itemsPerPage.toString()} onValueChange={(v) => setItemsPerPage(Number(v))}>
+        <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent className="bg-slate-700 border-slate-600">
+          <SelectItem value="20" className="text-white">20</SelectItem>
+          <SelectItem value="50" className="text-white">50</SelectItem>
+          <SelectItem value="100" className="text-white">100</SelectItem>
+          <SelectItem value="200" className="text-white">200</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  );
+
+  const ExtraFilters = (
+    <div className="grid grid-cols-2 gap-4">
+      {OperatorFilter}
+      {PaginationSelector}
     </div>
   );
 
@@ -329,7 +356,7 @@ const DailyFlow = () => {
           endDate={endDate}
           onEndDateChange={setEndDate}
           onClear={clearFilters}
-          extraFilters={OperatorFilter}
+          extraFilters={ExtraFilters}
         />
 
         {/* Resumo - Cards Compactos */}
@@ -373,7 +400,12 @@ const DailyFlow = () => {
             <CardTitle className="text-white text-base md:text-lg">Histórico de Fechamentos</CardTitle>
           </CardHeader>
           <CardContent className="p-2 md:p-3">
-            {filteredDailyFlowData.length > 0 ? (
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center py-12 space-y-3">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
+                <p className="text-slate-400 text-sm">Carregando fechamentos...</p>
+              </div>
+            ) : filteredDailyFlowData.length > 0 ? (
               <>
                 {/* Mobile View */}
                 <div className="md:hidden space-y-2">
@@ -516,9 +548,14 @@ const DailyFlow = () => {
                   </Table>
                 </div>
 
+                {/* Position Indicator */}
+                <div className="text-sm text-slate-400 text-center mt-3">
+                  Exibindo {startIndex + 1} a {Math.min(endIndex, filteredDailyFlowData.length)} de {filteredDailyFlowData.length} fechamentos
+                </div>
+
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <div className="mt-4 flex justify-center">
+                  <div className="mt-2 flex justify-center">
                     <Pagination>
                       <PaginationContent>
                         <PaginationItem>
@@ -564,8 +601,9 @@ const DailyFlow = () => {
                 )}
               </>
             ) : (
-              <div className="text-center py-6 text-slate-400">
-                Nenhum fechamento de caixa encontrado no período selecionado.
+              <div className="flex flex-col items-center justify-center py-12 space-y-3">
+                <Calendar className="h-12 w-12 text-slate-500" />
+                <p className="text-slate-400 text-sm">Nenhum fechamento de caixa encontrado no período selecionado.</p>
               </div>
             )}
           </CardContent>
